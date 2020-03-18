@@ -1,0 +1,44 @@
+.auth {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    float: right;
+    margin: 0 6px;
+}
+
+.user-pic {
+    width: 30px;
+    height: 30px;
+    border-radius: 2px;
+    background-size: contain;
+    margin: 6px;
+}
+
+.user-name {
+    margin: 6px;
+}
+
+.auth-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    align-content: flex-start;
+    width: 600px;
+    margin: 100px auto;
+}
+
+img.partner-logo {
+    height: 60px;
+    margin: 16px;
+}
+
+img.partner-logo--unicef {
+    height: 40px;
+    padding-bottom: 3px;
+}
+
+.project-description p {
+    margin: 16px 0;
+    text-align: center;
+}
