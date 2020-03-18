@@ -1,8 +1,42 @@
-const functions = require('firebase-functions');
+const functions = require("firebase-functions");
+const monitoring = require("@google-cloud/monitoring");
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
+const client = new monitoring.MetricServiceClient();
+
+exports.fetchCPUUtilizationMetrics = functions.https.onRequest(
+  async (request, response) => {
+    const dataRequest = {
+      name: client.projectPath(request.query.projectId),
+      filter: 'metric.type="compute.googleapis.com/instance/cpu/utilization"',
+      interval: {
+        startTime: {
+          // Limit results to the last 10 minutes
+          seconds: Number(request.query.startTime) || (Date.now() / 1000 - 60 * 10)
+        },
+        endTime: {
+          seconds: Number(request.query.endTime) || (Date.now() / 1000)
+        }
+      }
+    };
+    const [timeSeries] = await client.listTimeSeries(dataRequest);
+    response.json(timeSeries)
+  }
+);
+
+exports.fetchCPUUsageTimeMetrics = functions.https.onRequest(
+  async (request, response) => {
+    
+  }
+);
+
+exports.fetchRamUsageMetrics = functions.https.onRequest(
+  async (request, response) => {
+    
+  }
+);
+
+exports.fetchInstanceUptimeMetrics = functions.https.onRequest(
+  async (request, response) => {
+    
+  }
+);
