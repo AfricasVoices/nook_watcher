@@ -76,9 +76,9 @@ function getFormattedMetrics(timeSeries) {
       return series.points.map(point => {
         return {
           instanceName: instanceName,
-          datetime: admin.firestore.Timestamp.fromMillis(
+          datetime: new Date(
             point.interval.endTime.seconds * 1000
-          ).toDate(),
+          ).toISOString(),
           value: point.value.doubleValue
         };
       });
