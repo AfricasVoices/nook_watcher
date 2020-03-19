@@ -9,7 +9,7 @@ const client = new monitoring.MetricServiceClient();
 exports.fetchAllMetrics = functions.pubsub
   .schedule("every 10 minutes")
   .onRun(context => {
-    let projectId = "";
+    let projectId = process.env.GCLOUD_PROJECT || 'YOUR_PROJECT_ID';
     fetchCPUUtilizationMetrics(projectId);
     fetchCPUUsageTimeMetrics(projectId);
     return null;
