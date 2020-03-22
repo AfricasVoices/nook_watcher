@@ -1,5 +1,6 @@
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:firebase/firestore.dart' as firestore;
+import 'package:nook_watcher/model.dart';
 
 import 'controller.dart' as controller;
 import 'logger.dart';
@@ -54,18 +55,18 @@ bool isUserSignedIn() {
   return firebaseAuth.currentUser != null;
 }
 
-typedef CollectionListener(List<Map> changes);
+typedef CollectionListener(List<DocSnapshot> changes);
 
 void listenForMetrics(String collectionRoot, CollectionListener listener) {
   log.verbose('Loading from metrics');
   _firestoreInstance
         .collection(collectionRoot)
         .onSnapshot.listen((snapshots) {
-          List<Map<String, Map>> changes = [];
+          List<DocSnapshot> changes = [];
           log.verbose("Starting processing ${snapshots.docChanges().length} changes.");
           for (var docChange in snapshots.docChanges()) {
             log.verbose('Processing ${docChange.doc.id}');
-            changes.add({docChange.doc.id : docChange.doc.data()});
+            changes.add(new DocSnapshot(docChange.doc.id, docChange.doc.data()));
           }
           listener(changes);
     });
