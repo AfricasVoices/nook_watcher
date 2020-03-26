@@ -87,14 +87,14 @@ class HistogramChartView {
   }
 }
 
-class TimeseriesLineChartView {
+class DailyTimeseriesLineChartView {
   DivElement chartContainer;
   DivElement title;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
 
-  TimeseriesLineChartView() {
+  DailyTimeseriesLineChartView() {
     chartContainer = new DivElement()
       ..classes.add('chart');
 

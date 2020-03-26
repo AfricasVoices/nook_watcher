@@ -176,10 +176,10 @@ class ContentView {
   charts.SingleIndicatorChartView needsReplyAndEscalateLatestValue;
   charts.SingleIndicatorChartView needsReplyMoreThan24hLatestValue;
   charts.SingleIndicatorChartView needsReplyAndEscalateMoreThan24hLatestValue;
-  charts.TimeseriesLineChartView needsReplyTimeseries;
-  charts.TimeseriesLineChartView needsReplyAndEscalateTimeseries;
-  charts.TimeseriesLineChartView needsReplyMoreThan24hTimeseries;
-  charts.TimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
@@ -206,25 +206,25 @@ class ContentView {
       ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
 
-    needsReplyTimeseries = new charts.TimeseriesLineChartView();
+    needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
       titleText: 'needs reply',
       datasetLabel: 'needs reply');
 
-    needsReplyAndEscalateTimeseries = new charts.TimeseriesLineChartView();
+    needsReplyAndEscalateTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyAndEscalateTimeseries.chartContainer);
     needsReplyAndEscalateTimeseries.createEmptyChart(
       titleText: 'needs reply and escalate',
       datasetLabel: 'needs reply and escalate');
 
-    needsReplyMoreThan24hTimeseries = new charts.TimeseriesLineChartView();
+    needsReplyMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyMoreThan24hTimeseries.chartContainer);
     needsReplyMoreThan24hTimeseries.createEmptyChart(
       titleText: 'needs reply more than 24h',
       datasetLabel: 'needs reply more than 24h');
 
-    needsReplyAndEscalateMoreThan24hTimeseries = new charts.TimeseriesLineChartView();
+    needsReplyAndEscalateMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyAndEscalateMoreThan24hTimeseries.chartContainer);
     needsReplyAndEscalateMoreThan24hTimeseries.createEmptyChart(
       titleText: 'needs reply and escalate more than 24h',
