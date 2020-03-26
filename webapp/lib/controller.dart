@@ -1,7 +1,5 @@
 library controller;
 
-import 'dart:convert' show json;
-
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -9,18 +7,14 @@ import 'view.dart' as view;
 
 Logger log = new Logger('controller.dart');
 
-final METRICS_ROOT_COLLECTION_KEY = 'daily_tag_metrics';
-
-enum UIActionObject {
-  conversation,
-  message,
-}
+final NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY = 'needs_reply_metrics';
 
 enum UIAction {
   userSignedIn,
   userSignedOut,
   signInButtonClicked,
-  signOutButtonClicked
+  signOutButtonClicked,
+  needsReplyDataUpdated
 }
 
 class Data {}
@@ -32,7 +26,8 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
-List<model.MetricsSnapshot> metrics;
+List<model.NeedsReplyData> needsReplyDataList;
+
 model.User signedInUser;
 
 void init() async {
@@ -41,26 +36,27 @@ void init() async {
 }
 
 void initUI() {
-  metrics = [];
+  needsReplyDataList = [];
 
   platform.listenForMetrics(
-    METRICS_ROOT_COLLECTION_KEY,
-    (updatedMetrics) {
+    NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
+    (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
         return;
       }
-      var updatedIds = updatedMetrics.map((m) => m.keys.first).toSet();
-      metrics.removeWhere((m) => updatedIds.contains(m.docId));
-      var newMetrics = updatedMetrics.map((m) => model.MetricsSnapshot.fromData(m));
-      metrics.addAll(newMetrics);
-      view.contentView.show(metrics.toString());
+      var updatedIds = updatedMetrics.map((m) => m.id).toSet();
+      var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
+      needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
+      needsReplyDataList.addAll(updatedData);
+      command(UIAction.needsReplyDataUpdated, null);
     }
   );
 }
 
 void command(UIAction action, Data data) {
   switch (action) {
+    /*** User */
     case UIAction.userSignedOut:
       signedInUser = null;
       view.authHeaderView.signOut();
@@ -80,6 +76,42 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();
+      break;
+
+    /*** Data */
+    case UIAction.needsReplyDataUpdated:
+      Map<DateTime, int> data = new Map.fromIterable(needsReplyDataList,
+        key: (item) => (item as model.NeedsReplyData).datetime,
+        value: (item) => (item as model.NeedsReplyData).needsReplyCount);
+      view.contentView.needsReplyTimeseries.updateChart(data);
+
+      data = new Map.fromIterable(needsReplyDataList,
+        key: (item) => (item as model.NeedsReplyData).datetime,
+        value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
+      view.contentView.needsReplyAndEscalateTimeseries.updateChart(data);
+
+
+      data = new Map.fromIterable(needsReplyDataList,
+        key: (item) => (item as model.NeedsReplyData).datetime,
+        value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
+      view.contentView.needsReplyMoreThan24hTimeseries.updateChart(data);
+
+
+      data = new Map.fromIterable(needsReplyDataList,
+        key: (item) => (item as model.NeedsReplyData).datetime,
+        value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
+      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart(data);
+
+
+      DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
+      var latestData = needsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
+
+      view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
+      view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
+      view.contentView.needsReplyMoreThan24hLatestValue.updateChart('${latestData.needsReplyMoreThan24h}');
+      view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
+
+      view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
       break;
   }
 }

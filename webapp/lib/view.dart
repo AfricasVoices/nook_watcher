@@ -3,6 +3,7 @@ import 'dart:html';
 
 import 'logger.dart';
 import 'controller.dart' as controller;
+import 'charts.dart' as charts;
 
 Logger log = new Logger('view.dart');
 
@@ -171,13 +172,69 @@ class BannerView {
 
 class ContentView {
   DivElement contentElement;
+  charts.SingleIndicatorChartView needsReplyLatestValue;
+  charts.SingleIndicatorChartView needsReplyAndEscalateLatestValue;
+  charts.SingleIndicatorChartView needsReplyMoreThan24hLatestValue;
+  charts.SingleIndicatorChartView needsReplyAndEscalateMoreThan24hLatestValue;
+  charts.DailyTimeseriesLineChartView needsReplyTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
+  charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
+  charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
-    contentElement = new DivElement();
-  }
+    contentElement = new DivElement()
+      ..classes.add('charts');
 
-  void show(String content) {
-    contentElement.text = content;
+    var singleIndicators = new DivElement()
+      ..classes.add('single-indicator-container');
+    contentElement.append(singleIndicators);
+
+    needsReplyLatestValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'needs reply');
+    singleIndicators.append(needsReplyLatestValue.chartContainer);
+
+    needsReplyAndEscalateLatestValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'needs reply and escalate');
+    singleIndicators.append(needsReplyAndEscalateLatestValue.chartContainer);
+
+    needsReplyMoreThan24hLatestValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'needs reply more than 24h');
+    singleIndicators.append(needsReplyMoreThan24hLatestValue.chartContainer);
+
+    needsReplyAndEscalateMoreThan24hLatestValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
+    singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
+
+    needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
+    contentElement.append(needsReplyTimeseries.chartContainer);
+    needsReplyTimeseries.createEmptyChart(
+      titleText: 'needs reply',
+      datasetLabel: 'needs reply');
+
+    needsReplyAndEscalateTimeseries = new charts.DailyTimeseriesLineChartView();
+    contentElement.append(needsReplyAndEscalateTimeseries.chartContainer);
+    needsReplyAndEscalateTimeseries.createEmptyChart(
+      titleText: 'needs reply and escalate',
+      datasetLabel: 'needs reply and escalate');
+
+    needsReplyMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
+    contentElement.append(needsReplyMoreThan24hTimeseries.chartContainer);
+    needsReplyMoreThan24hTimeseries.createEmptyChart(
+      titleText: 'needs reply more than 24h',
+      datasetLabel: 'needs reply more than 24h');
+
+    needsReplyAndEscalateMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
+    contentElement.append(needsReplyAndEscalateMoreThan24hTimeseries.chartContainer);
+    needsReplyAndEscalateMoreThan24hTimeseries.createEmptyChart(
+      titleText: 'needs reply and escalate more than 24h',
+      datasetLabel: 'needs reply and escalate more than 24h');
+
+    needsReplyAgeHistogram = new charts.HistogramChartView();
+    contentElement.append(needsReplyAgeHistogram.chartContainer);
+    needsReplyAgeHistogram.createEmptyChart(
+      titleText: 'needs reply messages by date',
+      datasetLabel: 'needs reply messages by date');
   }
 }
 
