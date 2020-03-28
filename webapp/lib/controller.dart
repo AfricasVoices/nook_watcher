@@ -102,24 +102,24 @@ void command(UIAction action, Data data) {
       Map<DateTime, int> data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-      view.contentView.needsReplyTimeseries.updateChart(data);
+      view.contentView.needsReplyTimeseries.updateChart([data]);
 
       data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-      view.contentView.needsReplyAndEscalateTimeseries.updateChart(data);
+      view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
 
 
       data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-      view.contentView.needsReplyMoreThan24hTimeseries.updateChart(data);
+      view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
 
 
       data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart(data);
+      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
 
 
       DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
@@ -134,10 +134,10 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
-      Map<DateTime, String> data = new Map.fromIterable(systemEventsDataList,
+      Map<DateTime, int> data = new Map.fromIterable(systemEventsDataList,
           key: (item) => (item as model.SystemEventsData).timestamp,
-          value: (item) => (item as model.SystemEventsData).systemName);
-        view.contentView.needsReplyTimeseries.updateChart(data);
-        break;
+          value: (item) => 1);
+      view.contentView.restartSystemEventTimeseries.updateChart([data]);
+      break;
   }
 }
