@@ -21,6 +21,7 @@ StatusView statusView;
 void init() {
   authMainView = new AuthMainView();
   authHeaderView = new AuthHeaderView();
+
   bannerView = new BannerView();
   contentView = new ContentView();
   snackbarView = new SnackbarView();
@@ -171,7 +172,14 @@ class BannerView {
 }
 
 class ContentView {
+  DivElement tabElement;
+  ButtonElement _systemTabLink;
+  ButtonElement _conversationTabLink;
+
   DivElement contentElement;
+  DivElement systemChartsTabContent;
+  DivElement conversationChartsTabContent;
+
   charts.SingleIndicatorChartView needsReplyLatestValue;
   charts.SingleIndicatorChartView needsReplyAndEscalateLatestValue;
   charts.SingleIndicatorChartView needsReplyMoreThan24hLatestValue;
@@ -184,12 +192,30 @@ class ContentView {
   charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
+    tabElement = new DivElement()
+      ..classes.add('tabs');
+    _conversationTabLink = new ButtonElement()
+      ..text = "Conversations"
+      ..onClick.listen((_) => toogleTabView(ChartType.conversation));
+    tabElement.append(_conversationTabLink);
+
+    _systemTabLink = new ButtonElement()
+      ..text = "Systems"
+      ..onClick.listen((_) => toogleTabView(ChartType.system));
+    tabElement.append(_systemTabLink);
+    headerElement.insertAdjacentElement('afterBegin', tabElement);
+
     contentElement = new DivElement()
       ..classes.add('charts');
+    
+    conversationChartsTabContent = new DivElement()
+      ..id = "conversations";
+    
+    toogleTabView(ChartType.conversation); // Default Chart View
 
     var singleIndicators = new DivElement()
       ..classes.add('single-indicator-container');
-    contentElement.append(singleIndicators);
+    conversationChartsTabContent.append(singleIndicators);
 
     needsReplyLatestValue = new charts.SingleIndicatorChartView()
       ..createEmptyChart(titleText: 'needs reply');
@@ -208,41 +234,67 @@ class ContentView {
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
 
     needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
-    contentElement.append(needsReplyTimeseries.chartContainer);
+    conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
       titleText: 'needs reply',
       datasetLabels: ['needs reply']);
 
     needsReplyAndEscalateTimeseries = new charts.DailyTimeseriesLineChartView();
-    contentElement.append(needsReplyAndEscalateTimeseries.chartContainer);
+    conversationChartsTabContent.append(needsReplyAndEscalateTimeseries.chartContainer);
     needsReplyAndEscalateTimeseries.createEmptyChart(
       titleText: 'needs reply and escalate',
       datasetLabels: ['needs reply and escalate']);
 
     needsReplyMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
-    contentElement.append(needsReplyMoreThan24hTimeseries.chartContainer);
+    conversationChartsTabContent.append(needsReplyMoreThan24hTimeseries.chartContainer);
     needsReplyMoreThan24hTimeseries.createEmptyChart(
       titleText: 'needs reply more than 24h',
       datasetLabels: ['needs reply more than 24h']);
 
     needsReplyAndEscalateMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
-    contentElement.append(needsReplyAndEscalateMoreThan24hTimeseries.chartContainer);
+    conversationChartsTabContent.append(needsReplyAndEscalateMoreThan24hTimeseries.chartContainer);
     needsReplyAndEscalateMoreThan24hTimeseries.createEmptyChart(
       titleText: 'needs reply and escalate more than 24h',
       datasetLabels: ['needs reply and escalate more than 24h']);
 
     needsReplyAgeHistogram = new charts.HistogramChartView();
-    contentElement.append(needsReplyAgeHistogram.chartContainer);
+    conversationChartsTabContent.append(needsReplyAgeHistogram.chartContainer);
     needsReplyAgeHistogram.createEmptyChart(
       titleText: 'needs reply messages by date',
       datasetLabel: 'needs reply messages by date');
 
+    systemChartsTabContent = new DivElement()
+      ..id = "systems";
+
     restartSystemEventTimeseries = new charts.DailyTimeseriesLineChartView();
-    contentElement.append(restartSystemEventTimeseries.chartContainer);
+    systemChartsTabContent.append(restartSystemEventTimeseries.chartContainer);
     restartSystemEventTimeseries.createEmptyChart(
       titleText: 'system events',
       datasetLabels: ['restart']);
   }
+
+  void toogleTabView(ChartType chartType) {
+    contentElement.children.clear();
+    _systemTabLink.classes.remove('active');
+    _conversationTabLink.classes.remove('active');
+    switch(chartType) {
+      case ChartType.system:
+        contentElement.append(systemChartsTabContent);
+        _systemTabLink
+          ..classes.add('active');
+      break;
+      case ChartType.conversation:
+        contentElement.append(conversationChartsTabContent);
+        _conversationTabLink
+          ..classes.add('active');
+      break;
+    }
+  }
+}
+
+enum ChartType {
+  system,
+  conversation
 }
 
 enum SnackbarNotificationType {
