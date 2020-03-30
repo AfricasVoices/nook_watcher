@@ -76,13 +76,13 @@ class HistogramChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(Map<String, int> updatedCountsPerDay) {
+  void updateChart(Map<String, int> updatedCountsAtTimestamp) {
     chartData.datasets.first.data
       ..clear()
-      ..addAll(updatedCountsPerDay.values);
+      ..addAll(updatedCountsAtTimestamp.values);
     chartData.labels
       ..clear()
-      ..addAll(updatedCountsPerDay.keys);
+      ..addAll(updatedCountsAtTimestamp.keys);
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }
@@ -113,16 +113,16 @@ class DailyTimeseriesLineChartView {
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
-    List<chartjs.ChartDataSets> chartDataset = [];
+    List<chartjs.ChartDataSets> chartDatasets = [];
     datasetLabels.forEach((datasetLabel) => {
-          chartDataset.add(new chartjs.ChartDataSets(
+          chartDatasets.add(new chartjs.ChartDataSets(
               label: datasetLabel,
               backgroundColor: 'rgba(0, 0, 0, 0)',
               borderColor: '#24ABB8',
               data: []))
         });
 
-    chartData = new chartjs.ChartData(labels: [], datasets: chartDataset);
+    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets);
 
     var chartOptions = new chartjs.ChartOptions(
       legend: new chartjs.ChartLegendOptions(display: false),
@@ -133,33 +133,32 @@ class DailyTimeseriesLineChartView {
             ..distribution = 'linear'
             ..bounds = 'ticks'
             ..time = (new chartjs.TimeScale(unit: 'day'))
-      ],
-      yAxes: [
-        new chartjs.ChartYAxe()
-          ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
+        ],
+        yAxes: [
+          new chartjs.ChartYAxe()
+            ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
 
-    var chartConfig = new chartjs.ChartConfiguration(
-        type: 'line', data: chartData, options: chartOptions);
+    var chartConfig = new chartjs.ChartConfiguration(type: 'line', data: chartData, options: chartOptions);
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(List<Map<DateTime, int>> updatedCountsPerDayList) {
-    List<chartjs.ChartPoint> timeseriesPoints = [];
-    for (var updatedCountsPerDay in updatedCountsPerDayList) {
-      List<DateTime> sortedDateTimes = updatedCountsPerDay.keys.toList()
+  void updateChart(List<Map<DateTime, int>> updatedCountsAtTimestampList) {
+    for (var updatedCountsAtTimestamp in updatedCountsAtTimestampList) {
+      List<chartjs.ChartPoint> timeseriesPoints = [];
+      List<DateTime> sortedDateTimes = updatedCountsAtTimestamp.keys.toList()
         ..sort((t1, t2) => t1.compareTo(t2));
       for (var datetime in sortedDateTimes) {
-        var value = updatedCountsPerDay[datetime];
+        var value = updatedCountsAtTimestamp[datetime];
         timeseriesPoints.add(
             new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
       }
-    }
-    chartData.datasets.first.data
+      chartData.datasets.first.data
       ..clear()
       ..addAll(timeseriesPoints);
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
+    }
   }
 }
