@@ -146,19 +146,19 @@ class DailyTimeseriesLineChartView {
   }
 
   void updateChart(List<Map<DateTime, int>> updatedCountsAtTimestampList) {
-    for (var updatedCountsAtTimestamp in updatedCountsAtTimestampList) {
+    for (var i =0; i<updatedCountsAtTimestampList.length; i++) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
-      List<DateTime> sortedDateTimes = updatedCountsAtTimestamp.keys.toList()
+      List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
         ..sort((t1, t2) => t1.compareTo(t2));
       for (var datetime in sortedDateTimes) {
-        var value = updatedCountsAtTimestamp[datetime];
+        var value = updatedCountsAtTimestampList[i][datetime];
         timeseriesPoints.add(
             new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
       }
-      chartData.datasets.first.data
+      chartData.datasets[i].data
       ..clear()
       ..addAll(timeseriesPoints);
-    chart.update(new chartjs.ChartUpdateProps(duration: 0));
     }
+    chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }
