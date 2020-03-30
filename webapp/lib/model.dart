@@ -45,6 +45,40 @@ class NeedsReplyData {
   }
 }
 
+class SystemEventsData {
+  String docId;
+  String event;
+  String hostname;
+  String systemName;
+  DateTime timestamp;
+  
+  static SystemEventsData fromSnapshot(DocSnapshot doc) =>
+      fromData(doc.data)..docId = doc.id;
+
+  static SystemEventsData fromData(Map data) {
+    if (data == null) return null;
+    return SystemEventsData()
+      ..event = data['event']
+      ..hostname = data['hostname']
+      ..systemName = data['system_name']
+      ..timestamp = DateTime_fromData(data['timestamp']);
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      if (event != null) 'event': event,
+      if (hostname != null) 'hostname': hostname,
+      if (systemName != null) 'system_name': systemName,
+      if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
 class User {
   String userName;
   String userEmail;

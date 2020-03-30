@@ -8,13 +8,15 @@ import 'view.dart' as view;
 Logger log = new Logger('controller.dart');
 
 final NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY = 'needs_reply_metrics';
+final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
 
 enum UIAction {
   userSignedIn,
   userSignedOut,
   signInButtonClicked,
   signOutButtonClicked,
-  needsReplyDataUpdated
+  needsReplyDataUpdated,
+  systemEventsDataUpdated
 }
 
 class Data {}
@@ -27,6 +29,7 @@ class UserData extends Data {
 }
 
 List<model.NeedsReplyData> needsReplyDataList;
+List<model.SystemEventsData> systemEventsDataList;
 
 model.User signedInUser;
 
@@ -37,6 +40,7 @@ void init() async {
 
 void initUI() {
   needsReplyDataList = [];
+  systemEventsDataList = [];
 
   platform.listenForMetrics(
     NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
@@ -50,6 +54,21 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
+    }
+  );
+
+  platform.listenForMetrics(
+    SYSTEM_EVENTS_ROOT_COLLECTION_KEY,
+    (List<model.DocSnapshot> updatedEvents) {
+      if (signedInUser == null) {
+        log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
+        return;
+      }
+      var updatedIds = updatedEvents.map((m) => m.id).toSet();
+      var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
+      systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
+      systemEventsDataList.addAll(updatedData);
+      command(UIAction.systemEventsDataUpdated, null);
     }
   );
 }
@@ -83,24 +102,24 @@ void command(UIAction action, Data data) {
       Map<DateTime, int> data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-      view.contentView.needsReplyTimeseries.updateChart(data);
+      view.contentView.needsReplyTimeseries.updateChart([data]);
 
       data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-      view.contentView.needsReplyAndEscalateTimeseries.updateChart(data);
+      view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
 
 
       data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-      view.contentView.needsReplyMoreThan24hTimeseries.updateChart(data);
+      view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
 
 
       data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart(data);
+      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
 
 
       DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
@@ -112,6 +131,13 @@ void command(UIAction action, Data data) {
       view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
 
       view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+      break;
+
+    case UIAction.systemEventsDataUpdated:
+      Map<DateTime, int> data = new Map.fromIterable(systemEventsDataList,
+          key: (item) => (item as model.SystemEventsData).timestamp,
+          value: (item) => 1);
+      view.contentView.restartSystemEventTimeseries.updateChart([data]);
       break;
   }
 }

@@ -180,6 +180,7 @@ class ContentView {
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
+  charts.DailyTimeseriesLineChartView restartSystemEventTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
@@ -210,31 +211,37 @@ class ContentView {
     contentElement.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
       titleText: 'needs reply',
-      datasetLabel: 'needs reply');
+      datasetLabels: ['needs reply']);
 
     needsReplyAndEscalateTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyAndEscalateTimeseries.chartContainer);
     needsReplyAndEscalateTimeseries.createEmptyChart(
       titleText: 'needs reply and escalate',
-      datasetLabel: 'needs reply and escalate');
+      datasetLabels: ['needs reply and escalate']);
 
     needsReplyMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyMoreThan24hTimeseries.chartContainer);
     needsReplyMoreThan24hTimeseries.createEmptyChart(
       titleText: 'needs reply more than 24h',
-      datasetLabel: 'needs reply more than 24h');
+      datasetLabels: ['needs reply more than 24h']);
 
     needsReplyAndEscalateMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
     contentElement.append(needsReplyAndEscalateMoreThan24hTimeseries.chartContainer);
     needsReplyAndEscalateMoreThan24hTimeseries.createEmptyChart(
       titleText: 'needs reply and escalate more than 24h',
-      datasetLabel: 'needs reply and escalate more than 24h');
+      datasetLabels: ['needs reply and escalate more than 24h']);
 
     needsReplyAgeHistogram = new charts.HistogramChartView();
     contentElement.append(needsReplyAgeHistogram.chartContainer);
     needsReplyAgeHistogram.createEmptyChart(
       titleText: 'needs reply messages by date',
       datasetLabel: 'needs reply messages by date');
+
+    restartSystemEventTimeseries = new charts.DailyTimeseriesLineChartView();
+    contentElement.append(restartSystemEventTimeseries.chartContainer);
+    restartSystemEventTimeseries.createEmptyChart(
+      titleText: 'system events',
+      datasetLabels: ['restart']);
   }
 }
 
