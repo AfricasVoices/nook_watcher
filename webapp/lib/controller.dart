@@ -134,10 +134,18 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
-      Map<DateTime, int> data = new Map.fromIterable(systemEventsDataList,
+      var rapidProEventData = systemEventsDataList.where((eventData) => eventData.systemName == 'rapidpro_adapter');
+      var pubsubEventData = systemEventsDataList.where((eventData) => eventData.systemName == 'pubsub_handler');
+      
+      Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
           key: (item) => (item as model.SystemEventsData).timestamp,
           value: (item) => 1);
-      view.contentView.restartSystemEventTimeseries.updateChart([data]);
+      view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
+
+      data = new Map.fromIterable(pubsubEventData,
+          key: (item) => (item as model.SystemEventsData).timestamp,
+          value: (item) => 1);
+      view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
       break;
   }
 }
