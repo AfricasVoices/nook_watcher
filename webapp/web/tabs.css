@@ -1,0 +1,27 @@
+div.tabs.hidden {
+    visibility: hidden;
+}
+
+div.tabs button {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    float: left;
+    margin: 0 6px;
+    background-color: #fff;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 1.15em 1.2em;
+    font-size: 1em;
+}
+
+div.tabs button:hover {
+    background-color: #ccc;
+    color: #fff;
+}
+
+div.tabs button.active {
+    background-color: #ccc;
+    color: #fff;
+}
