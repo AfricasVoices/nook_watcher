@@ -33,6 +33,7 @@ void init() {
 
 void initSignedInView() {
   clearMain();
+  contentView.tabElement.classes.remove('hidden');
   mainElement
     ..append(contentView.contentElement)
     ..append(snackbarView.snackbarElement);
@@ -41,6 +42,7 @@ void initSignedInView() {
 
 void initSignedOutView() {
   clearMain();
+  contentView.tabElement.classes.add('hidden');
   mainElement
     ..append(authMainView.authElement);
   statusView.showNormalStatus('signed out');
@@ -193,7 +195,7 @@ class ContentView {
 
   ContentView() {
     tabElement = new DivElement()
-      ..classes.add('tabs');
+      ..classes.addAll(['tabs', 'hidden']);
     _conversationTabLink = new ButtonElement()
       ..text = "Conversations"
       ..onClick.listen((_) => toogleTabView(ChartType.conversation));
@@ -280,13 +282,11 @@ class ContentView {
     switch(chartType) {
       case ChartType.system:
         contentElement.append(systemChartsTabContent);
-        _systemTabLink
-          ..classes.add('active');
+        _systemTabLink.classes.add('active');
       break;
       case ChartType.conversation:
         contentElement.append(conversationChartsTabContent);
-        _conversationTabLink
-          ..classes.add('active');
+        _conversationTabLink.classes.add('active');
       break;
     }
   }

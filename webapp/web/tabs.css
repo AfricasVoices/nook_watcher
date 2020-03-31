@@ -1,3 +1,7 @@
+div.tabs.hidden {
+    visibility: hidden;
+}
+
 div.tabs button {
     display: flex;
     justify-content: flex-start;
