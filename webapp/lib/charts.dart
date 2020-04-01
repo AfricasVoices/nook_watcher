@@ -164,7 +164,7 @@ class DailyTimeseriesLineChartView {
 }
 
  class SystenEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
-   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
+   @override void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
     List<chartjs.ChartDataSets> chartDatasets = [];
