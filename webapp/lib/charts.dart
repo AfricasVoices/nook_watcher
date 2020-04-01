@@ -162,3 +162,45 @@ class DailyTimeseriesLineChartView {
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }
+
+ class SystenEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
+   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
+    title.text = titleText;
+
+    List<chartjs.ChartDataSets> chartDatasets = [];
+    datasetLabels.forEach((datasetLabel) => {
+          chartDatasets.add(new chartjs.ChartDataSets(
+              label: datasetLabel,
+              backgroundColor: 'rgba(36, 171, 184, 0.3)',
+              borderColor: '#2B8991',
+              data: [],
+              showLine: false,
+              pointRadius: 8))
+        });
+
+    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets);
+
+    var chartOptions = new chartjs.ChartOptions(
+      legend: new chartjs.ChartLegendOptions(display: false),
+      scales: new chartjs.LinearScale(
+        xAxes: [
+          new chartjs.ChartXAxe()
+            ..type = 'time'
+            ..distribution = 'linear'
+            ..bounds = 'ticks'
+            ..time = (new chartjs.TimeScale(unit: 'day'))
+        ],
+        yAxes: [
+          new chartjs.ChartYAxe()
+            ..ticks = (new chartjs.LinearTickOptions()
+              ..beginAtZero = true
+              ..max = 2)
+              ..display = false
+        ]),
+      hover: new chartjs.ChartHoverOptions()..animationDuration = 0
+    );
+
+    var chartConfig = new chartjs.ChartConfiguration(type: 'line', data: chartData, options: chartOptions);
+    chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
+  }
+ }
