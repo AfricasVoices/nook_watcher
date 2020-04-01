@@ -190,8 +190,8 @@ class ContentView {
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
-  charts.DailyTimeseriesLineChartView pubsubSystemEventTimeseries;
-  charts.DailyTimeseriesLineChartView rapidProSystemEventTimeseries;
+  charts.SystenEventsTimeseriesLineChartView pubsubSystemEventTimeseries;
+  charts.SystenEventsTimeseriesLineChartView rapidProSystemEventTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
@@ -269,13 +269,13 @@ class ContentView {
     systemChartsTabContent = new DivElement()
       ..id = "systems";
 
-    rapidProSystemEventTimeseries = new charts.DailyTimeseriesLineChartView();
+    rapidProSystemEventTimeseries = new charts.SystenEventsTimeseriesLineChartView();
     systemChartsTabContent.append(rapidProSystemEventTimeseries.chartContainer);
     rapidProSystemEventTimeseries.createEmptyChart(
       titleText: 'system events [rapidpro_adapter]',
       datasetLabels: ['restart']);
     
-    pubsubSystemEventTimeseries = new charts.DailyTimeseriesLineChartView();
+    pubsubSystemEventTimeseries = new charts.SystenEventsTimeseriesLineChartView();
     systemChartsTabContent.append(pubsubSystemEventTimeseries.chartContainer);
     pubsubSystemEventTimeseries.createEmptyChart(
       titleText: 'system events [pubsub_handler]',
