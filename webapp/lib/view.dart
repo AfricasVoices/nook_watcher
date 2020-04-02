@@ -34,6 +34,7 @@ void init() {
 void initSignedInView() {
   clearMain();
   contentView.tabElement.classes.remove('hidden');
+  contentView.projectSelectorView.projectSelector.classes.remove('hidden');
   mainElement
     ..append(contentView.contentElement)
     ..append(snackbarView.snackbarElement);
@@ -43,6 +44,7 @@ void initSignedInView() {
 void initSignedOutView() {
   clearMain();
   contentView.tabElement.classes.add('hidden');
+  contentView.projectSelectorView.projectSelector.classes.add('hidden');
   mainElement
     ..append(authMainView.authElement);
   statusView.showNormalStatus('signed out');

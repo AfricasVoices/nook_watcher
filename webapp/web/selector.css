@@ -17,3 +17,7 @@
     background-position: right 15px top 1em, right 10px top 1em;
     background-size: 5px 5px, 5px 5px;
   }
+
+ #project-selector.hidden {
+    visibility: hidden;
+}
