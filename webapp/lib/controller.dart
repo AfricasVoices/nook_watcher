@@ -28,6 +28,7 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
+Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 
@@ -39,6 +40,7 @@ void init() async {
 }
 
 void initUI() {
+  projectList = {};
   needsReplyDataList = [];
   systemEventsDataList = [];
 
@@ -51,6 +53,7 @@ void initUI() {
       }
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
+      projectList.addAll(updatedData.map((m) => m.project).toSet());
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
@@ -99,6 +102,8 @@ void command(UIAction action, Data data) {
 
     /*** Data */
     case UIAction.needsReplyDataUpdated:
+      view.contentView.projectSelectorView.populateProjects(projectList.toList());
+      
       Map<DateTime, int> data = new Map.fromIterable(needsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyCount);
