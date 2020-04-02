@@ -163,7 +163,7 @@ class DailyTimeseriesLineChartView {
   }
 }
 
- class SystenEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
+ class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
    @override void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
