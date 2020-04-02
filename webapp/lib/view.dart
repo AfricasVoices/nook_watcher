@@ -181,13 +181,23 @@ class ProjectSelectorView {
     projectSelector = new DivElement()
       ..id = 'project-selector';
     _projectOptions = new SelectElement();
+    _projectOptions.onChange.listen((_) {
+      controller.command(controller.UIAction.needsReplyDataUpdated, null);
+    });
     projectSelector.append(_projectOptions);
   }
 
-  void populateProjects(List<String> options) {
-    options.forEach((option)=> {
-      _projectOptions.children.add(new OptionElement()..text = option)
-    });
+  String get selectedProject => _projectOptions.value;
+
+  void populateProjects(Set<String> options) {
+    for(var option in options) {
+      if(_projectOptions.children.where((opt) => (opt as OptionElement).value == option).length > 0)
+        continue;
+      var optionElement =  new OptionElement()
+        ..text = option
+        ..value = option;
+      _projectOptions.children.add(optionElement);
+    }
   }
 }
 

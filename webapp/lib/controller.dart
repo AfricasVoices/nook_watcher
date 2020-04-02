@@ -102,33 +102,36 @@ void command(UIAction action, Data data) {
 
     /*** Data */
     case UIAction.needsReplyDataUpdated:
-      view.contentView.projectSelectorView.populateProjects(projectList.toList());
-      
-      Map<DateTime, int> data = new Map.fromIterable(needsReplyDataList,
+      view.contentView.projectSelectorView.populateProjects(projectList);
+
+      var selectedProjectNeedsReplyDataList = needsReplyDataList.where((
+        d) => d.project == view.contentView.projectSelectorView.selectedProject).toList();
+
+      Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyCount);
       view.contentView.needsReplyTimeseries.updateChart([data]);
 
-      data = new Map.fromIterable(needsReplyDataList,
+      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
       view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
 
 
-      data = new Map.fromIterable(needsReplyDataList,
+      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
       view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
 
 
-      data = new Map.fromIterable(needsReplyDataList,
+      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
       view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
 
 
       DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
-      var latestData = needsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
+      var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
 
       view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
       view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
