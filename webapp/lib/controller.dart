@@ -28,6 +28,7 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
+Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 
@@ -39,6 +40,7 @@ void init() async {
 }
 
 void initUI() {
+  projectList = {};
   needsReplyDataList = [];
   systemEventsDataList = [];
 
@@ -51,6 +53,7 @@ void initUI() {
       }
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
+      projectList.addAll(updatedData.map((m) => m.project).toSet());
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
@@ -99,31 +102,36 @@ void command(UIAction action, Data data) {
 
     /*** Data */
     case UIAction.needsReplyDataUpdated:
-      Map<DateTime, int> data = new Map.fromIterable(needsReplyDataList,
+      view.contentView.projectSelectorView.populateProjects(projectList);
+
+      var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+          d.project == view.contentView.projectSelectorView.selectedProject).toList();
+
+      Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyCount);
       view.contentView.needsReplyTimeseries.updateChart([data]);
 
-      data = new Map.fromIterable(needsReplyDataList,
+      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
       view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
 
 
-      data = new Map.fromIterable(needsReplyDataList,
+      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
       view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
 
 
-      data = new Map.fromIterable(needsReplyDataList,
+      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
         value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
       view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
 
 
       DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
-      var latestData = needsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
+      var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
 
       view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
       view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
@@ -134,8 +142,12 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
-      var rapidProEventData = systemEventsDataList.where((eventData) => eventData.systemName == 'rapidpro_adapter');
-      var pubsubEventData = systemEventsDataList.where((eventData) => eventData.systemName == 'pubsub_handler');
+      var rapidProEventData = systemEventsDataList.where((eventData) =>
+          eventData.systemName == 'rapidpro_adapter' &&
+          eventData.project == view.contentView.projectSelectorView.selectedProject);
+      var pubsubEventData = systemEventsDataList.where((eventData) =>
+          eventData.systemName == 'pubsub_handler' &&
+          eventData.project == view.contentView.projectSelectorView.selectedProject);
       
       Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
           key: (item) => (item as model.SystemEventsData).timestamp,

@@ -34,6 +34,7 @@ void init() {
 void initSignedInView() {
   clearMain();
   contentView.tabElement.classes.remove('hidden');
+  contentView.projectSelectorView.projectSelector.classes.remove('hidden');
   mainElement
     ..append(contentView.contentElement)
     ..append(snackbarView.snackbarElement);
@@ -43,6 +44,7 @@ void initSignedInView() {
 void initSignedOutView() {
   clearMain();
   contentView.tabElement.classes.add('hidden');
+  contentView.projectSelectorView.projectSelector.classes.add('hidden');
   mainElement
     ..append(authMainView.authElement);
   statusView.showNormalStatus('signed out');
@@ -53,7 +55,6 @@ void clearMain() {
   contentView.contentElement.remove();
   snackbarView.snackbarElement.remove();
 }
-
 
 class AuthHeaderView {
   DivElement authElement;
@@ -173,10 +174,43 @@ class BannerView {
   }
 }
 
+class ProjectSelectorView {
+  DivElement projectSelector;
+  SelectElement _projectOptions;
+
+  ProjectSelectorView() {
+    projectSelector = new DivElement()
+      ..id = 'project-selector';
+    _projectOptions = new SelectElement();
+    _projectOptions.onChange.listen((_) {
+      controller.command(controller.UIAction.needsReplyDataUpdated, null);
+      controller.command(controller.UIAction.systemEventsDataUpdated, null);
+    });
+    projectSelector.append(_projectOptions);
+  }
+
+  String get selectedProject => _projectOptions.value;
+
+  void populateProjects(Set<String> options) {
+    for (var option in options) {
+      
+      if (_projectOptions.children.where((opt) => (opt as OptionElement).value == option).length > 0)
+        continue;
+        
+      var optionElement =  new OptionElement()
+        ..text = option
+        ..value = option;
+      _projectOptions.children.add(optionElement);
+    }
+  }
+}
+
 class ContentView {
   DivElement tabElement;
   ButtonElement _systemTabLink;
   ButtonElement _conversationTabLink;
+
+  ProjectSelectorView projectSelectorView;
 
   DivElement contentElement;
   DivElement systemChartsTabContent;
@@ -195,6 +229,9 @@ class ContentView {
   charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
+    projectSelectorView = new ProjectSelectorView();
+    headerElement.insertAdjacentElement('afterBegin', projectSelectorView.projectSelector);
+
     tabElement = new DivElement()
       ..classes.addAll(['tabs', 'hidden']);
     _conversationTabLink = new ButtonElement()

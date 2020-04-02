@@ -4,6 +4,7 @@ Logger log = new Logger('model.dart');
 
 class NeedsReplyData {
   String docId;
+  String project;
   DateTime datetime;
   DateTime earliestNeedsReplyDate;
   int needsReplyCount;
@@ -18,6 +19,7 @@ class NeedsReplyData {
   static NeedsReplyData fromData(Map data) {
     if (data == null) return null;
     return NeedsReplyData()
+      ..project = data['project'] != null ? data['project'] : 'default'
       ..datetime = DateTime_fromData(data['datetime'])
       ..earliestNeedsReplyDate = DateTime_fromData(data['earliest_needs_reply_date'])
       ..needsReplyCount = int_fromData(data['needs_reply_count'])
@@ -29,6 +31,7 @@ class NeedsReplyData {
 
   Map<String, dynamic> toData() {
     return {
+      'project': project,
       if (datetime != null) 'datetime': datetime.toIso8601String(),
       if (earliestNeedsReplyDate != null) 'earliest_needs_reply_date': datetime.toIso8601String(),
       if (needsReplyCount != null) 'needs_reply_count': needsReplyCount,
@@ -51,6 +54,7 @@ class SystemEventsData {
   String hostname;
   String systemName;
   DateTime timestamp;
+  String project;
   
   static SystemEventsData fromSnapshot(DocSnapshot doc) =>
       fromData(doc.data)..docId = doc.id;
@@ -61,7 +65,8 @@ class SystemEventsData {
       ..event = data['event']
       ..hostname = data['hostname']
       ..systemName = data['system_name']
-      ..timestamp = DateTime_fromData(data['timestamp']);
+      ..timestamp = DateTime_fromData(data['timestamp'])
+      ..project = data['project'] != null ? data['project'] : 'default';
   }
 
   Map<String, dynamic> toData() {
@@ -70,6 +75,7 @@ class SystemEventsData {
       if (hostname != null) 'hostname': hostname,
       if (systemName != null) 'system_name': systemName,
       if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
+      'project' : project
     };
   }
 
