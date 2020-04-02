@@ -104,8 +104,8 @@ void command(UIAction action, Data data) {
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
 
-      var selectedProjectNeedsReplyDataList = needsReplyDataList.where((
-        d) => d.project == view.contentView.projectSelectorView.selectedProject).toList();
+      var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+          d.project == view.contentView.projectSelectorView.selectedProject).toList();
 
       Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
         key: (item) => (item as model.NeedsReplyData).datetime,
@@ -142,8 +142,12 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
-      var rapidProEventData = systemEventsDataList.where((eventData) => eventData.systemName == 'rapidpro_adapter');
-      var pubsubEventData = systemEventsDataList.where((eventData) => eventData.systemName == 'pubsub_handler');
+      var rapidProEventData = systemEventsDataList.where((eventData) =>
+          eventData.systemName == 'rapidpro_adapter' &&
+          eventData.project == view.contentView.projectSelectorView.selectedProject);
+      var pubsubEventData = systemEventsDataList.where((eventData) =>
+          eventData.systemName == 'pubsub_handler' &&
+          eventData.project == view.contentView.projectSelectorView.selectedProject);
       
       Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
           key: (item) => (item as model.SystemEventsData).timestamp,

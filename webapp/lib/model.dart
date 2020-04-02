@@ -54,6 +54,7 @@ class SystemEventsData {
   String hostname;
   String systemName;
   DateTime timestamp;
+  String project;
   
   static SystemEventsData fromSnapshot(DocSnapshot doc) =>
       fromData(doc.data)..docId = doc.id;
@@ -64,7 +65,8 @@ class SystemEventsData {
       ..event = data['event']
       ..hostname = data['hostname']
       ..systemName = data['system_name']
-      ..timestamp = DateTime_fromData(data['timestamp']);
+      ..timestamp = DateTime_fromData(data['timestamp'])
+      ..project = data['project'] != null ? data['project'] : 'default';
   }
 
   Map<String, dynamic> toData() {
@@ -73,6 +75,7 @@ class SystemEventsData {
       if (hostname != null) 'hostname': hostname,
       if (systemName != null) 'system_name': systemName,
       if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
+      'project' : project
     };
   }
 

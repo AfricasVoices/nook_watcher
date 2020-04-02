@@ -56,7 +56,6 @@ void clearMain() {
   snackbarView.snackbarElement.remove();
 }
 
-
 class AuthHeaderView {
   DivElement authElement;
   DivElement _userPic;
@@ -185,6 +184,7 @@ class ProjectSelectorView {
     _projectOptions = new SelectElement();
     _projectOptions.onChange.listen((_) {
       controller.command(controller.UIAction.needsReplyDataUpdated, null);
+      controller.command(controller.UIAction.systemEventsDataUpdated, null);
     });
     projectSelector.append(_projectOptions);
   }
@@ -192,9 +192,11 @@ class ProjectSelectorView {
   String get selectedProject => _projectOptions.value;
 
   void populateProjects(Set<String> options) {
-    for(var option in options) {
-      if(_projectOptions.children.where((opt) => (opt as OptionElement).value == option).length > 0)
+    for (var option in options) {
+      
+      if (_projectOptions.children.where((opt) => (opt as OptionElement).value == option).length > 0)
         continue;
+        
       var optionElement =  new OptionElement()
         ..text = option
         ..value = option;
