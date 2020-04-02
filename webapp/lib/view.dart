@@ -173,10 +173,30 @@ class BannerView {
   }
 }
 
+class ProjectSelectorView {
+  DivElement projectSelector;
+  SelectElement _projectOptions;
+
+  ProjectSelectorView() {
+    projectSelector = new DivElement()
+      ..id = 'project-selector';
+    _projectOptions = new SelectElement();
+    projectSelector.append(_projectOptions);
+  }
+
+  void populateProjects(List<String> options) {
+    options.forEach((option)=> {
+      _projectOptions.children.add(new OptionElement()..text = option)
+    });
+  }
+}
+
 class ContentView {
   DivElement tabElement;
   ButtonElement _systemTabLink;
   ButtonElement _conversationTabLink;
+
+  ProjectSelectorView projectSelectorView;
 
   DivElement contentElement;
   DivElement systemChartsTabContent;
@@ -195,6 +215,9 @@ class ContentView {
   charts.HistogramChartView needsReplyAgeHistogram;
 
   ContentView() {
+    projectSelectorView = new ProjectSelectorView();
+    headerElement.insertAdjacentElement('afterBegin', projectSelectorView.projectSelector);
+
     tabElement = new DivElement()
       ..classes.addAll(['tabs', 'hidden']);
     _conversationTabLink = new ButtonElement()
