@@ -347,6 +347,10 @@ class ContentView {
       datasetLabels: ['restart']);
   }
 
+  String currentTabView() {
+    return _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
+  }
+
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
     _systemTabLink.classes.remove('active');
@@ -361,6 +365,12 @@ class ContentView {
         _conversationTabLink.classes.add('active');
       break;
     }
+  }
+
+  void populateUrlFilters() {
+    var selectedProject = projectSelectorView.selectedProject;
+    var currentTab = currentTabView();
+    urlView.pageUrlFilters= {'type': currentTab, 'project': selectedProject};
   }
 }
 

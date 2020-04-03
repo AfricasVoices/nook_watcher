@@ -95,6 +95,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.signInButtonClicked:
       platform.signIn();
+      view.contentView.populateUrlFilters();
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();
