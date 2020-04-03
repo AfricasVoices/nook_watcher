@@ -17,6 +17,7 @@ BannerView bannerView;
 ContentView contentView;
 SnackbarView snackbarView;
 StatusView statusView;
+UrlView urlView;
 
 void init() {
   authMainView = new AuthMainView();
@@ -26,6 +27,7 @@ void init() {
   contentView = new ContentView();
   snackbarView = new SnackbarView();
   statusView = new StatusView();
+  urlView = new UrlView();
 
   headerElement.insertAdjacentElement('beforeBegin', bannerView.bannerElement);
   headerElement.append(authHeaderView.authElement);
@@ -54,6 +56,32 @@ void clearMain() {
   authMainView.authElement.remove();
   contentView.contentElement.remove();
   snackbarView.snackbarElement.remove();
+}
+
+class UrlView {
+
+  static const List<String> queryFilterKeys = ['type', 'project'];
+
+  Map<String, String> get pageUrlFilters {
+    Map<String, String> pageFiltersMap = {};
+    var uri = Uri.parse(window.location.href);
+
+    for (var key in queryFilterKeys) {
+
+      if (uri.queryParameters.containsKey(key)) {
+        var filterValue = uri.queryParameters[key];
+        pageFiltersMap[key] = filterValue;
+      }
+
+    }
+    return pageFiltersMap;
+  }
+
+  set pageUrlFilters(Map<String, String> pageFiltersMap) {
+    var uri = Uri.parse(window.location.href);
+    uri = uri.replace(queryParameters: pageFiltersMap);
+    window.history.pushState('', '', uri.toString());
+  }
 }
 
 class AuthHeaderView {
