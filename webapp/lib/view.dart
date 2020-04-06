@@ -384,6 +384,11 @@ class ContentView {
   void changeViewOnUrlChange() {
     var urlFilters = UrlView.getPageUrlFilters();
 
+    if (urlFilters.isEmpty) {
+      populateUrlFilters();
+      return;
+    }
+
     if (urlFilters['type'] != null) {
       
       switch (urlFilters['type']) {
