@@ -384,7 +384,7 @@ class ContentView {
     UrlView.setPageUrlFilters({'type': currentTab, 'project': selectedProject});
   }
 
-  void changeViewOnUrlChange(){
+  void changeViewOnUrlChange() {
     var urlFilters = UrlView.getPageUrlFilters();
 
     if (urlFilters['type'] != null) {
@@ -399,7 +399,7 @@ class ContentView {
       }
     }
 
-    if (urlFilters['project'] !=null) {
+    if (urlFilters['project'] != null) {
       projectSelectorView.setActiveProject(urlFilters['project']);
     }
   }
