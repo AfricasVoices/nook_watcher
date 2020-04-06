@@ -21,6 +21,10 @@ enum UIAction {
 
 class Data {}
 
+class ProjectSelectionData extends Data {
+  bool isProjectSelection;
+}
+
 class UserData extends Data {
   String displayName;
   String email;
@@ -76,7 +80,7 @@ void initUI() {
   );
 }
 
-void command(UIAction action, Data data) {
+void command(UIAction action, Data actionData) {
   switch (action) {
     /*** User */
     case UIAction.userSignedOut:
@@ -85,7 +89,7 @@ void command(UIAction action, Data data) {
       view.initSignedOutView();
       break;
     case UIAction.userSignedIn:
-      UserData userData = data;
+      UserData userData = actionData;
       signedInUser = new model.User()
         ..userName = userData.displayName
         ..userEmail = userData.email;
@@ -103,6 +107,12 @@ void command(UIAction action, Data data) {
     /*** Data */
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
+
+      if (actionData != null && (actionData as ProjectSelectionData).isProjectSelection) {
+        view.contentView.populateUrlFilters();
+      } else {
+        view.contentView.changeViewOnUrlChange();
+      }
 
       var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
@@ -142,6 +152,11 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
+      if (actionData != null && (actionData as ProjectSelectionData).isProjectSelection) {
+        view.contentView.populateUrlFilters();
+      } else {
+        view.contentView.changeViewOnUrlChange();
+      }
       var rapidProEventData = systemEventsDataList.where((eventData) =>
           eventData.systemName == 'rapidpro_adapter' &&
           eventData.project == view.contentView.projectSelectorView.selectedProject);

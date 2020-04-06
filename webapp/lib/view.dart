@@ -56,6 +56,23 @@ void clearMain() {
   snackbarView.snackbarElement.remove();
 }
 
+class UrlView {
+  static Map<String, String> getPageUrlFilters() {
+    Map<String, String> pageFiltersMap = {};
+    var uri = Uri.parse(window.location.href);
+    pageFiltersMap.addAll(uri.queryParameters);
+    return pageFiltersMap;
+  }
+
+  static setPageUrlFilters(Map<String, String> pageFiltersMap) {
+    var currentPageFilters = getPageUrlFilters();
+    currentPageFilters.addAll(pageFiltersMap);
+    var uri = Uri.parse(window.location.href);
+    uri = uri.replace(queryParameters: currentPageFilters);
+    window.history.pushState('', '', uri.toString());
+  }
+}
+
 class AuthHeaderView {
   DivElement authElement;
   DivElement _userPic;
@@ -183,13 +200,18 @@ class ProjectSelectorView {
       ..id = 'project-selector';
     _projectOptions = new SelectElement();
     _projectOptions.onChange.listen((_) {
-      controller.command(controller.UIAction.needsReplyDataUpdated, null);
-      controller.command(controller.UIAction.systemEventsDataUpdated, null);
+      var data = new controller.ProjectSelectionData()..isProjectSelection = true;
+      controller.command(controller.UIAction.needsReplyDataUpdated, data);
+      controller.command(controller.UIAction.systemEventsDataUpdated, data);
     });
     projectSelector.append(_projectOptions);
   }
 
   String get selectedProject => _projectOptions.value;
+
+  void setActiveProject (String projectName) {
+    _projectOptions.value = projectName;
+  }
 
   void populateProjects(Set<String> options) {
     for (var option in options) {
@@ -236,12 +258,18 @@ class ContentView {
       ..classes.addAll(['tabs', 'hidden']);
     _conversationTabLink = new ButtonElement()
       ..text = "Conversations"
-      ..onClick.listen((_) => toogleTabView(ChartType.conversation));
+      ..onClick.listen((_) {
+        toogleTabView(ChartType.conversation);
+        populateUrlFilters();
+      });
     tabElement.append(_conversationTabLink);
 
     _systemTabLink = new ButtonElement()
       ..text = "Systems"
-      ..onClick.listen((_) => toogleTabView(ChartType.system));
+      ..onClick.listen((_) {
+        toogleTabView(ChartType.system);
+        populateUrlFilters();
+      });
     tabElement.append(_systemTabLink);
     headerElement.insertAdjacentElement('afterBegin', tabElement);
 
@@ -319,6 +347,8 @@ class ContentView {
       datasetLabels: ['restart']);
   }
 
+  String get currentTabView => _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
+
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
     _systemTabLink.classes.remove('active');
@@ -332,6 +362,36 @@ class ContentView {
         contentElement.append(conversationChartsTabContent);
         _conversationTabLink.classes.add('active');
       break;
+    }
+  }
+
+  void populateUrlFilters() {
+    var selectedProject = projectSelectorView.selectedProject;
+    UrlView.setPageUrlFilters({'type': currentTabView, 'project': selectedProject});
+  }
+
+  void changeViewOnUrlChange() {
+    var urlFilters = UrlView.getPageUrlFilters();
+
+    if (urlFilters.isEmpty) {
+      populateUrlFilters();
+      return;
+    }
+
+    if (urlFilters['type'] != null) {
+      
+      switch (urlFilters['type']) {
+        case 'conversations': 
+          toogleTabView(ChartType.conversation);
+          break;
+        case 'systems': 
+          toogleTabView(ChartType.system);
+          break;
+      }
+    }
+
+    if (urlFilters['project'] != null) {
+      projectSelectorView.setActiveProject(urlFilters['project']);
     }
   }
 }
