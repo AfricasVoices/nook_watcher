@@ -212,8 +212,9 @@ class ProjectSelectorView {
       ..id = 'project-selector';
     _projectOptions = new SelectElement();
     _projectOptions.onChange.listen((_) {
-      controller.command(controller.UIAction.needsReplyDataUpdated, null);
-      controller.command(controller.UIAction.systemEventsDataUpdated, null);
+      var data = new controller.ProjectSelectionData()..isProjectSelection = true;
+      controller.command(controller.UIAction.needsReplyDataUpdated, data);
+      controller.command(controller.UIAction.systemEventsDataUpdated, data);
     });
     projectSelector.append(_projectOptions);
   }
