@@ -358,9 +358,7 @@ class ContentView {
       datasetLabels: ['restart']);
   }
 
-  String currentTabView() {
-    return _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
-  }
+  String get currentTabView => _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
 
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
@@ -380,8 +378,7 @@ class ContentView {
 
   void populateUrlFilters() {
     var selectedProject = projectSelectorView.selectedProject;
-    var currentTab = currentTabView();
-    UrlView.setPageUrlFilters({'type': currentTab, 'project': selectedProject});
+    UrlView.setPageUrlFilters({'type': currentTabView, 'project': selectedProject});
   }
 
   void changeViewOnUrlChange() {
