@@ -95,7 +95,6 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.signInButtonClicked:
       platform.signIn();
-      view.contentView.populateUrlFilters();
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();
@@ -104,6 +103,7 @@ void command(UIAction action, Data data) {
     /*** Data */
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
+      view.contentView.populateUrlFilters();
 
       var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
@@ -143,6 +143,7 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
+      view.contentView.populateUrlFilters();
       var rapidProEventData = systemEventsDataList.where((eventData) =>
           eventData.systemName == 'rapidpro_adapter' &&
           eventData.project == view.contentView.projectSelectorView.selectedProject);

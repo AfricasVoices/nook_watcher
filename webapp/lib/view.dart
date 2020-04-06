@@ -27,7 +27,6 @@ void init() {
   contentView = new ContentView();
   snackbarView = new SnackbarView();
   statusView = new StatusView();
-  urlView = new UrlView();
 
   headerElement.insertAdjacentElement('beforeBegin', bannerView.bannerElement);
   headerElement.append(authHeaderView.authElement);
@@ -60,13 +59,13 @@ void clearMain() {
 
 class UrlView {
 
-  static const List<String> queryFilterKeys = ['type', 'project'];
+  static const List<String> _queryFilterKeys = ['type', 'project'];
 
-  Map<String, String> get pageUrlFilters {
+  static Map<String, String> getPageUrlFilters() {
     Map<String, String> pageFiltersMap = {};
     var uri = Uri.parse(window.location.href);
 
-    for (var key in queryFilterKeys) {
+    for (var key in _queryFilterKeys) {
 
       if (uri.queryParameters.containsKey(key)) {
         var filterValue = uri.queryParameters[key];
@@ -77,9 +76,11 @@ class UrlView {
     return pageFiltersMap;
   }
 
-  set pageUrlFilters(Map<String, String> pageFiltersMap) {
+  static setPageUrlFilters(Map<String, String> pageFiltersMap) {
+    var currentPageFilters = getPageUrlFilters();
+    currentPageFilters.addAll(pageFiltersMap);
     var uri = Uri.parse(window.location.href);
-    uri = uri.replace(queryParameters: pageFiltersMap);
+    uri = uri.replace(queryParameters: currentPageFilters);
     window.history.pushState('', '', uri.toString());
   }
 }
@@ -264,12 +265,18 @@ class ContentView {
       ..classes.addAll(['tabs', 'hidden']);
     _conversationTabLink = new ButtonElement()
       ..text = "Conversations"
-      ..onClick.listen((_) => toogleTabView(ChartType.conversation));
+      ..onClick.listen((_) {
+        toogleTabView(ChartType.conversation);
+        populateUrlFilters();
+      });
     tabElement.append(_conversationTabLink);
 
     _systemTabLink = new ButtonElement()
       ..text = "Systems"
-      ..onClick.listen((_) => toogleTabView(ChartType.system));
+      ..onClick.listen((_) {
+        toogleTabView(ChartType.system);
+        populateUrlFilters();
+      });
     tabElement.append(_systemTabLink);
     headerElement.insertAdjacentElement('afterBegin', tabElement);
 
@@ -370,7 +377,7 @@ class ContentView {
   void populateUrlFilters() {
     var selectedProject = projectSelectorView.selectedProject;
     var currentTab = currentTabView();
-    urlView.pageUrlFilters= {'type': currentTab, 'project': selectedProject};
+    UrlView.setPageUrlFilters({'type': currentTab, 'project': selectedProject});
   }
 }
 
