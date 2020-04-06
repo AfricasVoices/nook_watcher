@@ -17,7 +17,6 @@ BannerView bannerView;
 ContentView contentView;
 SnackbarView snackbarView;
 StatusView statusView;
-UrlView urlView;
 
 void init() {
   authMainView = new AuthMainView();
