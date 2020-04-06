@@ -23,7 +23,6 @@ class Data {}
 
 class ProjectSelectionData extends Data {
   bool isProjectSelection;
-  // ProjectSelectionData(this.isProjectSelection);
 }
 
 class UserData extends Data {
