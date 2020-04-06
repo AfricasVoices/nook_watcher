@@ -220,6 +220,10 @@ class ProjectSelectorView {
 
   String get selectedProject => _projectOptions.value;
 
+  void setActiveProject (String projectName) {
+    _projectOptions.value = projectName;
+  }
+
   void populateProjects(Set<String> options) {
     for (var option in options) {
       
@@ -378,6 +382,26 @@ class ContentView {
     var selectedProject = projectSelectorView.selectedProject;
     var currentTab = currentTabView();
     UrlView.setPageUrlFilters({'type': currentTab, 'project': selectedProject});
+  }
+
+  void changeViewOnUrlChange(){
+    var urlFilters = UrlView.getPageUrlFilters();
+
+    if (urlFilters['type'] != null) {
+      
+      switch (urlFilters['type']) {
+        case 'conversations': 
+          toogleTabView(ChartType.conversation);
+          break;
+        case 'systems': 
+          toogleTabView(ChartType.system);
+          break;
+      }
+    }
+
+    if (urlFilters['project'] !=null) {
+      projectSelectorView.setActiveProject(urlFilters['project']);
+    }
   }
 }
 

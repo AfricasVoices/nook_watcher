@@ -103,6 +103,7 @@ void command(UIAction action, Data data) {
     /*** Data */
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
+      view.contentView.changeViewOnUrlChange();
       view.contentView.populateUrlFilters();
 
       var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
@@ -143,6 +144,7 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.systemEventsDataUpdated:
+      view.contentView.changeViewOnUrlChange();
       view.contentView.populateUrlFilters();
       var rapidProEventData = systemEventsDataList.where((eventData) =>
           eventData.systemName == 'rapidpro_adapter' &&
