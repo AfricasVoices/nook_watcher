@@ -57,21 +57,10 @@ void clearMain() {
 }
 
 class UrlView {
-
-  static const List<String> _queryFilterKeys = ['type', 'project'];
-
   static Map<String, String> getPageUrlFilters() {
     Map<String, String> pageFiltersMap = {};
     var uri = Uri.parse(window.location.href);
-
-    for (var key in _queryFilterKeys) {
-
-      if (uri.queryParameters.containsKey(key)) {
-        var filterValue = uri.queryParameters[key];
-        pageFiltersMap[key] = filterValue;
-      }
-
-    }
+    pageFiltersMap.addAll(uri.queryParameters);
     return pageFiltersMap;
   }
 
