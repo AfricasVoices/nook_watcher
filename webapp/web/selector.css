@@ -1,5 +1,5 @@
 #project-selector select {
-    width: 150px;
+    min-width: 310px;
     margin: 4px 10px;
     display: flex;
     box-sizing: border-box;
