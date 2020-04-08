@@ -19,10 +19,21 @@ enum UIAction {
   systemEventsDataUpdated
 }
 
+enum ChartPeriodFilters {
+  days1,
+  days8,
+  days15,
+  month1,
+}
+
 class Data {}
 
 class ProjectSelectionData extends Data {
   bool isProjectSelection;
+}
+
+class ChartFilterdata extends Data {
+  ChartPeriodFilters periodFilter;
 }
 
 class UserData extends Data {
@@ -113,6 +124,8 @@ void command(UIAction action, Data actionData) {
       } else {
         view.contentView.changeViewOnUrlChange();
       }
+
+      ChartPeriodFilters filterData = (actionData as ChartFilterdata).periodFilter;
 
       var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
           d.project == view.contentView.projectSelectorView.selectedProject).toList();

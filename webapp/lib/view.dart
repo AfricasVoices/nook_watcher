@@ -234,16 +234,24 @@ class ChartFiltersView {
   ChartFiltersView() {
     chartFiltersContainer = new DivElement()..classes.add('chart-filters');
     _periodFilter = new SelectElement()..classes.add('period-filter');
-    _periodFilter.children.addAll(_getPeriodFilterOptions(['1 day', '8 days', '15 days', '1 month']));
+    _periodFilter.children.addAll(_getPeriodFilterOptions());
+    _periodFilter.onChange.listen((_) {
+      var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
+      var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
+      controller.command(controller.UIAction.needsReplyDataUpdated, filterData);
+      controller.command(controller.UIAction.systemEventsDataUpdated, filterData);
+    });
     chartFiltersContainer.append(_periodFilter);
   }
 
-  List<OptionElement> _getPeriodFilterOptions(List<String> options) {
+  String get selectedPeriodFilter => _periodFilter.value;
+
+  List<OptionElement> _getPeriodFilterOptions() {
     List<OptionElement> periodsOptions;
-    for (var option in options) {
+    for (var filter in controller.ChartPeriodFilters.values) {
       var optionElement = new OptionElement()
-      ..text = option
-      ..value = option;
+      ..text = filter.toString()
+      ..value = filter.toString();
       periodsOptions.add(optionElement);
     }
     return periodsOptions;
