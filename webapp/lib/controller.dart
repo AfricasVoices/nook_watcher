@@ -151,7 +151,7 @@ void command(UIAction action, Data actionData) {
 
       if (actionData !=null && actionData is ChartFilterdata) {
         DateTime filterDate = getFilteredDate(actionData);
-        filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate));
+        filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate)).toList();
       } else {
         filteredSystemEventsDataList = systemEventsDataList;
       }

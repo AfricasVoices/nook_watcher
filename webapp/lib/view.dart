@@ -229,32 +229,64 @@ class ProjectSelectorView {
 
 class ChartFiltersView {
   DivElement chartFiltersContainer;
+  DivElement _singleFilterSpan;
+  LabelElement _periodFilterTitle;
   SelectElement _periodFilter;
 
   ChartFiltersView() {
     chartFiltersContainer = new DivElement()..classes.add('chart-filters');
+    _singleFilterSpan = new DivElement()..classes.add('chart-filter');
+    _periodFilterTitle = new LabelElement()..text = 'Filter by Period:';
     _periodFilter = new SelectElement()..classes.add('period-filter');
     _periodFilter.children.addAll(_getPeriodFilterOptions());
     _periodFilter.onChange.listen((_) {
       var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
-      var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
-      controller.command(controller.UIAction.needsReplyDataUpdated, filterData);
-      controller.command(controller.UIAction.systemEventsDataUpdated, filterData);
+      if (periodFilter != null) {
+        var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
+        controller.command(controller.UIAction.needsReplyDataUpdated, filterData);
+        controller.command(controller.UIAction.systemEventsDataUpdated, filterData);
+      }
     });
-    chartFiltersContainer.append(_periodFilter);
+    _singleFilterSpan.append(_periodFilterTitle);
+    _singleFilterSpan.append(_periodFilter);
+    chartFiltersContainer.append(_singleFilterSpan);
   }
 
   String get selectedPeriodFilter => _periodFilter.value;
 
   List<OptionElement> _getPeriodFilterOptions() {
-    List<OptionElement> periodsOptions;
+    List<OptionElement> periodsOptions = [];
+    var defaultOption = new OptionElement()
+      ..text = 'Select Period'
+      ..value = 'Select Period';
+    periodsOptions.add(defaultOption);
     for (var filter in controller.ChartPeriodFilters.values) {
+      print(filter.toString());
       var optionElement = new OptionElement()
-      ..text = filter.toString()
-      ..value = filter.toString();
+        ..text = _periodFilterValue(filter)
+        ..value = filter.toString();
       periodsOptions.add(optionElement);
     }
     return periodsOptions;
+  }
+
+  String _periodFilterValue (controller.ChartPeriodFilters filter) { 
+    String filteredValue;
+    switch(filter) {
+      case controller.ChartPeriodFilters.days1:
+        filteredValue = '1 Day';
+      break;
+      case controller.ChartPeriodFilters.days8:
+        filteredValue = '8 days';
+      break;
+      case controller.ChartPeriodFilters.days15:
+        filteredValue = '15 days';
+      break;
+      case controller.ChartPeriodFilters.month1:
+        filteredValue = '1 month';
+      break;
+    }
+    return filteredValue;
   }
 }
 
@@ -264,6 +296,7 @@ class ContentView {
   ButtonElement _conversationTabLink;
 
   ProjectSelectorView projectSelectorView;
+  ChartFiltersView chartFiltersView;
 
   DivElement contentElement;
   DivElement systemChartsTabContent;
@@ -331,6 +364,9 @@ class ContentView {
     needsReplyAndEscalateMoreThan24hLatestValue = new charts.SingleIndicatorChartView()
       ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
+
+    chartFiltersView = new ChartFiltersView();
+    conversationChartsTabContent.append(chartFiltersView.chartFiltersContainer); // Chart Filters
 
     needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
     conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
