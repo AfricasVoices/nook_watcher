@@ -227,6 +227,29 @@ class ProjectSelectorView {
   }
 }
 
+class ChartFiltersView {
+  DivElement chartFiltersContainer;
+  SelectElement _periodFilter;
+
+  ChartFiltersView() {
+    chartFiltersContainer = new DivElement()..classes.add('chart-filters');
+    _periodFilter = new SelectElement()..classes.add('period-filter');
+    _periodFilter.children.addAll(_getPeriodFilterOptions(['1 day', '8 days', '15 days', '1 month']));
+    chartFiltersContainer.append(_periodFilter);
+  }
+
+  List<OptionElement> _getPeriodFilterOptions(List<String> options) {
+    List<OptionElement> periodsOptions;
+    for (var option in options) {
+      var optionElement = new OptionElement()
+      ..text = option
+      ..value = option;
+      periodsOptions.add(optionElement);
+    }
+    return periodsOptions;
+  }
+}
+
 class ContentView {
   DivElement tabElement;
   ButtonElement _systemTabLink;
