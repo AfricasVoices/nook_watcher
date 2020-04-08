@@ -127,41 +127,7 @@ void command(UIAction action, Data actionData) {
 
       ChartPeriodFilters filterData = (actionData as ChartFilterdata).periodFilter;
 
-      var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
-          d.project == view.contentView.projectSelectorView.selectedProject).toList();
-
-      Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-      view.contentView.needsReplyTimeseries.updateChart([data]);
-
-      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-      view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
-
-
-      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-      view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
-
-
-      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
-
-
-      DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
-      var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
-
-      view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
-      view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
-      view.contentView.needsReplyMoreThan24hLatestValue.updateChart('${latestData.needsReplyMoreThan24h}');
-      view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
-
-      view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+      updateNeedsReplyCharts();
       break;
 
     case UIAction.systemEventsDataUpdated:
@@ -170,22 +136,64 @@ void command(UIAction action, Data actionData) {
       } else {
         view.contentView.changeViewOnUrlChange();
       }
-      var rapidProEventData = systemEventsDataList.where((eventData) =>
-          eventData.systemName == 'rapidpro_adapter' &&
-          eventData.project == view.contentView.projectSelectorView.selectedProject);
-      var pubsubEventData = systemEventsDataList.where((eventData) =>
-          eventData.systemName == 'pubsub_handler' &&
-          eventData.project == view.contentView.projectSelectorView.selectedProject);
-      
-      Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
-          key: (item) => (item as model.SystemEventsData).timestamp,
-          value: (item) => 1);
-      view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
-
-      data = new Map.fromIterable(pubsubEventData,
-          key: (item) => (item as model.SystemEventsData).timestamp,
-          value: (item) => 1);
-      view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
+      updateSystemEventsCharts();
       break;
   }
+}
+
+void updateNeedsReplyCharts() {
+  var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+      d.project == view.contentView.projectSelectorView.selectedProject).toList();
+
+  Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyCount);
+  view.contentView.needsReplyTimeseries.updateChart([data]);
+
+  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
+
+
+  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
+
+
+  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
+
+
+  DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
+  var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
+
+  view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
+  view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
+  view.contentView.needsReplyMoreThan24hLatestValue.updateChart('${latestData.needsReplyMoreThan24h}');
+  view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
+
+  view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+}
+
+void updateSystemEventsCharts() {
+  var rapidProEventData = systemEventsDataList.where((eventData) =>
+      eventData.systemName == 'rapidpro_adapter' &&
+      eventData.project == view.contentView.projectSelectorView.selectedProject);
+  var pubsubEventData = systemEventsDataList.where((eventData) =>
+      eventData.systemName == 'pubsub_handler' &&
+      eventData.project == view.contentView.projectSelectorView.selectedProject);
+  
+  Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
+      key: (item) => (item as model.SystemEventsData).timestamp,
+      value: (item) => 1);
+  view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
+
+  data = new Map.fromIterable(pubsubEventData,
+      key: (item) => (item as model.SystemEventsData).timestamp,
+      value: (item) => 1);
+  view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
 }
