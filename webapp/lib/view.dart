@@ -228,12 +228,18 @@ class ProjectSelectorView {
 }
 
 class ChartFiltersView {
+  static final ChartFiltersView _singleton = new ChartFiltersView._internal();
+
+  factory ChartFiltersView() {
+    return _singleton;
+  }
+
   DivElement chartFiltersContainer;
   DivElement _singleFilterSpan;
   LabelElement _periodFilterTitle;
   SelectElement _periodFilter;
 
-  ChartFiltersView() {
+  ChartFiltersView._internal() {
     chartFiltersContainer = new DivElement()..classes.add('chart-filters');
     _singleFilterSpan = new DivElement()..classes.add('chart-filter');
     _periodFilterTitle = new LabelElement()..text = 'Filter by Period:';
@@ -272,7 +278,7 @@ class ChartFiltersView {
 
   String _periodFilterValue (controller.ChartPeriodFilters filter) { 
     String filteredValue;
-    switch(filter) {
+    switch (filter) {
       case controller.ChartPeriodFilters.days1:
         filteredValue = '1 Day';
       break;
@@ -296,7 +302,6 @@ class ContentView {
   ButtonElement _conversationTabLink;
 
   ProjectSelectorView projectSelectorView;
-  ChartFiltersView chartFiltersView;
 
   DivElement contentElement;
   DivElement systemChartsTabContent;
@@ -365,9 +370,6 @@ class ContentView {
       ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
 
-    chartFiltersView = new ChartFiltersView();
-    conversationChartsTabContent.append(chartFiltersView.chartFiltersContainer); // Chart Filters
-
     needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
     conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
@@ -418,6 +420,7 @@ class ContentView {
 
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
+    contentElement.append(new ChartFiltersView().chartFiltersContainer); // Initialize Chart Filters
     _systemTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
     switch(chartType) {
