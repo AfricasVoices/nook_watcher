@@ -203,6 +203,7 @@ class ProjectSelectorView {
       var data = new controller.ProjectSelectionData()..isProjectSelection = true;
       controller.command(controller.UIAction.needsReplyDataUpdated, data);
       controller.command(controller.UIAction.systemEventsDataUpdated, data);
+      ChartFiltersView().filterChartsByPeriod(_);
     });
     projectSelector.append(_projectOptions);
   }
@@ -245,20 +246,22 @@ class ChartFiltersView {
     _periodFilterTitle = new LabelElement()..text = 'Filter by Period:';
     _periodFilter = new SelectElement()..classes.add('period-filter');
     _periodFilter.children.addAll(_getPeriodFilterOptions());
-    _periodFilter.onChange.listen((_) {
-      var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
-      if (periodFilter != null) {
-        var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
-        controller.command(controller.UIAction.needsReplyDataUpdated, filterData);
-        controller.command(controller.UIAction.systemEventsDataUpdated, filterData);
-      }
-    });
+    _periodFilter.onChange.listen(filterChartsByPeriod);
     _singleFilterSpan.append(_periodFilterTitle);
     _singleFilterSpan.append(_periodFilter);
     chartFiltersContainer.append(_singleFilterSpan);
   }
 
   String get selectedPeriodFilter => _periodFilter.value;
+
+  void filterChartsByPeriod(_) {
+    var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
+    if (periodFilter != null) {
+      var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
+      controller.command(controller.UIAction.needsReplyDataUpdated, filterData);
+      controller.command(controller.UIAction.systemEventsDataUpdated, filterData);
+    }
+  }
 
   List<OptionElement> _getPeriodFilterOptions() {
     List<OptionElement> periodsOptions = [];
@@ -420,7 +423,7 @@ class ContentView {
 
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
-    contentElement.append(new ChartFiltersView().chartFiltersContainer); // Initialize Chart Filters
+    contentElement.append(ChartFiltersView().chartFiltersContainer); // Initialize Chart Filters
     _systemTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
     switch(chartType) {
