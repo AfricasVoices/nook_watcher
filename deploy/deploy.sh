@@ -21,12 +21,13 @@ FIREBASE_CONSTANTS_FILENAME="$(basename "$FIREBASE_CONSTANTS")"
 FIREBASE_CONSTANTS_FILE="$FIREBASE_CONSTANTS_DIR/$FIREBASE_CONSTANTS_FILENAME"
 
 
-########## cd to the nook project directory and get the absolute path
+########## cd to the nook watcher project directory and get the absolute path
 
 cd "$WORK_DIR"
-cd "$(dirname "$0")"/..
-PROJDIR="$(pwd)"
 
+cd "$(dirname "$0")"/..
+PROJECT_DIR="$(pwd)"
+cd "$PROJECT_DIR"
 
 ########## rebuild the webapp
 
@@ -49,7 +50,7 @@ cp $FIREBASE_CONSTANTS_FILE public/assets/firebase_constants.json
 
 # Get the project id
 echo "getting project id..."
-PROJECT_ID=$(cat $FIREBASE_CONSTANTS | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
+PROJECT_ID=$(cat $FIREBASE_CONSTANTS_FILE | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
 echo "project id: $PROJECT_ID"
 
 # Deploy using the local firebase instance
