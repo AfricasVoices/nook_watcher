@@ -1,5 +1,4 @@
 #project-selector select, .period-filter {
-    width: 150px;
     margin: 4px 10px;
     display: flex;
     box-sizing: border-box;
