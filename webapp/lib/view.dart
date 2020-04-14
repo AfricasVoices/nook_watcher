@@ -203,7 +203,7 @@ class ProjectSelectorView {
       var data = new controller.ProjectSelectionData()..isProjectSelection = true;
       controller.command(controller.UIAction.needsReplyDataUpdated, data);
       controller.command(controller.UIAction.systemEventsDataUpdated, data);
-      ChartFiltersView().filterChartsByPeriod(_);
+      ChartFiltersView().filterChartsByPeriod();
     });
     projectSelector.append(_projectOptions);
   }
@@ -246,7 +246,7 @@ class ChartFiltersView {
     _periodFilterTitle = new LabelElement()..text = 'Filter by Period:';
     _periodFilter = new SelectElement()..classes.add('period-filter');
     _periodFilter.children.addAll(_getPeriodFilterOptions());
-    _periodFilter.onChange.listen(filterChartsByPeriod);
+    _periodFilter.onChange.listen((_) => filterChartsByPeriod());
     _singleFilterSpan.append(_periodFilterTitle);
     _singleFilterSpan.append(_periodFilter);
     chartFiltersContainer.append(_singleFilterSpan);
@@ -254,23 +254,15 @@ class ChartFiltersView {
 
   String get selectedPeriodFilter => _periodFilter.value;
 
-  void filterChartsByPeriod(_) {
+  void filterChartsByPeriod() {
     var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
-    if (periodFilter != null) {
-      var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
-      controller.command(controller.UIAction.needsReplyDataUpdated, filterData);
-      controller.command(controller.UIAction.systemEventsDataUpdated, filterData);
-    }
+    var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
+    controller.command(controller.UIAction.chartsFiltered, filterData);
   }
 
   List<OptionElement> _getPeriodFilterOptions() {
     List<OptionElement> periodsOptions = [];
-    var defaultOption = new OptionElement()
-      ..text = 'Select Period'
-      ..value = 'Select Period';
-    periodsOptions.add(defaultOption);
     for (var filter in controller.ChartPeriodFilters.values) {
-      print(filter.toString());
       var optionElement = new OptionElement()
         ..text = _periodFilterValue(filter)
         ..value = filter.toString();
@@ -282,6 +274,9 @@ class ChartFiltersView {
   String _periodFilterValue (controller.ChartPeriodFilters filter) { 
     String filteredValue;
     switch (filter) {
+      case controller.ChartPeriodFilters.alltime:
+        filteredValue = 'All Time';
+        break;
       case controller.ChartPeriodFilters.days1:
         filteredValue = '1 Day';
       break;

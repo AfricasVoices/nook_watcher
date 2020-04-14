@@ -16,10 +16,12 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   needsReplyDataUpdated,
-  systemEventsDataUpdated
+  systemEventsDataUpdated,
+  chartsFiltered
 }
 
 enum ChartPeriodFilters {
+  alltime,
   days1,
   days8,
   days15,
@@ -126,16 +128,8 @@ void command(UIAction action, Data actionData) {
       }
 
       List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
-
-      if (actionData !=null && actionData is ChartFilterdata) {
-        DateTime filterDate = getFilteredDate(actionData);
-        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
-            d.project == view.contentView.projectSelectorView.selectedProject &&
-            d.datetime.isAfter(filterDate)).toList();
-      } else {
-        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
-            d.project == view.contentView.projectSelectorView.selectedProject).toList();
-      }
+      selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+          d.project == view.contentView.projectSelectorView.selectedProject).toList();
 
       updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
       break;
@@ -146,18 +140,29 @@ void command(UIAction action, Data actionData) {
       } else {
         view.contentView.changeViewOnUrlChange();
       }
-      
+
+      updateSystemEventsCharts(systemEventsDataList);
+      break;
+    
+    case UIAction.chartsFiltered:
+      List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
       List<model.SystemEventsData> filteredSystemEventsDataList = [];
 
-      if (actionData !=null && actionData is ChartFilterdata) {
-        DateTime filterDate = getFilteredDate(actionData);
+      DateTime filterDate = getFilteredDate(actionData);
+
+      if (filterDate != null) {
+        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+            d.project == view.contentView.projectSelectorView.selectedProject &&
+            d.datetime.isAfter(filterDate)).toList();
         filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate)).toList();
       } else {
+        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+            d.project == view.contentView.projectSelectorView.selectedProject).toList();
         filteredSystemEventsDataList = systemEventsDataList;
       }
-
+      updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
       updateSystemEventsCharts(filteredSystemEventsDataList);
-      break;
+    break;
   }
 }
 
@@ -217,18 +222,21 @@ DateTime getFilteredDate(ChartFilterdata filterData) {
   DateTime filterDate;
 
   switch (filterData.periodFilter) {
-  case ChartPeriodFilters.days1:
-    filterDate = now.subtract(Duration(days: 1));
-    break;
-  case ChartPeriodFilters.days8:
-    filterDate = now.subtract(Duration(days: 8));
-    break;
-  case ChartPeriodFilters.days15:
-    filterDate = now.subtract(Duration(days: 15));
-    break;
-  case ChartPeriodFilters.month1:
-    filterDate = now.subtract(Duration(days: 31));
-    break;
+    case ChartPeriodFilters.alltime:
+      filterData = null;
+      break;
+    case ChartPeriodFilters.days1:
+      filterDate = now.subtract(Duration(days: 1));
+      break;
+    case ChartPeriodFilters.days8:
+      filterDate = now.subtract(Duration(days: 8));
+      break;
+    case ChartPeriodFilters.days15:
+      filterDate = now.subtract(Duration(days: 15));
+      break;
+    case ChartPeriodFilters.month1:
+      filterDate = now.subtract(Duration(days: 31));
+      break;
   }
 
   return filterDate;
