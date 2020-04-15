@@ -16,13 +16,26 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   needsReplyDataUpdated,
-  systemEventsDataUpdated
+  systemEventsDataUpdated,
+  chartsFiltered
+}
+
+enum ChartPeriodFilters {
+  alltime,
+  days1,
+  days8,
+  days15,
+  month1,
 }
 
 class Data {}
 
 class ProjectSelectionData extends Data {
   bool isProjectSelection;
+}
+
+class ChartFilterdata extends Data {
+  ChartPeriodFilters periodFilter;
 }
 
 class UserData extends Data {
@@ -108,71 +121,124 @@ void command(UIAction action, Data actionData) {
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
 
-      if (actionData != null && (actionData as ProjectSelectionData).isProjectSelection) {
+      if (actionData != null && actionData is ProjectSelectionData && actionData.isProjectSelection) {
         view.contentView.populateUrlFilters();
       } else {
         view.contentView.changeViewOnUrlChange();
       }
 
-      var selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+      List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
+      selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
 
-      Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-      view.contentView.needsReplyTimeseries.updateChart([data]);
-
-      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-      view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
-
-
-      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-      view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
-
-
-      data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-        key: (item) => (item as model.NeedsReplyData).datetime,
-        value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-      view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
-
-
-      DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
-      var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
-
-      view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
-      view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
-      view.contentView.needsReplyMoreThan24hLatestValue.updateChart('${latestData.needsReplyMoreThan24h}');
-      view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
-
-      view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+      updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
       break;
 
     case UIAction.systemEventsDataUpdated:
-      if (actionData != null && (actionData as ProjectSelectionData).isProjectSelection) {
+      if (actionData != null && actionData is ProjectSelectionData &&  actionData.isProjectSelection) {
         view.contentView.populateUrlFilters();
       } else {
         view.contentView.changeViewOnUrlChange();
       }
-      var rapidProEventData = systemEventsDataList.where((eventData) =>
-          eventData.systemName == 'rapidpro_adapter' &&
-          eventData.project == view.contentView.projectSelectorView.selectedProject);
-      var pubsubEventData = systemEventsDataList.where((eventData) =>
-          eventData.systemName == 'pubsub_handler' &&
-          eventData.project == view.contentView.projectSelectorView.selectedProject);
-      
-      Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
-          key: (item) => (item as model.SystemEventsData).timestamp,
-          value: (item) => 1);
-      view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
 
-      data = new Map.fromIterable(pubsubEventData,
-          key: (item) => (item as model.SystemEventsData).timestamp,
-          value: (item) => 1);
-      view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
+      updateSystemEventsCharts(systemEventsDataList);
       break;
+    
+    case UIAction.chartsFiltered:
+      List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
+      List<model.SystemEventsData> filteredSystemEventsDataList = [];
+
+      DateTime filterDate = getFilteredDate(actionData);
+
+      if (filterDate != null) {
+        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+            d.project == view.contentView.projectSelectorView.selectedProject &&
+            d.datetime.isAfter(filterDate)).toList();
+        filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate)).toList();
+      } else {
+        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+            d.project == view.contentView.projectSelectorView.selectedProject).toList();
+        filteredSystemEventsDataList = systemEventsDataList;
+      }
+      updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
+      updateSystemEventsCharts(filteredSystemEventsDataList);
+    break;
   }
 }
+
+void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReplyDataList) {
+  Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyCount);
+  view.contentView.needsReplyTimeseries.updateChart([data]);
+
+  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
+
+  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
+
+  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime,
+    value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
+
+  DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
+  var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
+
+  view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
+  view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
+  view.contentView.needsReplyMoreThan24hLatestValue.updateChart('${latestData.needsReplyMoreThan24h}');
+  view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
+
+  view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+}
+
+void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
+  var rapidProEventData = filteredSystemEventsDataList.where((eventData) =>
+      eventData.systemName == 'rapidpro_adapter' &&
+      eventData.project == view.contentView.projectSelectorView.selectedProject);
+  var pubsubEventData = filteredSystemEventsDataList.where((eventData) =>
+      eventData.systemName == 'pubsub_handler' &&
+      eventData.project == view.contentView.projectSelectorView.selectedProject);
+  
+  Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
+      key: (item) => (item as model.SystemEventsData).timestamp,
+      value: (item) => 1);
+  view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
+
+  data = new Map.fromIterable(pubsubEventData,
+      key: (item) => (item as model.SystemEventsData).timestamp,
+      value: (item) => 1);
+  view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
+}
+
+DateTime getFilteredDate(ChartFilterdata filterData) {
+  DateTime now = new DateTime.now();
+  DateTime filterDate;
+
+  switch (filterData.periodFilter) {
+    case ChartPeriodFilters.alltime:
+      filterData = null;
+      break;
+    case ChartPeriodFilters.days1:
+      filterDate = now.subtract(Duration(days: 1));
+      break;
+    case ChartPeriodFilters.days8:
+      filterDate = now.subtract(Duration(days: 8));
+      break;
+    case ChartPeriodFilters.days15:
+      filterDate = now.subtract(Duration(days: 15));
+      break;
+    case ChartPeriodFilters.month1:
+      filterDate = now.subtract(Duration(days: 31));
+      break;
+  }
+
+  return filterDate;
+}
+

@@ -203,6 +203,7 @@ class ProjectSelectorView {
       var data = new controller.ProjectSelectionData()..isProjectSelection = true;
       controller.command(controller.UIAction.needsReplyDataUpdated, data);
       controller.command(controller.UIAction.systemEventsDataUpdated, data);
+      ChartFiltersView().filterChartsByPeriod();
     });
     projectSelector.append(_projectOptions);
   }
@@ -224,6 +225,72 @@ class ProjectSelectorView {
         ..value = option;
       _projectOptions.children.add(optionElement);
     }
+  }
+}
+
+class ChartFiltersView {
+  static final ChartFiltersView _singleton = new ChartFiltersView._internal();
+
+  factory ChartFiltersView() {
+    return _singleton;
+  }
+
+  DivElement chartFiltersContainer;
+  DivElement _singleFilterSpan;
+  LabelElement _periodFilterTitle;
+  SelectElement _periodFilter;
+
+  ChartFiltersView._internal() {
+    chartFiltersContainer = new DivElement()..classes.add('chart-filters');
+    _singleFilterSpan = new DivElement()..classes.add('chart-filter');
+    _periodFilterTitle = new LabelElement()..text = 'Filter by Period:';
+    _periodFilter = new SelectElement()..classes.add('period-filter');
+    _periodFilter.children.addAll(_getPeriodFilterOptions());
+    _periodFilter.onChange.listen((_) => filterChartsByPeriod());
+    _singleFilterSpan.append(_periodFilterTitle);
+    _singleFilterSpan.append(_periodFilter);
+    chartFiltersContainer.append(_singleFilterSpan);
+  }
+
+  String get selectedPeriodFilter => _periodFilter.value;
+
+  void filterChartsByPeriod() {
+    var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
+    var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
+    controller.command(controller.UIAction.chartsFiltered, filterData);
+  }
+
+  List<OptionElement> _getPeriodFilterOptions() {
+    List<OptionElement> periodsOptions = [];
+    for (var filter in controller.ChartPeriodFilters.values) {
+      var optionElement = new OptionElement()
+        ..text = _periodFilterValue(filter)
+        ..value = filter.toString();
+      periodsOptions.add(optionElement);
+    }
+    return periodsOptions;
+  }
+
+  String _periodFilterValue (controller.ChartPeriodFilters filter) { 
+    String filteredValue;
+    switch (filter) {
+      case controller.ChartPeriodFilters.alltime:
+        filteredValue = 'All Time';
+        break;
+      case controller.ChartPeriodFilters.days1:
+        filteredValue = '1 Day';
+      break;
+      case controller.ChartPeriodFilters.days8:
+        filteredValue = '8 days';
+      break;
+      case controller.ChartPeriodFilters.days15:
+        filteredValue = '15 days';
+      break;
+      case controller.ChartPeriodFilters.month1:
+        filteredValue = '1 month';
+      break;
+    }
+    return filteredValue;
   }
 }
 
@@ -351,6 +418,7 @@ class ContentView {
 
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
+    contentElement.append(ChartFiltersView().chartFiltersContainer); // Initialize Chart Filters
     _systemTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
     switch(chartType) {

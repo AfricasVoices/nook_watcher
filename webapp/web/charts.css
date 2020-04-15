@@ -41,3 +41,16 @@
 .single-indicator-container .chart {
   flex: 1 1 25%;
 }
+
+.chart-filters {
+  margin: 10px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  box-shadow: 0 0 20px 0 #ddd;
+}
+
+.chart-filter label{
+  margin: 10px 5px;
+  float: left;
+}
+
