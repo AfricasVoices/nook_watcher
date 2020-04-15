@@ -253,6 +253,11 @@ class ChartFiltersView {
   }
 
   String get selectedPeriodFilter => _periodFilter.value;
+  
+  void setActiveChartPeriodFilter (String periodFilterLabel) {
+    _periodFilter.value = periodFilterLabel;
+    filterChartsByPeriod();
+  }
 
   void filterChartsByPeriod() {
     var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
@@ -435,7 +440,8 @@ class ContentView {
 
   void populateUrlFilters() {
     var selectedProject = projectSelectorView.selectedProject;
-    UrlView.setPageUrlFilters({'type': currentTabView, 'project': selectedProject});
+    var periodFilter = ChartFiltersView().selectedPeriodFilter.split('.')[1];
+    UrlView.setPageUrlFilters({'type': currentTabView, 'project': selectedProject, 'period-filter': periodFilter});
   }
 
   void changeViewOnUrlChange() {
@@ -460,6 +466,29 @@ class ContentView {
 
     if (urlFilters['project'] != null) {
       projectSelectorView.setActiveProject(urlFilters['project']);
+    }
+
+    if (urlFilters['period-filter'] != null) {
+      var period;
+
+      switch (urlFilters['period-filter']) {
+        case 'alltime':
+          period = 'ChartPeriodFilters.alltime';
+          break;
+        case 'days1':
+          period = 'ChartPeriodFilters.days1';
+          break;
+        case 'days8':
+          period = 'ChartPeriodFilters.days8';
+          break;
+        case 'days15':
+          period = 'ChartPeriodFilters.days15';
+          break;
+        case 'month1':
+          period = 'ChartPeriodFilters.month1';
+          break;
+      }
+      ChartFiltersView().setActiveChartPeriodFilter(period);
     }
   }
 }

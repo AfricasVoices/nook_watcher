@@ -145,6 +145,8 @@ void command(UIAction action, Data actionData) {
       break;
     
     case UIAction.chartsFiltered:
+      view.contentView.populateUrlFilters();
+
       List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
       List<model.SystemEventsData> filteredSystemEventsDataList = [];
 
