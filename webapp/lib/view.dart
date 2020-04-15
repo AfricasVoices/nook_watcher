@@ -470,6 +470,7 @@ class ContentView {
 
     if (urlFilters['period-filter'] != null) {
       var period;
+      
       switch (urlFilters['period-filter']) {
         case 'alltime':
           period = 'ChartPeriodFilters.alltime';
