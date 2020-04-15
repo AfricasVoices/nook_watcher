@@ -470,23 +470,23 @@ class ContentView {
 
     if (urlFilters['period-filter'] != null) {
       var period;
-      
+
       switch (urlFilters['period-filter']) {
         case 'alltime':
           period = 'ChartPeriodFilters.alltime';
           break;
         case 'days1':
           period = 'ChartPeriodFilters.days1';
-        break;
+          break;
         case 'days8':
           period = 'ChartPeriodFilters.days8';
-        break;
+          break;
         case 'days15':
           period = 'ChartPeriodFilters.days15';
-        break;
+          break;
         case 'month1':
           period = 'ChartPeriodFilters.month1';
-        break;
+          break;
       }
       ChartFiltersView().setActiveChartPeriodFilter(period);
     }
