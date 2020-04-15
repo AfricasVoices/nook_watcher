@@ -121,27 +121,27 @@ void command(UIAction action, Data actionData) {
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
 
-      if (actionData != null && actionData is ProjectSelectionData && actionData.isProjectSelection) {
-        view.contentView.populateUrlFilters();
-      } else {
-        view.contentView.changeViewOnUrlChange();
-      }
-
       List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
       selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
 
       updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
+
+      if (actionData != null && actionData is ProjectSelectionData && actionData.isProjectSelection) {
+        view.contentView.populateUrlFilters();
+      } else {
+        view.contentView.changeViewOnUrlChange();
+      }
       break;
 
     case UIAction.systemEventsDataUpdated:
+      updateSystemEventsCharts(systemEventsDataList);
+
       if (actionData != null && actionData is ProjectSelectionData &&  actionData.isProjectSelection) {
         view.contentView.populateUrlFilters();
       } else {
         view.contentView.changeViewOnUrlChange();
       }
-
-      updateSystemEventsCharts(systemEventsDataList);
       break;
     
     case UIAction.chartsFiltered:
