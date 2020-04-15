@@ -223,7 +223,7 @@ DateTime getFilteredDate(ChartFilterdata filterData) {
 
   switch (filterData.periodFilter) {
     case ChartPeriodFilters.alltime:
-      filterData = null;
+      filterDate = null;
       break;
     case ChartPeriodFilters.days1:
       filterDate = now.subtract(Duration(days: 1));
@@ -241,4 +241,3 @@ DateTime getFilteredDate(ChartFilterdata filterData) {
 
   return filterDate;
 }
-
