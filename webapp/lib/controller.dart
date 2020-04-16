@@ -218,16 +218,20 @@ DateTime getFilteredDate(ChartFilterdata filterData) {
       filterDate = null;
       break;
     case ChartPeriodFilters.days1:
-      filterDate = now.subtract(Duration(days: 1));
+      var diff = now.subtract(Duration(days: 1));
+      filterDate = new DateTime(diff.year, diff.month, diff.day);
       break;
     case ChartPeriodFilters.days8:
-      filterDate = now.subtract(Duration(days: 8));
+      var diff = now.subtract(Duration(days: 8));
+      filterDate = new DateTime(diff.year, diff.month, diff.day);
       break;
     case ChartPeriodFilters.days15:
-      filterDate = now.subtract(Duration(days: 15));
+      var diff = now.subtract(Duration(days: 15));
+      filterDate = new DateTime(diff.year, diff.month, diff.day);
       break;
     case ChartPeriodFilters.month1:
-      filterDate = now.subtract(Duration(days: 31));
+      var diff = now.subtract(Duration(days: 31));
+      filterDate = new DateTime(diff.year, diff.month, diff.day);
       break;
   }
 
