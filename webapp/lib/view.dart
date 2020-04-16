@@ -200,9 +200,7 @@ class ProjectSelectorView {
       ..id = 'project-selector';
     _projectOptions = new SelectElement();
     _projectOptions.onChange.listen((_) {
-      var data = new controller.ProjectSelectionData()..isProjectSelection = true;
-      controller.command(controller.UIAction.needsReplyDataUpdated, data);
-      controller.command(controller.UIAction.systemEventsDataUpdated, data);
+      controller.command(controller.UIAction.projectSelected, null);
       ChartFiltersView().filterChartsByPeriod();
     });
     projectSelector.append(_projectOptions);

@@ -17,6 +17,7 @@ enum UIAction {
   signOutButtonClicked,
   needsReplyDataUpdated,
   systemEventsDataUpdated,
+  projectSelected,
   chartsFiltered
 }
 
@@ -29,10 +30,6 @@ enum ChartPeriodFilters {
 }
 
 class Data {}
-
-class ProjectSelectionData extends Data {
-  bool isProjectSelection;
-}
 
 class ChartFilterdata extends Data {
   ChartPeriodFilters periodFilter;
@@ -118,6 +115,9 @@ void command(UIAction action, Data actionData) {
       break;
 
     /*** Data */
+    case UIAction.projectSelected:
+      view.contentView.populateUrlFilters();
+      break;
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
 
@@ -126,22 +126,12 @@ void command(UIAction action, Data actionData) {
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
 
       updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
-
-      if (actionData != null && actionData is ProjectSelectionData && actionData.isProjectSelection) {
-        view.contentView.populateUrlFilters();
-      } else {
-        view.contentView.changeViewOnUrlChange();
-      }
+      view.contentView.changeViewOnUrlChange();
       break;
 
     case UIAction.systemEventsDataUpdated:
       updateSystemEventsCharts(systemEventsDataList);
-
-      if (actionData != null && actionData is ProjectSelectionData &&  actionData.isProjectSelection) {
-        view.contentView.populateUrlFilters();
-      } else {
-        view.contentView.changeViewOnUrlChange();
-      }
+      view.contentView.changeViewOnUrlChange();
       break;
     
     case UIAction.chartsFiltered:
