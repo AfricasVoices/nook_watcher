@@ -372,6 +372,11 @@ class ContentView {
       ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
 
+    var someAlert = new AlertView();
+    someAlert.alertType = AlertViewType.danger;
+    someAlert.show();
+    conversationChartsTabContent.append(someAlert.alertElement);
+
     needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
     conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
@@ -557,5 +562,56 @@ class StatusView {
   void showWarningStatus(String text) {
     statusElement.text = text;
     statusElement.classes.toggle('status--warning', true);
+  }
+}
+
+enum AlertViewType {
+  info,
+  success,
+  warning,
+  danger
+}
+
+class AlertView {
+  String alertText;
+  AlertViewType alertViewType;
+
+  DivElement alertElement;
+  SpanElement _closeButton;
+
+  AlertView(this.alertText, this.alertViewType) {
+    alertElement = new DivElement()
+      ..classes.addAll(['alert', getAlertClass(alertViewType)])
+      ..text = alertText;
+    _closeButton = new SpanElement()
+      ..classes.add('close-btn')
+      ..text = "×"
+      ..onClick.listen((_) =>  alertElement.remove());
+
+    alertElement.append(_closeButton);
+  }
+
+  void set alertType(AlertViewType alertViewType) { 
+    alertElement.classes.clear();
+    alertElement.classes.addAll(['alert', getAlertClass(alertViewType)]);
+  }
+
+  String getAlertClass(AlertViewType alertViewType) {
+    String type;
+    switch (alertViewType) {
+      case AlertViewType.info:
+        type = 'alert-info';
+        break;
+      case AlertViewType.success:
+        type = 'alert-success';
+        break;
+      case AlertViewType.warning:
+        type = 'alert-warning';
+        break;
+      case AlertViewType.danger:
+        type = 'alert-danger';
+        break;
+    }
+    return type;
   }
 }
