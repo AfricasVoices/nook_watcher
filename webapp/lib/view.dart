@@ -241,7 +241,7 @@ class ChartFiltersView {
   ChartFiltersView._internal() {
     chartFiltersContainer = new DivElement()..classes.add('chart-filters');
     _singleFilterSpan = new DivElement()..classes.add('chart-filter');
-    _periodFilterTitle = new LabelElement()..text = 'Filter by Period:';
+    _periodFilterTitle = new LabelElement()..text = 'Period:';
     _periodFilter = new SelectElement()..classes.add('period-filter');
     _periodFilter.children.addAll(_getPeriodFilterOptions());
     _periodFilter.onChange.listen((_) => filterChartsByPeriod());
@@ -323,6 +323,7 @@ class ContentView {
   ContentView() {
     projectSelectorView = new ProjectSelectorView();
     headerElement.insertAdjacentElement('afterBegin', projectSelectorView.projectSelector);
+    headerElement.insertAdjacentElement('afterBegin', ChartFiltersView().chartFiltersContainer); // Initialize Chart Filters
 
     tabElement = new DivElement()
       ..classes.addAll(['tabs', 'hidden']);
@@ -421,7 +422,6 @@ class ContentView {
 
   void toogleTabView(ChartType chartType) {
     contentElement.children.clear();
-    contentElement.append(ChartFiltersView().chartFiltersContainer); // Initialize Chart Filters
     _systemTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
     switch(chartType) {

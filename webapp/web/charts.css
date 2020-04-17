@@ -43,14 +43,11 @@
 }
 
 .chart-filters {
-  margin: 10px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  box-shadow: 0 0 20px 0 #ddd;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .chart-filter label{
   margin: 10px 5px;
   float: left;
 }
-

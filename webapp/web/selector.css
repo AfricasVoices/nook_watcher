@@ -1,3 +1,7 @@
+#project-selector {
+    margin: auto;
+}
+
 #project-selector select, 
 .period-filter {
     margin: 4px 10px;
