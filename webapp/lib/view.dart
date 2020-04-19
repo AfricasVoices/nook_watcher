@@ -307,6 +307,7 @@ class ContentView {
   DivElement contentElement;
   DivElement systemChartsTabContent;
   DivElement conversationChartsTabContent;
+  DivElement chartDataLastUpdateTime;
 
   charts.SingleIndicatorChartView needsReplyLatestValue;
   charts.SingleIndicatorChartView needsReplyAndEscalateLatestValue;
@@ -372,6 +373,10 @@ class ContentView {
       ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
 
+    chartDataLastUpdateTime = new DivElement()
+      ..id = 'charts-last-update';
+    conversationChartsTabContent.append(chartDataLastUpdateTime);
+
     needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
     conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
@@ -418,7 +423,7 @@ class ContentView {
       datasetLabels: ['restart']);
   }
   
-  List<Element> get conversationsCharts => querySelectorAll('#conversations .chart');
+  List<Element> get conversationCharts => querySelectorAll('#conversations .chart');
 
   String get currentTabView => _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
 

@@ -67,6 +67,7 @@ void initUI() {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
         return;
       }
+
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
       projectList.addAll(updatedData.map((m) => m.project).toSet());
@@ -105,10 +106,11 @@ void checkNeedsReplyMetricsPipelineDataFlow() {
   var lastUpdateTimeDiff =  now.difference(lastNeedsReplyEntry.datetime).inHours;
   
   if (lastUpdateTimeDiff > 1) {
-    view.contentView.conversationsCharts.forEach((chart) => chart.classes.add('stale'));
+    view.contentView.conversationCharts.forEach((chart) => chart.classes.add('stale'));
   } else {
-    view.contentView.conversationsCharts.forEach((chart) => chart.classes.remove('stale'));
+    view.contentView.conversationCharts.forEach((chart) => chart.classes.remove('stale'));
   }
+  view.contentView.chartDataLastUpdateTime.text = 'Charts Last Updated: ${lastNeedsReplyEntry.datetime}';
 }
 
 void command(UIAction action, Data actionData) {
