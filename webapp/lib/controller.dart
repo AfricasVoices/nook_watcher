@@ -50,6 +50,8 @@ List<model.SystemEventsData> systemEventsDataList;
 
 model.User signedInUser;
 
+Timer periodicTimer;
+
 void init() async {
   view.init();
   await platform.init();
@@ -74,7 +76,11 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
-      Timer.periodic(Duration(seconds: 5), (_) => checkNeedsReplyMetricsPipelineDataFlow());
+      
+      if (periodicTimer == null) {
+        checkNeedsReplyMetricsPipelineDataFlow();
+        periodicTimer = Timer.periodic(Duration(seconds: 5), (_) => checkNeedsReplyMetricsPipelineDataFlow());
+      } 
     }
   );
 
@@ -96,15 +102,14 @@ void initUI() {
 }
 
 void checkNeedsReplyMetricsPipelineDataFlow() {
-  var now = new DateTime.now();
   var sortedNeedsReplyDataList = List.from(needsReplyDataList);
   sortedNeedsReplyDataList.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
-  
   var lastNeedsReplyEntry = sortedNeedsReplyDataList.where((entry)=>
       entry.project == view.contentView.projectSelectorView.selectedProject).last;
 
+  var now = new DateTime.now();
   var lastUpdateTimeDiff =  now.difference(lastNeedsReplyEntry.datetime).inHours;
-  
+
   if (lastUpdateTimeDiff > 1) {
     view.contentView.conversationCharts.forEach((chart) => chart.classes.add('stale'));
   } else {
