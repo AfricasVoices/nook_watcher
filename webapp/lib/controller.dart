@@ -1,5 +1,7 @@
 library controller;
 
+import 'dart:async';
+
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -71,6 +73,7 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
+      Timer.periodic(Duration(seconds: 5), (_) => checkNeedsReplyMetricsPipelineDataFlow());
     }
   );
 
@@ -81,6 +84,7 @@ void initUI() {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
         return;
       }
+      
       var updatedIds = updatedEvents.map((m) => m.id).toSet();
       var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
       systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
@@ -88,6 +92,23 @@ void initUI() {
       command(UIAction.systemEventsDataUpdated, null);
     }
   );
+}
+
+void checkNeedsReplyMetricsPipelineDataFlow() {
+  var now = new DateTime.now();
+  var sortedNeedsReplyDataList = List.from(needsReplyDataList);
+  sortedNeedsReplyDataList.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  
+  var lastNeedsReplyEntry = sortedNeedsReplyDataList.where((entry)=>
+      entry.project == view.contentView.projectSelectorView.selectedProject).last;
+
+  var lastUpdateTimeDiff =  now.difference(lastNeedsReplyEntry.datetime).inHours;
+  print(lastUpdateTimeDiff);
+  if (lastUpdateTimeDiff > 1) {
+    view.contentView.conversationsCharts.forEach((chart) => chart.classes.add('stale'));
+  } else {
+    view.contentView.conversationsCharts.forEach((chart) => chart.classes.remove('stale'));
+  }
 }
 
 void command(UIAction action, Data actionData) {
@@ -117,6 +138,7 @@ void command(UIAction action, Data actionData) {
     /*** Data */
     case UIAction.projectSelected:
       view.contentView.populateUrlFilters();
+      checkNeedsReplyMetricsPipelineDataFlow();
       break;
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);

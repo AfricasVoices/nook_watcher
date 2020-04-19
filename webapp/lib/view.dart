@@ -372,11 +372,6 @@ class ContentView {
       ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
     singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
 
-    var someAlert = new AlertView();
-    someAlert.alertType = AlertViewType.danger;
-    someAlert.show();
-    conversationChartsTabContent.append(someAlert.alertElement);
-
     needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
     conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
     needsReplyTimeseries.createEmptyChart(
@@ -422,6 +417,8 @@ class ContentView {
       titleText: 'system events [pubsub_handler]',
       datasetLabels: ['restart']);
   }
+  
+  List<Element> get conversationsCharts => querySelectorAll('#conversations .chart');
 
   String get currentTabView => _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
 

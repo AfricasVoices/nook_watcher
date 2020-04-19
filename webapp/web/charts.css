@@ -12,6 +12,12 @@
   box-shadow: 0 0 20px 0 #ddd;
 }
 
+.stale {
+  background-color: #ffbbbb;
+  box-shadow: 0 0 8px 0 #e01b2d;
+  border-color: #e01b2d;
+}
+
 .chart .chart--5080 {
   height: 500px;
   width: 800px;
