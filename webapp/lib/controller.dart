@@ -103,7 +103,7 @@ void checkNeedsReplyMetricsPipelineDataFlow() {
       entry.project == view.contentView.projectSelectorView.selectedProject).last;
 
   var lastUpdateTimeDiff =  now.difference(lastNeedsReplyEntry.datetime).inHours;
-  print(lastUpdateTimeDiff);
+  
   if (lastUpdateTimeDiff > 1) {
     view.contentView.conversationsCharts.forEach((chart) => chart.classes.add('stale'));
   } else {
