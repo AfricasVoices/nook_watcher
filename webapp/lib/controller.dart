@@ -69,7 +69,6 @@ void initUI() {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
         return;
       }
-
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
       projectList.addAll(updatedData.map((m) => m.project).toSet());
@@ -91,7 +90,6 @@ void initUI() {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
         return;
       }
-      
       var updatedIds = updatedEvents.map((m) => m.id).toSet();
       var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
       systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
