@@ -1,6 +1,8 @@
 import 'dart:html';
 import 'package:chartjs/chartjs.dart' as chartjs;
 
+import 'view.dart' as view;
+
 class SingleIndicatorChartView {
   DivElement chartContainer;
   DivElement title;
@@ -158,6 +160,10 @@ class DailyTimeseriesLineChartView {
       chartData.datasets[i].data
         ..clear()
         ..addAll(timeseriesPoints);
+    }
+
+    if (view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1') {
+      chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: 'hour'));
     }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
