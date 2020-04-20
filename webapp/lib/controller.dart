@@ -78,7 +78,7 @@ void initUI() {
       
       if (periodicTimer == null) {
         checkNeedsReplyMetricsPipelineDataFlow();
-        periodicTimer = Timer.periodic(Duration(seconds: 5), (_) => checkNeedsReplyMetricsPipelineDataFlow());
+        periodicTimer = Timer.periodic(Duration(hours: 1), (_) => checkNeedsReplyMetricsPipelineDataFlow());
       } 
     }
   );
