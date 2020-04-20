@@ -44,13 +44,20 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
+
 Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 
 model.User signedInUser;
 
-Timer periodicTimer;
+List<ProjectTimer> projectTimers = [];
+
+class ProjectTimer {
+  String project;
+  Timer timer;
+  ProjectTimer(this.project, this.timer);
+}
 
 void init() async {
   view.init();
@@ -75,11 +82,7 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
-      
-      if (periodicTimer == null) {
-        checkNeedsReplyMetricsPipelineDataFlow();
-        periodicTimer = Timer.periodic(Duration(hours: 1), (_) => checkNeedsReplyMetricsPipelineDataFlow());
-      } 
+      checkNeedsReplyMetricsStale();
     }
   );
 
@@ -99,21 +102,59 @@ void initUI() {
   );
 }
 
-void checkNeedsReplyMetricsPipelineDataFlow() {
-  var sortedNeedsReplyDataList = List.from(needsReplyDataList);
-  sortedNeedsReplyDataList.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
-  var lastNeedsReplyEntry = sortedNeedsReplyDataList.where((entry)=>
-      entry.project == view.contentView.projectSelectorView.selectedProject).last;
-
-  var now = new DateTime.now();
-  var lastUpdateTimeDiff =  now.difference(lastNeedsReplyEntry.datetime).inHours;
-
-  if (lastUpdateTimeDiff > 1) {
-    view.contentView.conversationCharts.forEach((chart) => chart.classes.add('stale'));
-  } else {
-    view.contentView.conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+void setupProjectTimers() {
+  var allProjects = view.contentView.projectSelectorView.allProjects;
+  for (var project in allProjects) {
+    var timer = new Timer(Duration(hours: 1), () => view.contentView.stale = true);
+    projectTimers.add(new ProjectTimer(project, timer));
   }
-  view.contentView.chartDataLastUpdateTime.text = 'Charts Last Updated: ${lastNeedsReplyEntry.datetime}';
+}
+
+void setupProjectTimer(String project) {
+  var timer = new Timer(Duration(hours: 1), () => view.contentView.stale = true);
+  projectTimers.add(new ProjectTimer(project, timer));
+}
+
+void checkNeedsReplyMetricsStale([bool isProjectSelection = false]) {
+  List<model.NeedsReplyData> sortedNeedsReplyDataList = List.from(needsReplyDataList);
+  sortedNeedsReplyDataList.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  var allProjects = view.contentView.projectSelectorView.allProjects;
+
+  List<model.NeedsReplyData> latestDataPerProject = [];
+  for (var project in allProjects) {
+    var latestProject = sortedNeedsReplyDataList.where((entry) => entry.project == project).last;
+    latestDataPerProject.add(latestProject);
+  }
+  
+  for (var entry in latestDataPerProject) {
+    if (projectTimers.length < 1) {
+      setupProjectTimers();
+    } else {
+      var projectTimer = projectTimers.firstWhere((projectTimer) => projectTimer.project == entry.project);
+      if(projectTimer != null) {
+        projectTimer.timer.cancel();
+        setupProjectTimer(entry.project);
+      }
+    }
+  }
+
+  var selectedProjectInLatest = latestDataPerProject.firstWhere((entry) =>
+      entry.project == view.contentView.projectSelectorView.selectedProject);
+  if (selectedProjectInLatest != null) {
+    if(isProjectSelection) {
+      var now = new DateTime.now();
+      int lastUpdateTimeDiff =  now.difference(selectedProjectInLatest.datetime).inHours;
+
+      if (lastUpdateTimeDiff >= 1) {
+        view.contentView.stale = true;
+      } else {
+        view.contentView.stale = false;
+      }
+    } else {
+      view.contentView.stale = false;
+    }
+    view.contentView.chartDataLastUpdateTime.text = 'Charts Last Updated: ${selectedProjectInLatest.datetime}';
+  }
 }
 
 void command(UIAction action, Data actionData) {
@@ -143,7 +184,7 @@ void command(UIAction action, Data actionData) {
     /*** Data */
     case UIAction.projectSelected:
       view.contentView.populateUrlFilters();
-      checkNeedsReplyMetricsPipelineDataFlow();
+      checkNeedsReplyMetricsStale(true);
       break;
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);

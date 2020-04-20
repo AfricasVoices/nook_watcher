@@ -208,6 +208,8 @@ class ProjectSelectorView {
 
   String get selectedProject => _projectOptions.value;
 
+  List<String> get allProjects => _projectOptions.options.map((option) => option.value).toList();
+
   void setActiveProject (String projectName) {
     _projectOptions.value = projectName;
   }
@@ -422,8 +424,16 @@ class ContentView {
       titleText: 'system events [pubsub_handler]',
       datasetLabels: ['restart']);
   }
+
+  void set stale (bool staleState) {
+    if (staleState) {
+      _conversationCharts.forEach((chart) => chart.classes.add('stale'));
+    } else {
+      _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+    }
+  }
   
-  List<Element> get conversationCharts => querySelectorAll('#conversations .chart');
+  List<Element> get _conversationCharts => querySelectorAll('#conversations .chart');
 
   String get currentTabView => _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
 
