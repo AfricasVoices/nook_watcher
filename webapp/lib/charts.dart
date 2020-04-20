@@ -161,10 +161,8 @@ class DailyTimeseriesLineChartView {
         ..clear()
         ..addAll(timeseriesPoints);
     }
-
-    if (view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1') {
-      chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: 'hour'));
-    }
+    var isOneDayFiltered = view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1';
+    chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: (isOneDayFiltered ? 'hour' : 'day')));
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }
