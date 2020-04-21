@@ -117,14 +117,18 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   String selectedProjectName = view.contentView.projectSelectorView.selectedProject;
   var latestSelectedProjectData = getLatestDataForSelectedProject(updatedData, selectedProjectName);
 
-  var now = new DateTime.now();
-  int lastUpdateTimeDiff =  now.difference(latestSelectedProjectData.datetime).inHours;
-  
-  if (lastUpdateTimeDiff >= 1) {
-      view.contentView.stale = true;
-    } else {
-      view.contentView.stale = false;
-    }
+  if (latestSelectedProjectData != null) {
+    var now = new DateTime.now();
+    int lastUpdateTimeDiff =  now.difference(latestSelectedProjectData.datetime).inHours;
+    
+    if (lastUpdateTimeDiff >= 1) {
+        view.contentView.stale = true;
+      } else {
+        view.contentView.stale = false;
+      }
+  } else {
+    view.contentView.stale = true;
+  }
 
   var currentProjectTimer =  projectTimers[selectedProjectName];
   if (currentProjectTimer != null) {
