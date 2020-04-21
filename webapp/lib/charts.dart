@@ -145,7 +145,7 @@ class DailyTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(List<Map<DateTime, int>> updatedCountsAtTimestampList) {
+  void updateChart([List<Map<DateTime, int>> updatedCountsAtTimestampList, String timeScaleUnit = 'day']) {
     for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
       List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
@@ -159,6 +159,7 @@ class DailyTimeseriesLineChartView {
         ..clear()
         ..addAll(timeseriesPoints);
     }
+    chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: timeScaleUnit));
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }

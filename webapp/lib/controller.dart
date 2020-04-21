@@ -159,25 +159,27 @@ void command(UIAction action, Data actionData) {
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReplyDataList) {
+  var timeScaleUnit = view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1' ? 'hour' : 'day';
+
   Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime,
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-  view.contentView.needsReplyTimeseries.updateChart([data]);
+  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime,
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data]);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime,
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data]);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime,
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data]);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
   var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
