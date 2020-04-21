@@ -51,13 +51,7 @@ List<model.SystemEventsData> systemEventsDataList;
 
 model.User signedInUser;
 
-List<ProjectTimer> projectTimers = [];
-
-class ProjectTimer {
-  String project;
-  Timer timer;
-  ProjectTimer(this.project, this.timer);
-}
+Map<String, Timer> projectTimers = {};
 
 void init() async {
   view.init();
@@ -82,7 +76,7 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
-      checkNeedsReplyMetricsStale();
+      checkNeedsReplyMetricsStale(updatedData);
     }
   );
 
@@ -102,59 +96,41 @@ void initUI() {
   );
 }
 
-void setupProjectTimers() {
-  var allProjects = view.contentView.projectSelectorView.allProjects;
-  for (var project in allProjects) {
-    var timer = new Timer(Duration(hours: 1), () => view.contentView.stale = true);
-    projectTimers.add(new ProjectTimer(project, timer));
-  }
-}
-
 void setupProjectTimer(String project) {
   var timer = new Timer(Duration(hours: 1), () => view.contentView.stale = true);
-  projectTimers.add(new ProjectTimer(project, timer));
+  projectTimers[project] = timer;
 }
 
-void checkNeedsReplyMetricsStale([bool isProjectSelection = false]) {
-  List<model.NeedsReplyData> sortedNeedsReplyDataList = List.from(needsReplyDataList);
-  sortedNeedsReplyDataList.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
-  var allProjects = view.contentView.projectSelectorView.allProjects;
-
-  List<model.NeedsReplyData> latestDataPerProject = [];
-  for (var project in allProjects) {
-    var latestProject = sortedNeedsReplyDataList.where((entry) => entry.project == project).last;
-    latestDataPerProject.add(latestProject);
-  }
-
-  if (projectTimers.length < 1) {
-      setupProjectTimers();
+model.NeedsReplyData getLatestDataForSelectedProject(List<model.NeedsReplyData> updatedData, String selectedProjectName) {
+  var latestProjectData = [];
+  latestProjectData.addAll(updatedData.where((data) => data.project == selectedProjectName));
+  if (latestProjectData.isEmpty) {
+    return null;
   } else {
-    for (var entry in latestDataPerProject) {
-      var projectTimer = projectTimers.firstWhere((projectTimer) => projectTimer.project == entry.project);
-      if (projectTimer != null) {
-        projectTimer.timer.cancel();
-        setupProjectTimer(entry.project);
-      }
-    }
+    return latestProjectData.last;
   }
+}
 
-  var selectedProjectInLatest = latestDataPerProject.firstWhere((entry) =>
-      entry.project == view.contentView.projectSelectorView.selectedProject);
-  if (selectedProjectInLatest != null) {
-    if (isProjectSelection) {
-      var now = new DateTime.now();
-      int lastUpdateTimeDiff =  now.difference(selectedProjectInLatest.datetime).inHours;
+void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  
+  String selectedProjectName = view.contentView.projectSelectorView.selectedProject;
+  var latestSelectedProjectData = getLatestDataForSelectedProject(updatedData, selectedProjectName);
 
-      if (lastUpdateTimeDiff >= 1) {
-        view.contentView.stale = true;
-      } else {
-        view.contentView.stale = false;
-      }
+  var now = new DateTime.now();
+  int lastUpdateTimeDiff =  now.difference(latestSelectedProjectData.datetime).inHours;
+  
+  if (lastUpdateTimeDiff >= 1) {
+      view.contentView.stale = true;
     } else {
       view.contentView.stale = false;
     }
-    view.contentView.chartDataLastUpdateTime.text = 'Charts Last Updated: ${selectedProjectInLatest.datetime}';
+
+  var currentProjectTimer =  projectTimers[selectedProjectName];
+  if (currentProjectTimer != null) {
+    currentProjectTimer.cancel();
   }
+  setupProjectTimer(selectedProjectName);
 }
 
 void command(UIAction action, Data actionData) {
@@ -184,7 +160,10 @@ void command(UIAction action, Data actionData) {
     /*** Data */
     case UIAction.projectSelected:
       view.contentView.populateUrlFilters();
-      checkNeedsReplyMetricsStale(true);
+      var selectedProjectTimer = projectTimers[view.contentView.projectSelectorView.selectedProject];
+      if (selectedProjectTimer != null && !selectedProjectTimer.isActive) {
+        view.contentView.stale = true;
+      }
       break;
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
