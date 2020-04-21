@@ -125,13 +125,13 @@ void checkNeedsReplyMetricsStale([bool isProjectSelection = false]) {
     var latestProject = sortedNeedsReplyDataList.where((entry) => entry.project == project).last;
     latestDataPerProject.add(latestProject);
   }
-  
-  for (var entry in latestDataPerProject) {
-    if (projectTimers.length < 1) {
+
+  if (projectTimers.length < 1) {
       setupProjectTimers();
-    } else {
+  } else {
+    for (var entry in latestDataPerProject) {
       var projectTimer = projectTimers.firstWhere((projectTimer) => projectTimer.project == entry.project);
-      if(projectTimer != null) {
+      if (projectTimer != null) {
         projectTimer.timer.cancel();
         setupProjectTimer(entry.project);
       }
@@ -141,7 +141,7 @@ void checkNeedsReplyMetricsStale([bool isProjectSelection = false]) {
   var selectedProjectInLatest = latestDataPerProject.firstWhere((entry) =>
       entry.project == view.contentView.projectSelectorView.selectedProject);
   if (selectedProjectInLatest != null) {
-    if(isProjectSelection) {
+    if (isProjectSelection) {
       var now = new DateTime.now();
       int lastUpdateTimeDiff =  now.difference(selectedProjectInLatest.datetime).inHours;
 
