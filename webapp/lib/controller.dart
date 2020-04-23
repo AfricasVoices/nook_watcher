@@ -96,45 +96,76 @@ void initUI() {
   );
 }
 
-void setupProjectTimer(String project) {
-  var timer = new Timer(Duration(hours: 1), () => view.contentView.stale = true);
-  projectTimers[project] = timer;
+Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReplyData> updatedData) {
+  Map<String, model.NeedsReplyData> latestProjectData = {};
+  
+  for (var project in projectList) {
+    var data = updatedData.where((data) => data.project == project).toList();
+    
+    if (data.isEmpty) {
+      latestProjectData[project] = null;
+    } else {
+      latestProjectData[project] = data.last;
+    }
+  }
+  return latestProjectData;
 }
 
-model.NeedsReplyData getLatestDataForSelectedProject(List<model.NeedsReplyData> updatedData, String selectedProjectName) {
-  var latestProjectData = [];
-  latestProjectData.addAll(updatedData.where((data) => data.project == selectedProjectName));
-  if (latestProjectData.isEmpty) {
-    return null;
+bool isProjectStale(model.NeedsReplyData projectData) {
+  var now = new DateTime.now();
+  int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
+
+  if (lastUpdateTimeDiff >= 1) {
+      return true;
+    } else {
+      return false;
+    }
+}
+
+void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
+  for (var project in projectTimers.keys) {
+
+    if (projectTimers[project] != null) {
+      projectTimers[project].cancel();
+    }
+  }
+
+  if (stale) {
+    projectTimers[projectData.project] = null;
   } else {
-    return latestProjectData.last;
+    var timeToExecute =  projectData.datetime.add(Duration(hours: 1));
+    var now = new DateTime.now();
+    var duration = timeToExecute.difference(now);
+    var timer = new Timer(duration, () => view.contentView.stale = true);
+    projectTimers[projectData.project] = timer;
   }
 }
 
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
-  
-  String selectedProjectName = view.contentView.projectSelectorView.selectedProject;
-  var latestSelectedProjectData = getLatestDataForSelectedProject(updatedData, selectedProjectName);
 
-  if (latestSelectedProjectData != null) {
-    var now = new DateTime.now();
-    int lastUpdateTimeDiff =  now.difference(latestSelectedProjectData.datetime).inHours;
-    
-    if (lastUpdateTimeDiff >= 1) {
-        view.contentView.stale = true;
+  var selectedProjectName = view.contentView.projectSelectorView.selectedProject;
+  Map<String, model.NeedsReplyData> latestDataPerProject = getLatestDataForProjects(updatedData);
+  
+  for (var project in latestDataPerProject.keys) {
+    var projectData = latestDataPerProject[project];
+
+    if (projectData != null) {
+
+      if (isProjectStale(projectData)) {
+        setupProjectTimer(projectData, true);
       } else {
-        view.contentView.stale = false;
+        setupProjectTimer(projectData);
       }
+    }
+  }
+
+  var selectedProjectTimer = projectTimers[selectedProjectName];
+  if (selectedProjectTimer != null) {
+    view.contentView.stale = false;
   } else {
     view.contentView.stale = true;
   }
-
-  var currentProjectTimer =  projectTimers[selectedProjectName];
-  if (currentProjectTimer != null) {
-    currentProjectTimer.cancel();
-  }
-  setupProjectTimer(selectedProjectName);
 }
 
 void command(UIAction action, Data actionData) {
@@ -164,8 +195,11 @@ void command(UIAction action, Data actionData) {
     /*** Data */
     case UIAction.projectSelected:
       view.contentView.populateUrlFilters();
+
       var selectedProjectTimer = projectTimers[view.contentView.projectSelectorView.selectedProject];
-      if (selectedProjectTimer != null && !selectedProjectTimer.isActive) {
+      if (selectedProjectTimer != null) {
+        view.contentView.stale = false;
+      } else {
         view.contentView.stale = true;
       }
       break;
