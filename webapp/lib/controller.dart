@@ -197,7 +197,7 @@ void command(UIAction action, Data actionData) {
       view.contentView.populateUrlFilters();
 
       var selectedProjectTimer = projectTimers[view.contentView.projectSelectorView.selectedProject];
-      if (selectedProjectTimer != null) {
+      if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
         view.contentView.stale = false;
       } else {
         view.contentView.stale = true;
