@@ -136,7 +136,12 @@ void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
     var timeToExecute =  projectData.datetime.add(Duration(hours: 1));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
-    var timer = new Timer(duration, () => view.contentView.stale = true);
+    var timer = new Timer(duration, () => {
+        if (projectData.project == view.contentView.projectSelectorView.selectedProject) {
+          view.contentView.stale = true
+        }
+      }
+    );
     projectTimers[projectData.project] = timer;
   }
 }
