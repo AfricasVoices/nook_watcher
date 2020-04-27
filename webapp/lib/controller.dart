@@ -116,10 +116,10 @@ bool isProjectStale(model.NeedsReplyData projectData) {
   int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
 
   if (lastUpdateTimeDiff >= 1) {
-      return true;
-    } else {
-      return false;
-    }
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
