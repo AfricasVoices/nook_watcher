@@ -162,27 +162,27 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
   var timeScaleUnit = view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1' ? 'hour' : 'day';
 
   Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-    key: (item) => (item as model.NeedsReplyData).datetime,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
   view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-    key: (item) => (item as model.NeedsReplyData).datetime,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
   view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-    key: (item) => (item as model.NeedsReplyData).datetime,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
   view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
-    key: (item) => (item as model.NeedsReplyData).datetime,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
   view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
-  var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime == latestDateTime, orElse: () => null);
+  var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
 
   view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
   view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
@@ -201,12 +201,12 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       eventData.project == view.contentView.projectSelectorView.selectedProject);
   
   Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
-      key: (item) => (item as model.SystemEventsData).timestamp,
+      key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
       value: (item) => 1);
   view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
 
   data = new Map.fromIterable(pubsubEventData,
-      key: (item) => (item as model.SystemEventsData).timestamp,
+      key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
       value: (item) => 1);
   view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
 }
