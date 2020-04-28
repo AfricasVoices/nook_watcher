@@ -1,5 +1,7 @@
 library controller;
 
+import 'dart:async';
+
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -42,11 +44,14 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
+
 Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 
 model.User signedInUser;
+
+Map<String, Timer> projectTimers = {};
 
 void init() async {
   view.init();
@@ -71,6 +76,7 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
+      checkNeedsReplyMetricsStale(updatedData);
     }
   );
 
@@ -88,6 +94,77 @@ void initUI() {
       command(UIAction.systemEventsDataUpdated, null);
     }
   );
+}
+
+Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReplyData> updatedData) {
+  Map<String, model.NeedsReplyData> latestProjectData = {};
+  
+  for (var project in projectList) {
+    var data = updatedData.where((data) => data.project == project).toList();
+    
+    if (data.isEmpty) {
+      latestProjectData[project] = null;
+    } else {
+      latestProjectData[project] = data.last;
+    }
+  }
+  return latestProjectData;
+}
+
+bool isProjectStale(model.NeedsReplyData projectData) {
+  var now = new DateTime.now();
+  int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
+
+  if (lastUpdateTimeDiff >= 1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
+  projectTimers[projectData.project]?.cancel();
+
+  if (stale) {
+    projectTimers[projectData.project] = null;
+  } else {
+    var timeToExecute =  projectData.datetime.add(Duration(hours: 1));
+    var now = new DateTime.now();
+    var duration = timeToExecute.difference(now);
+    var timer = new Timer(duration, () {
+      if (projectData.project == view.contentView.projectSelectorView.selectedProject) {
+        view.contentView.stale = true;
+      }
+    });
+    projectTimers[projectData.project] = timer;
+  }
+}
+
+void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+
+  var selectedProjectName = view.contentView.projectSelectorView.selectedProject;
+  Map<String, model.NeedsReplyData> latestDataPerProject = getLatestDataForProjects(updatedData);
+  
+  for (var project in latestDataPerProject.keys) {
+    var projectData = latestDataPerProject[project];
+
+    if (projectData != null) {
+
+      if (isProjectStale(projectData)) {
+        setupProjectTimer(projectData, true);
+      } else {
+        setupProjectTimer(projectData);
+      }
+    }
+  }
+
+  var selectedProjectTimer = projectTimers[selectedProjectName];
+  if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
+    view.contentView.stale = false;
+  } else {
+    view.contentView.stale = true;
+  }
 }
 
 void command(UIAction action, Data actionData) {
@@ -117,6 +194,13 @@ void command(UIAction action, Data actionData) {
     /*** Data */
     case UIAction.projectSelected:
       view.contentView.populateUrlFilters();
+
+      var selectedProjectTimer = projectTimers[view.contentView.projectSelectorView.selectedProject];
+      if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
+        view.contentView.stale = false;
+      } else {
+        view.contentView.stale = true;
+      }
       break;
     case UIAction.needsReplyDataUpdated:
       view.contentView.projectSelectorView.populateProjects(projectList);
