@@ -123,7 +123,7 @@ bool isProjectStale(model.NeedsReplyData projectData) {
 }
 
 void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[projectData.project].cancel();
+  projectTimers[projectData.project]?.cancel();
 
   if (stale) {
     projectTimers[projectData.project] = null;
