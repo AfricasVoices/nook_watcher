@@ -160,7 +160,7 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   }
 
   var selectedProjectTimer = projectTimers[selectedProjectName];
-  if (selectedProjectTimer != null) {
+  if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
     view.contentView.stale = false;
   } else {
     view.contentView.stale = true;
