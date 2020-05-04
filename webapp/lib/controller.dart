@@ -98,10 +98,10 @@ void initUI() {
 
 Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReplyData> updatedData) {
   Map<String, model.NeedsReplyData> latestProjectData = {};
-  
+
   for (var project in projectList) {
     var data = updatedData.where((data) => data.project == project).toList();
-    
+
     if (data.isEmpty) {
       latestProjectData[project] = null;
     } else {
@@ -115,7 +115,7 @@ bool isProjectStale(model.NeedsReplyData projectData) {
   var now = new DateTime.now();
   int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
 
-  if (lastUpdateTimeDiff >= 1) {
+  if (lastUpdateTimeDiff >= 2) {
     return true;
   } else {
     return false;
@@ -128,7 +128,7 @@ void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
   if (stale) {
     projectTimers[projectData.project] = null;
   } else {
-    var timeToExecute =  projectData.datetime.add(Duration(hours: 1));
+    var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
@@ -145,7 +145,7 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
 
   var selectedProjectName = view.contentView.projectSelectorView.selectedProject;
   Map<String, model.NeedsReplyData> latestDataPerProject = getLatestDataForProjects(updatedData);
-  
+
   for (var project in latestDataPerProject.keys) {
     var projectData = latestDataPerProject[project];
 
@@ -206,7 +206,7 @@ void command(UIAction action, Data actionData) {
       view.contentView.projectSelectorView.populateProjects(projectList);
 
       List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
-      selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+      selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
 
       updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
@@ -217,7 +217,7 @@ void command(UIAction action, Data actionData) {
       updateSystemEventsCharts(systemEventsDataList);
       view.contentView.changeViewOnUrlChange();
       break;
-    
+
     case UIAction.chartsFiltered:
       view.contentView.populateUrlFilters();
 
@@ -227,12 +227,12 @@ void command(UIAction action, Data actionData) {
       DateTime filterDate = getFilteredDate(actionData);
 
       if (filterDate != null) {
-        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
             d.project == view.contentView.projectSelectorView.selectedProject &&
             d.datetime.isAfter(filterDate)).toList();
         filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate)).toList();
       } else {
-        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) => 
+        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
             d.project == view.contentView.projectSelectorView.selectedProject).toList();
         filteredSystemEventsDataList = systemEventsDataList;
       }
@@ -283,7 +283,7 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
   var pubsubEventData = filteredSystemEventsDataList.where((eventData) =>
       eventData.systemName == 'pubsub_handler' &&
       eventData.project == view.contentView.projectSelectorView.selectedProject);
-  
+
   Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
       key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
       value: (item) => 1);
