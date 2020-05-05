@@ -12,6 +12,12 @@
   box-shadow: 0 0 20px 0 #ddd;
 }
 
+.stale {
+  background-color: #ffbbbb;
+  box-shadow: 0 0 8px 0 #e01b2d;
+  border-color: #e01b2d;
+}
+
 .chart .chart--5080 {
   height: 500px;
   width: 800px;
@@ -40,4 +46,19 @@
 
 .single-indicator-container .chart {
   flex: 1 1 25%;
+}
+
+.chart-filters {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.chart-filter label{
+  margin: 10px 5px;
+  float: left;
+}
+
+#charts-last-update {
+  float: right;
+  margin: -17px 11px;
 }
