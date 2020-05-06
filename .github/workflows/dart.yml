@@ -20,6 +20,7 @@ jobs:
         pub get
     - name: Build Release
       run: |
+        cd webapp
         pub global activate webdev
         export PATH="$PATH":"$HOME/.pub-cache/bin"
         webdev build
