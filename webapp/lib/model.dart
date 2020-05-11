@@ -85,6 +85,55 @@ class SystemEventsData {
   }
 }
 
+
+class SystemMetrics {
+  String docId;
+  DateTime datetime;
+  Map<String, double> cpuLoadIntervalPercent;
+  double cpuPercent;
+  List<Map<String, Map<String, double>>> diskUsage;
+  Map<String, double> memoryUsage;
+  
+  static SystemMetrics fromSnapshot(DocSnapshot doc) =>
+      fromData(doc.data)..docId = doc.id;
+
+  static SystemMetrics fromData(Map data) {
+    if (data == null) return null;
+    return SystemMetrics()
+      ..datetime = DateTime_fromData(data['timestamp'])
+      ..cpuLoadIntervalPercent =  Map_fromData(data['cpu_load_interval_percent'], double_fromData)
+      ..cpuPercent = double_fromData(data['cpu_percent'])
+      ..diskUsage = List_fromData(data['disk_usage'], getDiskUsageData)
+      ..memoryUsage = Map_fromData(data['memory_usage'], double_fromData);
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      if (datetime != null) 'datetime': datetime.toIso8601String(),
+      if (cpuLoadIntervalPercent != null) 'cpu_load_interval_percent': cpuLoadIntervalPercent,
+      if (cpuPercent != null) 'cpu_percent': cpuPercent,
+      if (diskUsage != null) 'disk_usage': diskUsage,
+      if (memoryUsage != null) 'memory_usage': memoryUsage
+    };
+  }
+
+  static Map<String, Map<String, double>> getDiskUsageData(data) {
+    Map<String, Map<String, double>> usagePerDisk = new Map();
+    usagePerDisk[data['disk']] = {
+      'total': double_fromData(data['total']),
+      'free': double_fromData(data['free']),
+      'used': double_fromData(data['used']),
+      'percent': double_fromData(data['percent'])
+    };
+    return usagePerDisk;
+  }
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
 class User {
   String userName;
   String userEmail;
@@ -111,6 +160,17 @@ int int_fromData(data) {
   if (data is String) {
     var result = int.tryParse(data);
     if (result is int) return result;
+  }
+  log.warning('unknown int value: ${data?.toString()}');
+  return null;
+}
+
+double double_fromData(data) {
+  if (data == null) return null;
+  if (data is double) return data;
+  if (data is String) {
+    var result = double.tryParse(data);
+    if (result is double) return result;
   }
   log.warning('unknown int value: ${data?.toString()}');
   return null;
