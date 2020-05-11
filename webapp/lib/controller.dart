@@ -19,6 +19,7 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   needsReplyDataUpdated,
+  systemMetricsDataUpdated,
   systemEventsDataUpdated,
   projectSelected,
   chartsFiltered
@@ -49,7 +50,7 @@ class UserData extends Data {
 Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
-List<model.SystemMetrics> systemMetricsDataList;
+List<model.SystemMetricsData> systemMetricsDataList;
 
 model.User signedInUser;
 
@@ -64,6 +65,7 @@ void initUI() {
   projectList = {};
   needsReplyDataList = [];
   systemEventsDataList = [];
+  systemMetricsDataList = [];
 
   platform.listenForMetrics(
     NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
@@ -99,17 +101,16 @@ void initUI() {
 
   platform.listenForMetrics(
     SYSTEM_METRICS_ROOT_COLLECTION_KEY,
-    (List<model.DocSnapshot> updatedEvents) {
+    (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
         return;
       }
-      var updatedIds = updatedEvents.map((m) => m.id).toSet();
-      var updatedData = updatedEvents.map((doc) => model.SystemMetrics.fromSnapshot(doc)).toList();
-      print(updatedData.map((d)=> d.diskUsage.map((u)=> u.keys)));
+      var updatedIds = updatedMetrics.map((m) => m.id).toSet();
+      var updatedData = updatedMetrics.map((doc) => model.SystemMetricsData.fromSnapshot(doc)).toList();
       systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemMetricsDataList.addAll(updatedData);
-      command(UIAction.systemEventsDataUpdated, null);
+      command(UIAction.systemMetricsDataUpdated, null);
     }
   );
 }
@@ -226,7 +227,6 @@ void command(UIAction action, Data actionData) {
       List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
       selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
           d.project == view.contentView.projectSelectorView.selectedProject).toList();
-
       updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
       view.contentView.changeViewOnUrlChange();
       break;
@@ -235,11 +235,17 @@ void command(UIAction action, Data actionData) {
       updateSystemEventsCharts(systemEventsDataList);
       view.contentView.changeViewOnUrlChange();
       break;
+    
+    case UIAction.systemMetricsDataUpdated:
+      updateSystemMetricsCharts(systemMetricsDataList);
+      view.contentView.changeViewOnUrlChange();
+      break;
 
     case UIAction.chartsFiltered:
       view.contentView.populateUrlFilters();
 
       List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
+      List<model.SystemMetricsData> filteredSystemMetricsDataList = [];
       List<model.SystemEventsData> filteredSystemEventsDataList = [];
 
       DateTime filterDate = getFilteredDate(actionData);
@@ -248,13 +254,16 @@ void command(UIAction action, Data actionData) {
         selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
             d.project == view.contentView.projectSelectorView.selectedProject &&
             d.datetime.isAfter(filterDate)).toList();
+        filteredSystemMetricsDataList = systemMetricsDataList.where((d) => d.datetime.isAfter(filterDate)).toList();
         filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate)).toList();
       } else {
         selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
             d.project == view.contentView.projectSelectorView.selectedProject).toList();
+        filteredSystemMetricsDataList = systemMetricsDataList;
         filteredSystemEventsDataList = systemEventsDataList;
       }
       updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
+      updateSystemMetricsCharts(filteredSystemMetricsDataList);
       updateSystemEventsCharts(filteredSystemEventsDataList);
     break;
   }
@@ -311,6 +320,13 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
       value: (item) => 1);
   view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
+}
+
+void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetricsDataList) {
+  Map<DateTime, double> data = new Map.fromIterable(filteredSystemMetricsDataList,
+      key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
+      value: (item) => (item as model.SystemMetricsData).cpuPercent);
+  view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data]);
 }
 
 DateTime getFilteredDate(ChartFilterdata filterData) {
