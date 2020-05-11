@@ -11,6 +11,7 @@ Logger log = new Logger('controller.dart');
 
 final NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY = 'needs_reply_metrics';
 final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
+final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
 
 enum UIAction {
   userSignedIn,
@@ -48,6 +49,7 @@ class UserData extends Data {
 Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
+List<model.SystemMetrics> systemMetricsDataList;
 
 model.User signedInUser;
 
@@ -91,6 +93,22 @@ void initUI() {
       var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
       systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemEventsDataList.addAll(updatedData);
+      command(UIAction.systemEventsDataUpdated, null);
+    }
+  );
+
+  platform.listenForMetrics(
+    SYSTEM_METRICS_ROOT_COLLECTION_KEY,
+    (List<model.DocSnapshot> updatedEvents) {
+      if (signedInUser == null) {
+        log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
+        return;
+      }
+      var updatedIds = updatedEvents.map((m) => m.id).toSet();
+      var updatedData = updatedEvents.map((doc) => model.SystemMetrics.fromSnapshot(doc)).toList();
+      print(updatedData.map((d)=> d.diskUsage.map((u)=> u.keys)));
+      systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
+      systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemEventsDataUpdated, null);
     }
   );
