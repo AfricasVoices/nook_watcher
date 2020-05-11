@@ -319,6 +319,7 @@ class ContentView {
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
+  charts.DailyTimeseriesLineChartView cpuPercentSystemMetricsTimeseries;
   charts.SystemEventsTimeseriesLineChartView pubsubSystemEventTimeseries;
   charts.SystemEventsTimeseriesLineChartView rapidProSystemEventTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
@@ -411,6 +412,12 @@ class ContentView {
 
     systemChartsTabContent = new DivElement()
       ..id = "systems";
+
+    cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
+    cpuPercentSystemMetricsTimeseries.createEmptyChart(
+      titleText: 'CPU Percentage',
+      datasetLabels: ['CPU Percentage']);
 
     rapidProSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
     systemChartsTabContent.append(rapidProSystemEventTimeseries.chartContainer);
