@@ -86,7 +86,7 @@ class SystemEventsData {
 }
 
 
-class SystemMetrics {
+class SystemMetricsData {
   String docId;
   DateTime datetime;
   Map<String, double> cpuLoadIntervalPercent;
@@ -94,13 +94,13 @@ class SystemMetrics {
   List<Map<String, Map<String, double>>> diskUsage;
   Map<String, double> memoryUsage;
   
-  static SystemMetrics fromSnapshot(DocSnapshot doc) =>
-      fromData(doc.data)..docId = doc.id;
+  static SystemMetricsData fromSnapshot(DocSnapshot doc) =>
+    fromData(doc.data)..docId = doc.id;
 
-  static SystemMetrics fromData(Map data) {
+  static SystemMetricsData fromData(Map data) {
     if (data == null) return null;
-    return SystemMetrics()
-      ..datetime = DateTime_fromData(data['timestamp'])
+    return SystemMetricsData()
+      ..datetime = DateTime_fromData(data['datetime'])
       ..cpuLoadIntervalPercent =  Map_fromData(data['cpu_load_interval_percent'], double_fromData)
       ..cpuPercent = double_fromData(data['cpu_percent'])
       ..diskUsage = List_fromData(data['disk_usage'], getDiskUsageData)
@@ -127,6 +127,9 @@ class SystemMetrics {
     };
     return usagePerDisk;
   }
+
+  static double sizeToMB(double bytes) =>
+      (bytes / (1024.0 * 1024.0)).roundToDouble();
 
   @override
   String toString() {
