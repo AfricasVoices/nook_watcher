@@ -21,6 +21,7 @@ enum UIAction {
   signOutButtonClicked,
   needsReplyDataUpdated,
   systemMetricsDataUpdated,
+  dirSizeMetricsDataUpdated,
   systemEventsDataUpdated,
   projectSelected,
   chartsFiltered
@@ -128,6 +129,7 @@ void initUI() {
       var updatedData = updatedMetrics.map((doc) => model.DirectorySizeMetricsData.fromSnapshot(doc)).toList();
       dirSizeMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       dirSizeMetricsDataList.addAll(updatedData);
+      command(UIAction.dirSizeMetricsDataUpdated, null);
     }
   );
 }
@@ -257,6 +259,10 @@ void command(UIAction action, Data actionData) {
       updateSystemMetricsCharts(systemMetricsDataList);
       view.contentView.changeViewOnUrlChange();
       break;
+    
+    case UIAction.systemMetricsDataUpdated:
+      view.contentView.changeViewOnUrlChange();
+      break;
 
     case UIAction.chartsFiltered:
       view.contentView.populateUrlFilters();
@@ -349,7 +355,7 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) {
         var diskEntries = (item as model.SystemMetricsData).diskUsage.where((d)=> d.keys.contains('/dev/sdb4'));
-        if(!diskEntries.isEmpty) {
+        if (!diskEntries.isEmpty) {
           return model.SystemMetricsData.sizeInGB(diskEntries.first['/dev/sdb4']['used']);
         }
       });

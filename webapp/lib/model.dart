@@ -209,7 +209,7 @@ double double_fromData(data) {
     var result = double.tryParse(data);
     if (result is double) return result;
   }
-  log.warning('unknown int value: ${data?.toString()}');
+  log.warning('unknown double value: ${data?.toString()}');
   return null;
 }
 
