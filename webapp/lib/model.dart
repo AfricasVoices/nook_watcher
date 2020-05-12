@@ -137,6 +137,40 @@ class SystemMetricsData {
   }
 }
 
+class DirectorySizeMetricsData {
+  String docId;
+  String  project;
+  String dirname;
+  DateTime timestamp;
+  double sizeInMB;
+  
+  static DirectorySizeMetricsData fromSnapshot(DocSnapshot doc) =>
+      fromData(doc.data)..docId = doc.id;
+
+  static DirectorySizeMetricsData fromData(Map data) {
+    if (data == null) return null;
+    return DirectorySizeMetricsData()
+      ..project = data['project']
+      ..dirname = data['dirname']
+      ..timestamp = DateTime_fromData(data['timestamp'])
+      ..sizeInMB = double_fromData(data['size_in_mb']);
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      'project': project,
+      if (dirname != null) 'dirname': dirname,
+      if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
+      if (sizeInMB != null) 'size_in_mb': sizeInMB
+    };
+  }
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
 class User {
   String userName;
   String userEmail;
