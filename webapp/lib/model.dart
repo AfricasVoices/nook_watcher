@@ -127,9 +127,9 @@ class SystemMetricsData {
     };
     return usagePerDisk;
   }
-
-  static double sizeToMB(double bytes) =>
-      (bytes / (1024.0 * 1024.0)).roundToDouble();
+  
+  static double sizeInGB(double bytes) =>
+      double.parse((bytes / (1024.0 * 1024.0 * 1024.0)).toStringAsFixed(1));
 
   @override
   String toString() {

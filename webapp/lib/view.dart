@@ -320,6 +320,8 @@ class ContentView {
   charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView cpuPercentSystemMetricsTimeseries;
+  charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
+  charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
   charts.SystemEventsTimeseriesLineChartView pubsubSystemEventTimeseries;
   charts.SystemEventsTimeseriesLineChartView rapidProSystemEventTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
@@ -416,8 +418,20 @@ class ContentView {
     cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
-      titleText: 'CPU Percentage',
-      datasetLabels: ['CPU Percentage']);
+      titleText: 'CPU Percentage (%)',
+      datasetLabels: ['CPU Percentage (%)']);
+
+    diskUsageSystemMetricsTimeseries= new charts.DailyTimeseriesLineChartView();
+    systemChartsTabContent.append(diskUsageSystemMetricsTimeseries.chartContainer);
+    diskUsageSystemMetricsTimeseries.createEmptyChart(
+      titleText: 'Disk Usage [/dev/sdb4] (GB)',
+      datasetLabels: ['/dev/sdb4 (GB)']);
+    
+    memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
+    memoryUsageSystemMetricsTimeseries.createEmptyChart(
+      titleText: 'RAM Usage (GB)',
+      datasetLabels: ['RAM Usage (GB)']);
 
     rapidProSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
     systemChartsTabContent.append(rapidProSystemEventTimeseries.chartContainer);
