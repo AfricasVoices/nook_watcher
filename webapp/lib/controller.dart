@@ -260,7 +260,7 @@ void command(UIAction action, Data actionData) {
       view.contentView.changeViewOnUrlChange();
       break;
     
-    case UIAction.systemMetricsDataUpdated:
+    case UIAction.dirSizeMetricsDataUpdated:
       view.contentView.changeViewOnUrlChange();
       break;
 
