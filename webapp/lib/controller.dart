@@ -12,6 +12,7 @@ Logger log = new Logger('controller.dart');
 final NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY = 'needs_reply_metrics';
 final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
 final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
+final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
 enum UIAction {
   userSignedIn,
@@ -51,6 +52,7 @@ Set<String> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 List<model.SystemMetricsData> systemMetricsDataList;
+List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 
 model.User signedInUser;
 
@@ -66,6 +68,7 @@ void initUI() {
   needsReplyDataList = [];
   systemEventsDataList = [];
   systemMetricsDataList = [];
+  dirSizeMetricsDataList = [];
 
   platform.listenForMetrics(
     NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
@@ -111,6 +114,20 @@ void initUI() {
       systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
+    }
+  );
+
+  platform.listenForMetrics(
+    DIR_SIZE_METRICS_ROOT_COLLECTION_KEY,
+    (List<model.DocSnapshot> updatedMetrics) {
+      if (signedInUser == null) {
+        log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
+        return;
+      }
+      var updatedIds = updatedMetrics.map((m) => m.id).toSet();
+      var updatedData = updatedMetrics.map((doc) => model.DirectorySizeMetricsData.fromSnapshot(doc)).toList();
+      dirSizeMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
+      dirSizeMetricsDataList.addAll(updatedData);
     }
   );
 }
