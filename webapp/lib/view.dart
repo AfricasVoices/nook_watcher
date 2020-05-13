@@ -415,6 +415,18 @@ class ContentView {
     systemChartsTabContent = new DivElement()
       ..id = "systems";
 
+    rapidProSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
+    systemChartsTabContent.append(rapidProSystemEventTimeseries.chartContainer);
+    rapidProSystemEventTimeseries.createEmptyChart(
+      titleText: 'system events [rapidpro_adapter]',
+      datasetLabels: ['restart']);
+    
+    pubsubSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
+    systemChartsTabContent.append(pubsubSystemEventTimeseries.chartContainer);
+    pubsubSystemEventTimeseries.createEmptyChart(
+      titleText: 'system events [pubsub_handler]',
+      datasetLabels: ['restart']);
+
     cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
@@ -432,18 +444,6 @@ class ContentView {
     memoryUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'RAM Usage (GB)',
       datasetLabels: ['RAM Usage (GB)']);
-
-    rapidProSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
-    systemChartsTabContent.append(rapidProSystemEventTimeseries.chartContainer);
-    rapidProSystemEventTimeseries.createEmptyChart(
-      titleText: 'system events [rapidpro_adapter]',
-      datasetLabels: ['restart']);
-    
-    pubsubSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
-    systemChartsTabContent.append(pubsubSystemEventTimeseries.chartContainer);
-    pubsubSystemEventTimeseries.createEmptyChart(
-      titleText: 'system events [pubsub_handler]',
-      datasetLabels: ['restart']);
   }
 
   void set stale (bool staleState) {
