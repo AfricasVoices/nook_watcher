@@ -85,6 +85,92 @@ class SystemEventsData {
   }
 }
 
+
+class SystemMetricsData {
+  String docId;
+  DateTime datetime;
+  Map<String, double> cpuLoadIntervalPercent;
+  double cpuPercent;
+  List<Map<String, Map<String, double>>> diskUsage;
+  Map<String, double> memoryUsage;
+  
+  static SystemMetricsData fromSnapshot(DocSnapshot doc) =>
+    fromData(doc.data)..docId = doc.id;
+
+  static SystemMetricsData fromData(Map data) {
+    if (data == null) return null;
+    return SystemMetricsData()
+      ..datetime = DateTime_fromData(data['datetime'])
+      ..cpuLoadIntervalPercent =  Map_fromData(data['cpu_load_interval_percent'], double_fromData)
+      ..cpuPercent = double_fromData(data['cpu_percent'])
+      ..diskUsage = List_fromData(data['disk_usage'], getDiskUsageData)
+      ..memoryUsage = Map_fromData(data['memory_usage'], double_fromData);
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      if (datetime != null) 'datetime': datetime.toIso8601String(),
+      if (cpuLoadIntervalPercent != null) 'cpu_load_interval_percent': cpuLoadIntervalPercent,
+      if (cpuPercent != null) 'cpu_percent': cpuPercent,
+      if (diskUsage != null) 'disk_usage': diskUsage,
+      if (memoryUsage != null) 'memory_usage': memoryUsage
+    };
+  }
+
+  static Map<String, Map<String, double>> getDiskUsageData(data) {
+    Map<String, Map<String, double>> usagePerDisk = new Map();
+    usagePerDisk[data['disk']] = {
+      'total': double_fromData(data['total']),
+      'free': double_fromData(data['free']),
+      'used': double_fromData(data['used']),
+      'percent': double_fromData(data['percent'])
+    };
+    return usagePerDisk;
+  }
+  
+  static double sizeInGB(double bytes) =>
+      double.parse((bytes / (1024.0 * 1024.0 * 1024.0)).toStringAsFixed(1));
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
+class DirectorySizeMetricsData {
+  String docId;
+  String  project;
+  String dirname;
+  DateTime timestamp;
+  double sizeInMB;
+  
+  static DirectorySizeMetricsData fromSnapshot(DocSnapshot doc) =>
+      fromData(doc.data)..docId = doc.id;
+
+  static DirectorySizeMetricsData fromData(Map data) {
+    if (data == null) return null;
+    return DirectorySizeMetricsData()
+      ..project = data['project']
+      ..dirname = data['dirname']
+      ..timestamp = DateTime_fromData(data['timestamp'])
+      ..sizeInMB = double_fromData(data['size_in_mb']);
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      'project': project,
+      if (dirname != null) 'dirname': dirname,
+      if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
+      if (sizeInMB != null) 'size_in_mb': sizeInMB
+    };
+  }
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
 class User {
   String userName;
   String userEmail;
@@ -113,6 +199,17 @@ int int_fromData(data) {
     if (result is int) return result;
   }
   log.warning('unknown int value: ${data?.toString()}');
+  return null;
+}
+
+double double_fromData(data) {
+  if (data == null) return null;
+  if (data is double) return data;
+  if (data is String) {
+    var result = double.tryParse(data);
+    if (result is double) return result;
+  }
+  log.warning('unknown double value: ${data?.toString()}');
   return null;
 }
 
