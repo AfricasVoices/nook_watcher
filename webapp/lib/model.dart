@@ -91,7 +91,7 @@ class SystemMetricsData {
   DateTime datetime;
   Map<String, double> cpuLoadIntervalPercent;
   double cpuPercent;
-  List<Map<String, Map<String, double>>> diskUsage;
+  Map<String, double> diskUsage;
   Map<String, double> memoryUsage;
   
   static SystemMetricsData fromSnapshot(DocSnapshot doc) =>
@@ -103,7 +103,7 @@ class SystemMetricsData {
       ..datetime = DateTime_fromData(data['datetime'])
       ..cpuLoadIntervalPercent =  Map_fromData(data['cpu_load_interval_percent'], double_fromData)
       ..cpuPercent = double_fromData(data['cpu_percent'])
-      ..diskUsage = List_fromData(data['disk_usage'], getDiskUsageData)
+      ..diskUsage = Map_fromData(data['disk_usage'], double_fromData)
       ..memoryUsage = Map_fromData(data['memory_usage'], double_fromData);
   }
 
@@ -115,17 +115,6 @@ class SystemMetricsData {
       if (diskUsage != null) 'disk_usage': diskUsage,
       if (memoryUsage != null) 'memory_usage': memoryUsage
     };
-  }
-
-  static Map<String, Map<String, double>> getDiskUsageData(data) {
-    Map<String, Map<String, double>> usagePerDisk = new Map();
-    usagePerDisk[data['disk']] = {
-      'total': double_fromData(data['total']),
-      'free': double_fromData(data['free']),
-      'used': double_fromData(data['used']),
-      'percent': double_fromData(data['percent'])
-    };
-    return usagePerDisk;
   }
   
   static double sizeInGB(double bytes) =>

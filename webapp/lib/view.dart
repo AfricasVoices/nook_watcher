@@ -436,8 +436,8 @@ class ContentView {
     diskUsageSystemMetricsTimeseries= new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(diskUsageSystemMetricsTimeseries.chartContainer);
     diskUsageSystemMetricsTimeseries.createEmptyChart(
-      titleText: 'Disk Usage [/dev/sdb4] (GB)',
-      datasetLabels: ['/dev/sdb4 (GB)']);
+      titleText: 'Disk Usage (GB)',
+      datasetLabels: ['Disk Usage (GB)']);
     
     memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
