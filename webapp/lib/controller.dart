@@ -353,12 +353,7 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
-      value: (item) {
-        var diskEntries = (item as model.SystemMetricsData).diskUsage.where((d)=> d.keys.contains('/dev/sdb4'));
-        if (!diskEntries.isEmpty) {
-          return model.SystemMetricsData.sizeInGB(diskEntries.first['/dev/sdb4']['used']);
-        }
-      });
+      value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).diskUsage['used']));
   view.contentView.diskUsageSystemMetricsTimeseries.updateChart([data]);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
