@@ -164,8 +164,8 @@ class DailyTimeseriesLineChartView {
   }
 }
 
- class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
-   @override void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
+class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
+  @override void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
     List<chartjs.ChartDataSets> chartDatasets = [];
@@ -204,10 +204,10 @@ class DailyTimeseriesLineChartView {
     var chartConfig = new chartjs.ChartConfiguration(type: 'line', data: chartData, options: chartOptions);
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
- }
+}
 
- class SystemMetricsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
-   @override void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit}) {
+class SystemMetricsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
+  @override void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit}) {
     for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
       List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
@@ -227,4 +227,4 @@ class DailyTimeseriesLineChartView {
                                               ..max= upperLimit);
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
- }
+}
