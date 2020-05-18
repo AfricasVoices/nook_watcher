@@ -332,12 +332,12 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
   if (filteredSystemEventsDataList.isEmpty) return;
-
+  
   var rapidProEventData = filteredSystemEventsDataList.where((eventData) =>
-      eventData.systemName == 'rapidpro_adapter' &&
+      (eventData.systemName == 'rapidpro_adapter' || eventData.systemName == 'rapidpro_adapter.sh') &&
       eventData.project == view.contentView.projectSelectorView.selectedProject);
   var pubsubEventData = filteredSystemEventsDataList.where((eventData) =>
-      eventData.systemName == 'pubsub_handler' &&
+      (eventData.systemName == 'pubsub_handler' || eventData.systemName == 'pubsub_handler.sh') &&
       eventData.project == view.contentView.projectSelectorView.selectedProject);
 
   Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
