@@ -53,6 +53,10 @@
   margin-bottom: auto;
 }
 
+.chart-filters.hidden {
+  visibility: hidden;
+}
+
 .chart-filter label{
   margin: 10px 5px;
   float: left;
