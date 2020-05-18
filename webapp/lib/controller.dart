@@ -49,7 +49,7 @@ class UserData extends Data {
 }
 
 
-Set<String> projectList;
+Map<String, Set> projectList;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 List<model.SystemMetricsData> systemMetricsDataList;
@@ -80,7 +80,7 @@ void initUI() {
       }
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
-      projectList.addAll(updatedData.map((m) => m.project).toSet());
+      projectList[NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY] = updatedData.map((m) => m.project).toSet();
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
@@ -97,7 +97,7 @@ void initUI() {
       }
       var updatedIds = updatedEvents.map((m) => m.id).toSet();
       var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
-      projectList.addAll(updatedData.map((m) => m.project).toSet());
+      projectList[SYSTEM_EVENTS_ROOT_COLLECTION_KEY] = updatedData.map((m) => m.project).toSet();
       systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemEventsDataList.addAll(updatedData);
       command(UIAction.systemEventsDataUpdated, null);
@@ -138,7 +138,7 @@ void initUI() {
 Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReplyData> updatedData) {
   Map<String, model.NeedsReplyData> latestProjectData = {};
 
-  for (var project in projectList) {
+  for (var project in projectList[NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY]) {
     var data = updatedData.where((data) => data.project == project).toList();
 
     if (data.isEmpty) {
@@ -295,6 +295,8 @@ void command(UIAction action, Data actionData) {
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReplyDataList) {
+  if (selectedProjectNeedsReplyDataList.isEmpty) return;
+
   var timeScaleUnit = view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1' ? 'hour' : 'day';
 
   Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
@@ -329,6 +331,8 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
 }
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
+  if (filteredSystemEventsDataList.isEmpty) return;
+
   var rapidProEventData = filteredSystemEventsDataList.where((eventData) =>
       eventData.systemName == 'rapidpro_adapter' &&
       eventData.project == view.contentView.projectSelectorView.selectedProject);

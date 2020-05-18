@@ -214,12 +214,20 @@ class ProjectSelectorView {
     _projectOptions.value = projectName;
   }
 
-  void populateProjects(Set<String> options) {
+  void populateProjects(Map<String, Set> projectList) {
+    if (projectList == null) return;
+
+    _projectOptions.children.clear();
+    var options;
+
+    if (contentView?.currentTabView == 'conversations') {
+      options = projectList[controller.NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY];
+    } else if (contentView?.currentTabView == 'systems') {
+      options = projectList[controller.SYSTEM_EVENTS_ROOT_COLLECTION_KEY];
+    }
+
     for (var option in options) {
-      
-      if (_projectOptions.children.where((opt) => (opt as OptionElement).value == option).length > 0)
-        continue;
-        
+
       var optionElement =  new OptionElement()
         ..text = option
         ..value = option;
@@ -472,6 +480,7 @@ class ContentView {
         _conversationTabLink.classes.add('active');
       break;
     }
+    if (currentTabView != null ) projectSelectorView.populateProjects(controller.projectList);
   }
 
   void populateUrlFilters() {
