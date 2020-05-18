@@ -97,6 +97,7 @@ void initUI() {
       }
       var updatedIds = updatedEvents.map((m) => m.id).toSet();
       var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
+      projectList.addAll(updatedData.map((m) => m.project).toSet());
       systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemEventsDataList.addAll(updatedData);
       command(UIAction.systemEventsDataUpdated, null);
@@ -251,6 +252,7 @@ void command(UIAction action, Data actionData) {
       break;
 
     case UIAction.systemEventsDataUpdated:
+    view.contentView.projectSelectorView.populateProjects(projectList);
       updateSystemEventsCharts(systemEventsDataList);
       view.contentView.changeViewOnUrlChange();
       break;
