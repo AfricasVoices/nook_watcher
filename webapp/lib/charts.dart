@@ -145,7 +145,7 @@ class DailyTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart([List<Map<DateTime, num>> updatedCountsAtTimestampList, String timeScaleUnit = 'day']) {
+  void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day'}) {
     for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
       List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
@@ -203,5 +203,28 @@ class DailyTimeseriesLineChartView {
 
     var chartConfig = new chartjs.ChartConfiguration(type: 'line', data: chartData, options: chartOptions);
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
+  }
+ }
+
+ class SystemMetricsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
+   @override void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit}) {
+    for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
+      List<chartjs.ChartPoint> timeseriesPoints = [];
+      List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
+        ..sort((t1, t2) => t1.compareTo(t2));
+      for (var datetime in sortedDateTimes) {
+        var value = updatedCountsAtTimestampList[i][datetime];
+        timeseriesPoints.add(
+            new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
+      }
+      chartData.datasets[i].data
+        ..clear()
+        ..addAll(timeseriesPoints);
+    }
+    chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: timeScaleUnit));
+    chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
+                                              ..beginAtZero = true
+                                              ..max= upperLimit);
+    chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
  }
