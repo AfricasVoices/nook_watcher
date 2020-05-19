@@ -298,22 +298,22 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
   Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit);
+  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
   data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
   var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
@@ -349,17 +349,20 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   Map<DateTime, double> data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => (item as model.SystemMetricsData).cpuPercent);
-  view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data]);
+  int maxPercentage = 100;
+  view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data], upperLimit: maxPercentage);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).diskUsage['used']));
-  view.contentView.diskUsageSystemMetricsTimeseries.updateChart([data]);
+  double maxDiskSpace = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.diskUsage['total']);
+  view.contentView.diskUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxDiskSpace);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).memoryUsage['used']));
-  view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data]);
+  double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['available']);
+  view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
 }
 
 DateTime getFilteredDate(ChartFilterdata filterData) {

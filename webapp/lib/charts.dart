@@ -145,7 +145,7 @@ class DailyTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart([List<Map<DateTime, num>> updatedCountsAtTimestampList, String timeScaleUnit = 'day']) {
+  void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit}) {
     for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
       List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
@@ -160,12 +160,18 @@ class DailyTimeseriesLineChartView {
         ..addAll(timeseriesPoints);
     }
     chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: timeScaleUnit));
+    if (upperLimit != null) {
+      chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
+                                              ..beginAtZero = true
+                                              ..max = upperLimit);
+    }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }
 
- class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
-   @override void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
+class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
+  @override 
+  void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
     List<chartjs.ChartDataSets> chartDatasets = [];
@@ -204,4 +210,4 @@ class DailyTimeseriesLineChartView {
     var chartConfig = new chartjs.ChartConfiguration(type: 'line', data: chartData, options: chartOptions);
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
- }
+}
