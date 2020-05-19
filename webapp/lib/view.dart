@@ -319,9 +319,9 @@ class ContentView {
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
-  charts.SystemMetricsTimeseriesLineChartView cpuPercentSystemMetricsTimeseries;
-  charts.SystemMetricsTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
-  charts.SystemMetricsTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
+  charts.DailyTimeseriesLineChartView cpuPercentSystemMetricsTimeseries;
+  charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
+  charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
   charts.SystemEventsTimeseriesLineChartView pubsubSystemEventTimeseries;
   charts.SystemEventsTimeseriesLineChartView rapidProSystemEventTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
@@ -427,19 +427,19 @@ class ContentView {
       titleText: 'system events [pubsub_handler]',
       datasetLabels: ['restart']);
 
-    cpuPercentSystemMetricsTimeseries = new charts.SystemMetricsTimeseriesLineChartView();
+    cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
       titleText: 'CPU Percentage (%)',
       datasetLabels: ['CPU Percentage (%)']);
 
-    diskUsageSystemMetricsTimeseries= new charts.SystemMetricsTimeseriesLineChartView();
+    diskUsageSystemMetricsTimeseries= new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(diskUsageSystemMetricsTimeseries.chartContainer);
     diskUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'Disk Usage (GB)',
       datasetLabels: ['Disk Usage (GB)']);
     
-    memoryUsageSystemMetricsTimeseries = new charts.SystemMetricsTimeseriesLineChartView();
+    memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
     memoryUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'RAM Usage (GB)',
