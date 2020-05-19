@@ -252,7 +252,7 @@ void command(UIAction action, Data actionData) {
       break;
 
     case UIAction.systemEventsDataUpdated:
-    view.contentView.projectSelectorView.populateProjects(projectList);
+      view.contentView.projectSelectorView.populateProjects(projectList);
       updateSystemEventsCharts(systemEventsDataList);
       view.contentView.changeViewOnUrlChange();
       break;
