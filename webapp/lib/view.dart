@@ -480,7 +480,7 @@ class ContentView {
         _conversationTabLink.classes.add('active');
       break;
     }
-    if (currentTabView != null) projectSelectorView.populateProjects(controller.projectList);
+    projectSelectorView.populateProjects(controller.projectList);
   }
 
   void populateUrlFilters() {
