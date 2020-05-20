@@ -1,8 +1,10 @@
 name: Nook Watcher CI
 
 on:
-  pull_request:
-    branches: [ master ]
+  push:
+    branches: [ fix-system-events-charts-data ]
+    paths:
+      'webapp/**'
 
 jobs:
   build:
