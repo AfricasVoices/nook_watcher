@@ -295,8 +295,6 @@ void command(UIAction action, Data actionData) {
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReplyDataList) {
-  if (selectedProjectNeedsReplyDataList.isEmpty) return;
-
   var timeScaleUnit = view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1' ? 'hour' : 'day';
 
   Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
@@ -331,8 +329,6 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
 }
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
-  if (filteredSystemEventsDataList.isEmpty) return;
-  
   var rapidProEventData = filteredSystemEventsDataList.where((eventData) =>
       (eventData.systemName == 'rapidpro_adapter' || eventData.systemName == 'rapidpro_adapter.sh') &&
       eventData.project == view.contentView.projectSelectorView.selectedProject);
