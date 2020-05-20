@@ -478,7 +478,7 @@ class ContentView {
 
   void populateUrlFilters() {
     var selectedProject = projectSelectorView.selectedProject;
-    var periodFilter = ChartFiltersView().selectedPeriodFilter.split('.')[1];
+    var periodFilters = ChartFiltersView().selectedPeriodFilter.split('.')[1];
     UrlView.setPageUrlFilters({'type': currentTabView, 'project': selectedProject, 'period-filter': periodFilter});
   }
 
