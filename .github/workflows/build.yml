@@ -2,7 +2,7 @@ name: Nook Watcher CI
 
 on:
   push:
-    branches: [ fix-system-events-charts-data ]
+    branches: [ refactor-github-actions ]
     paths:
       'webapp/**'
 
