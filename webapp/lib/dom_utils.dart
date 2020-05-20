@@ -6,5 +6,5 @@ List<Element> getAncestors(Element element) {
     ancestors.add(element);
     element = element.parent;
   }
-  return ancestors;
+  return ancestor;
 }
