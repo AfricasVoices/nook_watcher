@@ -1,8 +1,8 @@
 name: Nook Watcher CI
 
 on:
-  push:
-    branches: [ refactor-github-actions ]
+  pull_request:
+    branches: [ master ]
     paths:
       'webapp/**'
 
