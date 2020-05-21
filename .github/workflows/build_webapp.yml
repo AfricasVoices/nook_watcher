@@ -3,6 +3,8 @@ name: Nook Watcher CI
 on:
   pull_request:
     branches: [ master ]
+    paths:
+    - 'webapp/**'
 
 jobs:
   build:
