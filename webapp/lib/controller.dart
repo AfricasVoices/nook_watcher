@@ -324,6 +324,11 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
   view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
 
   view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+
+  var selectedNeedsReplyEntries = selectedProjectNeedsReplyDataList;
+  selectedNeedsReplyEntries.sort((a, b) => a.datetime.compareTo(b.datetime));
+  DateTime lastUpdateTime = selectedNeedsReplyEntries.last.datetime;
+  view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
 }
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
