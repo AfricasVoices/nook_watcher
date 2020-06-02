@@ -202,30 +202,22 @@ class ProjectSelectorView {
       ..id = 'project-selector';
     _projectOptions = new SelectElement();
     _projectOptions.onChange.listen((_) {
-      controller.command(controller.UIAction.projectSelected, null);
-      ChartFiltersView().filterChartsByPeriod();
+      controller.command(controller.UIAction.projectSelected, new controller.ProjectData(_projectOptions.value));
     });
     projectSelector.append(_projectOptions);
   }
 
   String get selectedProject => _projectOptions.value;
 
-  List<String> get allProjects => _projectOptions.options.map((option) => option.value).toList();
+  void set selectedProject (String projectName) => _projectOptions.value = projectName;
 
-  void setActiveProject (String projectName) {
-    _projectOptions.value = projectName;
-  }
-
-  void populateProjects(Set<String> options) {
+  set projectOptions(List<String> options) {
+    _projectOptions.children.clear();
     for (var option in options) {
-      
-      if (_projectOptions.children.where((opt) => (opt as OptionElement).value == option).length > 0)
-        continue;
-        
-      var optionElement =  new OptionElement()
+      var optionElement = new OptionElement()
         ..text = option
         ..value = option;
-      _projectOptions.children.add(optionElement);
+      _projectOptions.add(optionElement, null);
     }
   }
 }
@@ -247,38 +239,29 @@ class ChartFiltersView {
     _singleFilterSpan = new DivElement()..classes.add('chart-filter');
     _periodFilterTitle = new LabelElement()..text = 'Period:';
     _periodFilter = new SelectElement()..classes.add('period-filter');
-    _periodFilter.children.addAll(_getPeriodFilterOptions());
-    _periodFilter.onChange.listen((_) => filterChartsByPeriod());
+    _periodFilter.onChange.listen((_) => controller.command(controller.UIAction.chartsFiltered, new controller.ChartFilterData(selectedPeriodFilter)));
     _singleFilterSpan.append(_periodFilterTitle);
     _singleFilterSpan.append(_periodFilter);
     chartFiltersContainer.append(_singleFilterSpan);
   }
 
-  String get selectedPeriodFilter => _periodFilter.value;
-  
-  void setActiveChartPeriodFilter (String periodFilterLabel) {
-    _periodFilter.value = periodFilterLabel;
-    filterChartsByPeriod();
-  }
+  controller.ChartPeriodFilters get selectedPeriodFilter =>
+      controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == _periodFilter.value);
 
-  void filterChartsByPeriod() {
-    var periodFilter = controller.ChartPeriodFilters.values.firstWhere((filter) => filter.toString() == selectedPeriodFilter);
-    var filterData = new controller.ChartFilterdata()..periodFilter = periodFilter;
-    controller.command(controller.UIAction.chartsFiltered, filterData);
-  }
+  void set selectedPeriodFilter (controller.ChartPeriodFilters periodFilter) =>
+      _periodFilter.value = periodFilter.toString();
 
-  List<OptionElement> _getPeriodFilterOptions() {
-    List<OptionElement> periodsOptions = [];
-    for (var filter in controller.ChartPeriodFilters.values) {
+  set periodFilterOptions(List<controller.ChartPeriodFilters> options) {
+    _periodFilter.children.clear();
+    for (var option in options) {
       var optionElement = new OptionElement()
-        ..text = _periodFilterValue(filter)
-        ..value = filter.toString();
-      periodsOptions.add(optionElement);
+        ..text = _periodFilterValue(option)
+        ..value = option.toString();
+      _periodFilter.add(optionElement, null);
     }
-    return periodsOptions;
   }
 
-  String _periodFilterValue (controller.ChartPeriodFilters filter) { 
+  String _periodFilterValue (controller.ChartPeriodFilters filter) {
     String filteredValue;
     switch (filter) {
       case controller.ChartPeriodFilters.alltime:
@@ -337,28 +320,20 @@ class ContentView {
       ..classes.addAll(['tabs', 'hidden']);
     _conversationTabLink = new ButtonElement()
       ..text = "Conversations"
-      ..onClick.listen((_) {
-        toogleTabView(ChartType.conversation);
-        populateUrlFilters();
-      });
+      ..onClick.listen((_) => controller.command(controller.UIAction.tabSwitched, new controller.ChartTypeData(controller.ChartType.conversation)));
     tabElement.append(_conversationTabLink);
 
     _systemTabLink = new ButtonElement()
       ..text = "Systems"
-      ..onClick.listen((_) {
-        toogleTabView(ChartType.system);
-        populateUrlFilters();
-      });
+      ..onClick.listen((_) => controller.command(controller.UIAction.tabSwitched, new controller.ChartTypeData(controller.ChartType.system)));
     tabElement.append(_systemTabLink);
     headerElement.insertAdjacentElement('afterBegin', tabElement);
 
     contentElement = new DivElement()
       ..classes.add('charts');
-    
+
     conversationChartsTabContent = new DivElement()
       ..id = "conversations";
-    
-    toogleTabView(ChartType.conversation); // Default Chart View
 
     var singleIndicators = new DivElement()
       ..classes.add('single-indicator-container');
@@ -422,7 +397,7 @@ class ContentView {
     rapidProSystemEventTimeseries.createEmptyChart(
       titleText: 'system events [rapidpro_adapter]',
       datasetLabels: ['restart']);
-    
+
     pubsubSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
     systemChartsTabContent.append(pubsubSystemEventTimeseries.chartContainer);
     pubsubSystemEventTimeseries.createEmptyChart(
@@ -440,7 +415,7 @@ class ContentView {
     diskUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'Disk Usage (GB)',
       datasetLabels: ['Disk Usage (GB)']);
-    
+
     memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
     memoryUsageSystemMetricsTimeseries.createEmptyChart(
@@ -455,85 +430,46 @@ class ContentView {
       _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
     }
   }
-  
+
   List<Element> get _conversationCharts => querySelectorAll('#conversations .chart');
 
-  String get currentTabView => _conversationTabLink.classes.contains('active') ? 'conversations' : 'systems';
-
-  void toogleTabView(ChartType chartType) {
+  void toogleTabView(controller.ChartType chartType) {
     contentElement.children.clear();
     _systemTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
-    switch(chartType) {
-      case ChartType.system:
+    switch (chartType) {
+      case controller.ChartType.system:
         contentElement.append(systemChartsTabContent);
         _systemTabLink.classes.add('active');
       break;
-      case ChartType.conversation:
+      case controller.ChartType.conversation:
         contentElement.append(conversationChartsTabContent);
         _conversationTabLink.classes.add('active');
       break;
     }
   }
 
-  void populateUrlFilters() {
-    var selectedProject = projectSelectorView.selectedProject;
-    var periodFilter = ChartFiltersView().selectedPeriodFilter.split('.')[1];
-    UrlView.setPageUrlFilters({'type': currentTabView, 'project': selectedProject, 'period-filter': periodFilter});
+  void setUrlFilters(controller.ChartType type, String project, controller.ChartPeriodFilters periodFilter) {
+    UrlView.setPageUrlFilters({
+      'type': type.toString().split('.')[1],
+      'project': project,
+      'period-filter': periodFilter.toString().split('.')[1]
+    });
   }
 
-  void changeViewOnUrlChange() {
-    var urlFilters = UrlView.getPageUrlFilters();
-
-    if (urlFilters.isEmpty) {
-      populateUrlFilters();
-      return;
-    }
-
-    if (urlFilters['type'] != null) {
-      
-      switch (urlFilters['type']) {
-        case 'conversations': 
-          toogleTabView(ChartType.conversation);
-          break;
-        case 'systems': 
-          toogleTabView(ChartType.system);
-          break;
-      }
-    }
-
-    if (urlFilters['project'] != null) {
-      projectSelectorView.setActiveProject(urlFilters['project']);
-    }
-
-    if (urlFilters['period-filter'] != null) {
-      var period;
-
-      switch (urlFilters['period-filter']) {
-        case 'alltime':
-          period = 'ChartPeriodFilters.alltime';
-          break;
-        case 'days1':
-          period = 'ChartPeriodFilters.days1';
-          break;
-        case 'days8':
-          period = 'ChartPeriodFilters.days8';
-          break;
-        case 'days15':
-          period = 'ChartPeriodFilters.days15';
-          break;
-        case 'month1':
-          period = 'ChartPeriodFilters.month1';
-          break;
-      }
-      ChartFiltersView().setActiveChartPeriodFilter(period);
-    }
+  controller.ChartType getChartTypeUrlFilter() {
+    String type = UrlView.getPageUrlFilters()['type'];
+    return controller.ChartType.values.singleWhere((v) => v.toString() == 'ChartType.$type', orElse: () => null);
   }
-}
 
-enum ChartType {
-  system,
-  conversation
+  String getProjectFilter() {
+    return UrlView.getPageUrlFilters()['project'];
+  }
+
+  controller.ChartPeriodFilters getChartPeriodFilter() {
+    String periodFilter = UrlView.getPageUrlFilters()['period-filter'];
+    return controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == 'ChartPeriodFilters.$periodFilter', orElse: () => null);
+  }
 }
 
 enum SnackbarNotificationType {
