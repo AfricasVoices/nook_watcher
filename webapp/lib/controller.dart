@@ -24,7 +24,8 @@ enum UIAction {
   dirSizeMetricsDataUpdated,
   systemEventsDataUpdated,
   projectSelected,
-  chartsFiltered
+  chartsFiltered,
+  tabSwitched,
 }
 
 enum ChartPeriodFilters {
@@ -35,10 +36,26 @@ enum ChartPeriodFilters {
   month1,
 }
 
+enum ChartType {
+  system,
+  conversation
+}
+
 class Data {}
 
-class ChartFilterdata extends Data {
+class ChartFilterData extends Data {
   ChartPeriodFilters periodFilter;
+  ChartFilterData(this.periodFilter);
+}
+
+class ChartTypeData extends Data {
+  ChartType chartType;
+  ChartTypeData(this.chartType);
+}
+
+class ProjectData extends Data {
+  String project;
+  ProjectData(this.project);
 }
 
 class UserData extends Data {
@@ -54,6 +71,10 @@ List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 List<model.SystemMetricsData> systemMetricsDataList;
 List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
+
+ChartType selectedTab;
+String selectedProject;
+ChartPeriodFilters selectedPeriodFilter;
 
 model.User signedInUser;
 
@@ -71,6 +92,17 @@ void initUI() {
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
 
+  selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
+  view.contentView.toogleTabView(selectedTab);
+
+  selectedPeriodFilter = view.contentView.getChartPeriodFilter() ?? ChartPeriodFilters.alltime;
+  view.ChartFiltersView().periodFilterOptions = ChartPeriodFilters.values;
+  view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
+
+  selectedProject = view.contentView.getProjectFilter();
+
+  view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+
   platform.listenForMetrics(
     NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
     (List<model.DocSnapshot> updatedMetrics) {
@@ -80,9 +112,19 @@ void initUI() {
       }
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
-      projectList.addAll(updatedData.map((m) => m.project).toSet());
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
+
+      // Update project list and selected project if it's the first time
+      projectList.addAll(updatedData.map((m) => m.project).toSet());
+      if (selectedProject == null || !projectList.contains(selectedProject)) {
+        selectedProject = projectList.first;
+      }
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      view.contentView.projectSelectorView.projectOptions = projectList.toList();
+      view.contentView.projectSelectorView.selectedProject = selectedProject;
+
+      // Update charts
       command(UIAction.needsReplyDataUpdated, null);
       checkNeedsReplyMetricsStale(updatedData);
     }
@@ -170,7 +212,7 @@ void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      if (projectData.project == view.contentView.projectSelectorView.selectedProject) {
+      if (projectData.project == selectedProject) {
         view.contentView.stale = true;
       }
     });
@@ -181,7 +223,7 @@ void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var selectedProjectName = view.contentView.projectSelectorView.selectedProject;
+  var selectedProjectName = selectedProject;
   Map<String, model.NeedsReplyData> latestDataPerProject = getLatestDataForProjects(updatedData);
 
   for (var project in latestDataPerProject.keys) {
@@ -230,93 +272,125 @@ void command(UIAction action, Data actionData) {
       break;
 
     /*** Data */
-    case UIAction.projectSelected:
-      view.contentView.populateUrlFilters();
+    case UIAction.needsReplyDataUpdated:
+      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      break;
 
-      var selectedProjectTimer = projectTimers[view.contentView.projectSelectorView.selectedProject];
+    case UIAction.systemEventsDataUpdated:
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      break;
+
+    case UIAction.systemMetricsDataUpdated:
+      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      break;
+
+    case UIAction.dirSizeMetricsDataUpdated:
+      break;
+
+    /*** Filtering */
+    case UIAction.tabSwitched:
+      ChartTypeData tabData = actionData;
+      selectedTab = tabData.chartType;
+      view.contentView.toogleTabView(selectedTab);
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      break;
+
+    case UIAction.projectSelected:
+      ProjectData projectData = actionData;
+      selectedProject = projectData.project;
+      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      // skip updating the system metrics as these are project independent
+
+      var selectedProjectTimer = projectTimers[selectedProject];
       if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
         view.contentView.stale = false;
       } else {
         view.contentView.stale = true;
       }
-      break;
-    case UIAction.needsReplyDataUpdated:
-      view.contentView.projectSelectorView.populateProjects(projectList);
-
-      List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
-      selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
-          d.project == view.contentView.projectSelectorView.selectedProject).toList();
-      updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
-      view.contentView.changeViewOnUrlChange();
-      break;
-
-    case UIAction.systemEventsDataUpdated:
-      updateSystemEventsCharts(systemEventsDataList);
-      view.contentView.changeViewOnUrlChange();
-      break;
-    
-    case UIAction.systemMetricsDataUpdated:
-      updateSystemMetricsCharts(systemMetricsDataList);
-      view.contentView.changeViewOnUrlChange();
-      break;
-    
-    case UIAction.dirSizeMetricsDataUpdated:
-      view.contentView.changeViewOnUrlChange();
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       break;
 
     case UIAction.chartsFiltered:
-      view.contentView.populateUrlFilters();
-
-      List<model.NeedsReplyData> selectedProjectNeedsReplyDataList = [];
-      List<model.SystemMetricsData> filteredSystemMetricsDataList = [];
-      List<model.SystemEventsData> filteredSystemEventsDataList = [];
-
-      DateTime filterDate = getFilteredDate(actionData);
-
-      if (filterDate != null) {
-        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
-            d.project == view.contentView.projectSelectorView.selectedProject &&
-            d.datetime.isAfter(filterDate)).toList();
-        filteredSystemMetricsDataList = systemMetricsDataList.where((d) => d.datetime.isAfter(filterDate)).toList();
-        filteredSystemEventsDataList = systemEventsDataList.where((d) => d.timestamp.isAfter(filterDate)).toList();
-      } else {
-        selectedProjectNeedsReplyDataList = needsReplyDataList.where((d) =>
-            d.project == view.contentView.projectSelectorView.selectedProject).toList();
-        filteredSystemMetricsDataList = systemMetricsDataList;
-        filteredSystemEventsDataList = systemEventsDataList;
-      }
-      updateNeedsReplyCharts(selectedProjectNeedsReplyDataList);
-      updateSystemMetricsCharts(filteredSystemMetricsDataList);
-      updateSystemEventsCharts(filteredSystemEventsDataList);
-    break;
+      ChartFilterData chartFilterData = actionData;
+      selectedPeriodFilter = chartFilterData.periodFilter;
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      break;
   }
 }
 
-void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReplyDataList) {
-  var timeScaleUnit = view.ChartFiltersView().selectedPeriodFilter == 'ChartPeriodFilters.days1' ? 'hour' : 'day';
+List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needsReplyData) {
+  List<model.NeedsReplyData> filteredNeedsReplyData = [];
 
-  Map<DateTime, int> data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
+  if (filterDate != null) {
+    filteredNeedsReplyData = needsReplyData.where((d) =>
+        d.project == selectedProject &&
+        d.datetime.isAfter(filterDate)).toList();
+  } else {
+    filteredNeedsReplyData = needsReplyData.where((d) =>
+        d.project == selectedProject).toList();
+  }
+  return filteredNeedsReplyData;
+}
+
+List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsData> systemMetricsData) {
+  List<model.SystemMetricsData> filteredSystemMetricsDataList = [];
+
+  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
+  if (filterDate != null) {
+    filteredSystemMetricsDataList = systemMetricsDataList.where((d) =>
+        d.datetime.isAfter(filterDate)).toList();
+  } else {
+    filteredSystemMetricsDataList = systemMetricsDataList;
+  }
+  return filteredSystemMetricsDataList;
+}
+
+List<model.SystemEventsData> filterSystemEventsData(List<model.SystemEventsData> systemEventsData) {
+  List<model.SystemEventsData> filteredSystemEventsDataList = [];
+
+  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
+
+  if (filterDate != null) {
+    filteredSystemEventsDataList = systemEventsData.where((d) =>
+        d.project == selectedProject &&
+        d.timestamp.isAfter(filterDate)).toList();
+  } else {
+    filteredSystemEventsDataList = systemEventsData.where((d) =>
+        d.project == selectedProject).toList();
+  }
+  return filteredSystemEventsDataList;
+}
+
+void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
+  var timeScaleUnit = selectedPeriodFilter == ChartPeriodFilters.days1 ? 'hour' : 'day';
+
+  Map<DateTime, int> data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
   view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
-  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+  data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
   view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
-  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+  data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
   view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
-  data = new Map.fromIterable(selectedProjectNeedsReplyDataList,
+  data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
   view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
-  var latestData = selectedProjectNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
+  var latestData = filteredNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
 
   view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
   view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
@@ -325,7 +399,7 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
 
   view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
 
-  var selectedNeedsReplyEntries = selectedProjectNeedsReplyDataList;
+  var selectedNeedsReplyEntries = filteredNeedsReplyDataList;
   selectedNeedsReplyEntries.sort((a, b) => a.datetime.compareTo(b.datetime));
   DateTime lastUpdateTime = selectedNeedsReplyEntries.last.datetime;
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
@@ -334,10 +408,10 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> selectedProjectNeedsReply
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
   var rapidProEventData = filteredSystemEventsDataList.where((eventData) =>
       eventData.systemName == 'rapidpro_adapter' &&
-      eventData.project == view.contentView.projectSelectorView.selectedProject);
+      eventData.project == selectedProject);
   var pubsubEventData = filteredSystemEventsDataList.where((eventData) =>
       eventData.systemName == 'pubsub_handler' &&
-      eventData.project == view.contentView.projectSelectorView.selectedProject);
+      eventData.project == selectedProject);
 
   Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
       key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
@@ -370,11 +444,11 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
 }
 
-DateTime getFilteredDate(ChartFilterdata filterData) {
+DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   DateTime now = new DateTime.now();
   DateTime filterDate;
 
-  switch (filterData.periodFilter) {
+  switch (periodFilter) {
     case ChartPeriodFilters.alltime:
       filterDate = null;
       break;
