@@ -165,10 +165,11 @@ class DailyTimeseriesLineChartView {
         ..clear()
         ..addAll(timeseriesPoints);
     }
-    chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: timeScaleUnit));
+    var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
     if (timeScaleUnit == 'hour') {
-      chart.options.scales.xAxes[0].ticks = (new chartjs.LinearTickOptions()..maxTicksLimit = 21);
+      timeScaleOptions.stepSize = 2;
     }
+    chart.options.scales.xAxes[0].time = timeScaleOptions;
     if (upperLimit != null) {
       chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
                                               ..beginAtZero = true
