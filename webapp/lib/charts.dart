@@ -67,6 +67,10 @@ class HistogramChartView {
       scales: new chartjs.LinearScale(yAxes: [
         new chartjs.ChartYAxe()
           ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
+          ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
+        ],
+        xAxes: [
+          new chartjs.ChartXAxe()..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       animation: new chartjs.ChartAnimationOptions(duration: 0),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
@@ -133,10 +137,12 @@ class DailyTimeseriesLineChartView {
             ..distribution = 'linear'
             ..bounds = 'ticks'
             ..time = (new chartjs.TimeScale(unit: 'day'))
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ],
         yAxes: [
           new chartjs.ChartYAxe()
             ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
@@ -159,7 +165,11 @@ class DailyTimeseriesLineChartView {
         ..clear()
         ..addAll(timeseriesPoints);
     }
-    chart.options.scales.xAxes[0].time = (new chartjs.TimeScale(unit: timeScaleUnit));
+    var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
+    if (timeScaleUnit == 'hour') {
+      timeScaleOptions.stepSize = 2;
+    }
+    chart.options.scales.xAxes[0].time = timeScaleOptions;
     if (upperLimit != null) {
       chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
                                               ..beginAtZero = true
@@ -196,6 +206,7 @@ class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
             ..distribution = 'linear'
             ..bounds = 'ticks'
             ..time = (new chartjs.TimeScale(unit: 'day'))
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ],
         yAxes: [
           new chartjs.ChartYAxe()
@@ -203,6 +214,7 @@ class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
               ..beginAtZero = true
               ..max = 2)
               ..display = false
+              ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
