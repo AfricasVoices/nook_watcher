@@ -67,10 +67,10 @@ class HistogramChartView {
       scales: new chartjs.LinearScale(yAxes: [
         new chartjs.ChartYAxe()
           ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
-          ..gridLines = (new chartjs.GridLineOptions(color: '#f9f9f9', zeroLineWidth: 0))
+          ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ],
         xAxes: [
-          new chartjs.ChartXAxe()..gridLines = (new chartjs.GridLineOptions(color: '#f9f9f9', zeroLineWidth: 0))
+          new chartjs.ChartXAxe()..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       animation: new chartjs.ChartAnimationOptions(duration: 0),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
@@ -137,12 +137,12 @@ class DailyTimeseriesLineChartView {
             ..distribution = 'linear'
             ..bounds = 'ticks'
             ..time = (new chartjs.TimeScale(unit: 'day'))
-            ..gridLines = (new chartjs.GridLineOptions(color: '#f9f9f9', zeroLineWidth: 0))
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ],
         yAxes: [
           new chartjs.ChartYAxe()
             ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
-            ..gridLines = (new chartjs.GridLineOptions(color: '#f9f9f9', zeroLineWidth: 0))
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
@@ -205,7 +205,7 @@ class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
             ..distribution = 'linear'
             ..bounds = 'ticks'
             ..time = (new chartjs.TimeScale(unit: 'day'))
-            ..gridLines = (new chartjs.GridLineOptions(color: '#f9f9f9', zeroLineWidth: 0))
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ],
         yAxes: [
           new chartjs.ChartYAxe()
@@ -213,7 +213,7 @@ class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
               ..beginAtZero = true
               ..max = 2)
               ..display = false
-              ..gridLines = (new chartjs.GridLineOptions(color: '#f9f9f9', zeroLineWidth: 0))
+              ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
