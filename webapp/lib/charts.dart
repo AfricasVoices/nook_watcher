@@ -179,10 +179,34 @@ class DailyTimeseriesLineChartView {
   }
 }
 
-class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
-  @override 
-  void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
+class SystemEventsTimeseriesLineChartView {
+  String project;
+  DivElement chartContainer;
+  DivElement title;
+  CanvasElement canvas;
+  chartjs.Chart chart;
+  chartjs.ChartData chartData;
+
+  SystemEventsTimeseriesLineChartView() {
+    chartContainer = new DivElement()
+      ..classes.add('chart');
+
+    canvas = new CanvasElement(height: 300, width: 800);
+
+    // Wrap the canvas into a <div> element as needed by Chart.js
+    chartContainer.append(new DivElement()
+      ..classes.add('chart--3080')
+      ..append(canvas));
+
+    title = new DivElement()
+      ..classes.add('chart__title');
+    chartContainer.append(title);
+  }
+
+  void createEmptyChart({String projectName, String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
+
+    project = projectName;
 
     List<chartjs.ChartDataSets> chartDatasets = [];
     datasetLabels.forEach((datasetLabel) => {
@@ -221,5 +245,35 @@ class SystemEventsTimeseriesLineChartView extends DailyTimeseriesLineChartView {
 
     var chartConfig = new chartjs.ChartConfiguration(type: 'line', data: chartData, options: chartOptions);
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
+  }
+
+  void updateChart(List<Map<DateTime, Map<String, String>>> updatedCountsAtTimestampList, {String chartLabel = '', String timeScaleUnit = 'day', num upperLimit}) {
+    for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
+      List<chartjs.ChartPoint> timeseriesPoints = [];
+      List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
+        ..sort((t1, t2) => t1.compareTo(t2));
+      for (var datetime in sortedDateTimes) {
+        int value = int.parse(updatedCountsAtTimestampList[i][datetime]['y']);
+        timeseriesPoints.add(
+            new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
+        chartData.datasets[i].label = updatedCountsAtTimestampList[i][datetime]['label'];
+        //chartData.datasets[i].backgroundColor = 'rgb(255,0,0,0.3)';
+        //chartData.datasets[i].bordercolor = 'rgb(255,0,0,0.3)';
+      }
+      chartData.datasets[i].data
+        ..clear()
+        ..addAll(timeseriesPoints);
+    }
+    var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
+    if (timeScaleUnit == 'hour') {
+      timeScaleOptions.stepSize = 2;
+    }
+    chart.options.scales.xAxes[0].time = timeScaleOptions;
+    if (upperLimit != null) {
+      chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
+                                              ..beginAtZero = true
+                                              ..max = upperLimit);
+    }
+    chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 }
