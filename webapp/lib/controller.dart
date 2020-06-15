@@ -448,7 +448,8 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
 
 /*** Helpers */
 
-String stringToHexColor (str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
+// Alpha 100%: FF 87%: DE70%: B3 54%: 8A 50%: 80 38%: 61 12%: 1F
+String stringToHexColor (str) => '#FF${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
 
 DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   DateTime now = new DateTime.now();

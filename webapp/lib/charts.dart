@@ -253,12 +253,11 @@ class SystemEventsTimeseriesLineChartView {
       List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
         ..sort((t1, t2) => t1.compareTo(t2));
       for (var datetime in sortedDateTimes) {
-        int value = int.parse(updatedCountsAtTimestampList[i][datetime]['y']);
+        double value = double.parse(updatedCountsAtTimestampList[i][datetime]['y']);
         timeseriesPoints.add(
             new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
         chartData.datasets[i].label = updatedCountsAtTimestampList[i][datetime]['label'];
         chartData.datasets[i].backgroundColor = updatedCountsAtTimestampList[i][datetime]['color'];
-        //chartData.datasets[i].bordercolor = 'rgb(255,0,0,0.3)';
       }
       chartData.datasets[i].data
         ..clear()
