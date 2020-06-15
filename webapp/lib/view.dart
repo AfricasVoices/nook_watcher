@@ -442,10 +442,12 @@ class ContentView {
       case controller.ChartType.system:
         contentElement.append(systemChartsTabContent);
         _systemTabLink.classes.add('active');
+        projectSelectorView.projectSelector.classes.add('hidden');
       break;
       case controller.ChartType.conversation:
         contentElement.append(conversationChartsTabContent);
         _conversationTabLink.classes.add('active');
+        projectSelectorView.projectSelector.classes.remove('hidden');
       break;
     }
   }
