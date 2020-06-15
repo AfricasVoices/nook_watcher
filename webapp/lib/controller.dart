@@ -1,6 +1,8 @@
 library controller;
 
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -416,7 +418,7 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       List<Map<DateTime, Map<String, String>>> chartData = [];
       projectData.forEach((data) {
         chartData.add({
-          data.timestamp.toLocal() : {'y': '1', 'label': data.systemName, 'color': ''}
+          data.timestamp.toLocal() : {'y': '1', 'label': data.systemName, 'color': stringToHexColor(data.systemName)}
         });
       });
       chart.updateChart(chartData);
@@ -443,6 +445,10 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['available']);
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
 }
+
+/*** Helpers */
+
+String stringToHexColor (str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
 
 DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   DateTime now = new DateTime.now();

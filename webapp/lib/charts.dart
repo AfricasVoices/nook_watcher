@@ -257,7 +257,7 @@ class SystemEventsTimeseriesLineChartView {
         timeseriesPoints.add(
             new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
         chartData.datasets[i].label = updatedCountsAtTimestampList[i][datetime]['label'];
-        //chartData.datasets[i].backgroundColor = 'rgb(255,0,0,0.3)';
+        chartData.datasets[i].backgroundColor = updatedCountsAtTimestampList[i][datetime]['color'];
         //chartData.datasets[i].bordercolor = 'rgb(255,0,0,0.3)';
       }
       chartData.datasets[i].data
