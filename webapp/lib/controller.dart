@@ -405,7 +405,7 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 }
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
-  Set<String> systemEventsProjects = filteredSystemEventsDataList.map((d)=> d.project).toSet();
+  Set<String> systemEventsProjects = filteredSystemEventsDataList.map((d) => d.project).toSet();
   Map<String, List<model.SystemEventsData>> systemEventsProjectsData = {};
   
   systemEventsProjects.forEach((project) =>
