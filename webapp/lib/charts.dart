@@ -187,7 +187,6 @@ class SystemEventsTimeseriesLineChartView {
   DivElement title;
   CanvasElement canvas;
   chartjs.Chart chart;
-  Map<String, chartjs.ChartDataSets> chartDatasets;
   chartjs.ChartData chartData;
 
   SystemEventsTimeseriesLineChartView() {
@@ -204,24 +203,23 @@ class SystemEventsTimeseriesLineChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
-
-    chartDatasets = {};
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
-    for (var datasetLabel in datasetLabels) {
-      chartDatasets.putIfAbsent(datasetLabel, () => new chartjs.ChartDataSets(
-          label: datasetLabel,
-          backgroundColor: '${_stringToHexColor(datasetLabel)}80',
-          borderColor: _stringToHexColor(datasetLabel),
-          data: [],
-          showLine: false,
-          pointRadius: 8));
-    }
+    List<chartjs.ChartDataSets> chartDatasets = [];
+    datasetLabels.forEach((datasetLabel) {
+          chartDatasets.add(new chartjs.ChartDataSets(
+              label: datasetLabel,
+              backgroundColor: 'rgba(36, 171, 184, 0.3)',
+              borderColor: '#2B8991',
+              data: [],
+              showLine: false,
+              pointRadius: 8));
+          });
 
-    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets.values.toList());
+    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets.toList());
 
     var chartOptions = new chartjs.ChartOptions(
       legend: new chartjs.ChartLegendOptions(display: false),
@@ -250,7 +248,6 @@ class SystemEventsTimeseriesLineChartView {
 
   void updateChart(Map<String, Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit}) {
     // Clearing up previous data
-    chartDatasets.clear();
     chartData.datasets.clear();
 
     // Show new data
@@ -263,18 +260,16 @@ class SystemEventsTimeseriesLineChartView {
         timeseriesPoints.add(
             new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
       }
-      chartDatasets.putIfAbsent(datasetLabel, () {
-        var newChartDataset = new chartjs.ChartDataSets(
-          label: datasetLabel,
-          backgroundColor: '${_stringToHexColor(datasetLabel)}4D',
-          borderColor: _stringToHexColor(datasetLabel),
-          data: [],
-          showLine: false,
-          pointRadius: 8,
-          hoverRadius: 8);
-        chartData.datasets.add(newChartDataset);
-        return newChartDataset;
-      }).data.addAll(timeseriesPoints);
+      var newChartDataset = new chartjs.ChartDataSets(
+        label: datasetLabel,
+        backgroundColor: '${_stringToHexColor(datasetLabel)}4D',
+        borderColor: _stringToHexColor(datasetLabel),
+        data: [],
+        showLine: false,
+        pointRadius: 8,
+        hoverRadius: 8);
+      newChartDataset.data.addAll(timeseriesPoints);
+      chartData.datasets.add(newChartDataset);
     });
     var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
     if (timeScaleUnit == 'hour') {
