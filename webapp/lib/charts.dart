@@ -219,7 +219,7 @@ class SystemEventsTimeseriesLineChartView {
           pointRadius: 8));
       });
 
-    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets.toList());
+    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets);
 
     var chartOptions = new chartjs.ChartOptions(
       legend: new chartjs.ChartLegendOptions(display: false),
@@ -234,10 +234,9 @@ class SystemEventsTimeseriesLineChartView {
         ],
         yAxes: [
           new chartjs.ChartYAxe()
-            ..ticks = (new chartjs.LinearTickOptions()
-              ..beginAtZero = true)
-              ..display = false
-              ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
+            ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
+            ..display = false
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
