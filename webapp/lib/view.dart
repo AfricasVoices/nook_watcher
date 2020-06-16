@@ -309,7 +309,7 @@ class ContentView {
   charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
   charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
-  List<charts.SystemEventsTimeseriesLineChartView> systemEventsCharts = [];
+  Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
 
   ContentView() {
     projectSelectorView = new ProjectSelectorView();
@@ -392,6 +392,8 @@ class ContentView {
     systemChartsTabContent = new DivElement()
       ..id = "systems";
 
+    systemEventsCharts = {};
+
     cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
@@ -412,17 +414,16 @@ class ContentView {
   }
 
   void createSystemEventsCharts(Map<String, List<model.SystemEventsData>> systemEventsProjectsData) {
-    systemEventsProjectsData.forEach((projectName, projectData){
-      if (systemEventsCharts.singleWhere((c) => c.project == projectName, orElse: () => null) == null) {
+    systemEventsProjectsData.forEach((projectName, projectData) {
+      systemEventsCharts.putIfAbsent(projectName, () {
         var systemEventsChart = new charts.SystemEventsTimeseriesLineChartView();
         systemChartsTabContent.insertAdjacentElement('afterbegin', systemEventsChart.chartContainer);
         systemEventsChart.createEmptyChart(
-          projectName: projectName,
           titleText: '$projectName [system events]',
           datasetLabels: List.filled(projectData.length, '', growable: true)
         );
-        systemEventsCharts.add(systemEventsChart);
-      }
+        return systemEventsChart;
+      });
     });
   }
 
