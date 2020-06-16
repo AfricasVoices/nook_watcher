@@ -210,14 +210,14 @@ class SystemEventsTimeseriesLineChartView {
 
     List<chartjs.ChartDataSets> chartDatasets = [];
     datasetLabels.forEach((datasetLabel) {
-          chartDatasets.add(new chartjs.ChartDataSets(
-              label: datasetLabel,
-              backgroundColor: 'rgba(36, 171, 184, 0.3)',
-              borderColor: '#2B8991',
-              data: [],
-              showLine: false,
-              pointRadius: 8));
-          });
+      chartDatasets.add(new chartjs.ChartDataSets(
+          label: datasetLabel,
+          backgroundColor: 'rgba(36, 171, 184, 0.3)',
+          borderColor: '#2B8991',
+          data: [],
+          showLine: false,
+          pointRadius: 8));
+      });
 
     chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets.toList());
 
