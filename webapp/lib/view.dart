@@ -413,14 +413,16 @@ class ContentView {
 
   void createSystemEventsCharts(Map<String, List<model.SystemEventsData>> systemEventsProjectsData) {
     systemEventsProjectsData.forEach((projectName, projectData){
-      var systemEventsChart = new charts.SystemEventsTimeseriesLineChartView();
-      systemChartsTabContent.insertAdjacentElement('beforeBegin', systemEventsChart.chartContainer);
-      systemEventsChart.createEmptyChart(
-        projectName: projectName,
-        titleText: '$projectName [system events]',
-        datasetLabels: List.filled(projectData.length, '', growable: true)
-      );
-      systemEventsCharts.add(systemEventsChart);
+      if (systemEventsCharts.singleWhere((c) => c.project == projectName, orElse: () => null) == null) {
+        var systemEventsChart = new charts.SystemEventsTimeseriesLineChartView();
+        systemChartsTabContent.insertAdjacentElement('afterbegin', systemEventsChart.chartContainer);
+        systemEventsChart.createEmptyChart(
+          projectName: projectName,
+          titleText: '$projectName [system events]',
+          datasetLabels: List.filled(projectData.length, '', growable: true)
+        );
+        systemEventsCharts.add(systemEventsChart);
+      }
     });
   }
 
