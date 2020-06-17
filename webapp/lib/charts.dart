@@ -283,6 +283,5 @@ class SystemEventsTimeseriesLineChartView {
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 
-  // Alpha 100%: FF 87%: DE70%: B3 54%: 8A 50%: 80 38%: 61 12%: 1F
   String _stringToHexColor(str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
 }
