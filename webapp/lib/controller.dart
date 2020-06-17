@@ -1,8 +1,6 @@
 library controller;
 
 import 'dart:async';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -406,23 +404,21 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
   Set<String> systemEventsProjects = filteredSystemEventsDataList.map((d) => d.project).toSet();
+  List<String> systemNameProjects = filteredSystemEventsDataList.map((d) => d.systemName).toSet().toList()..sort();
   Map<String, List<model.SystemEventsData>> systemEventsProjectsData = {};
-  
+
   systemEventsProjects.forEach((project) =>
       systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
   view.contentView.createSystemEventsCharts(systemEventsProjectsData);
 
   systemEventsProjectsData.forEach((projectName, projectData) {
-    var chart = view.contentView.systemEventsCharts.singleWhere((c) => c.project == projectName, orElse: () => null);
-    if (chart != null) {
-      List<Map<DateTime, Map<String, String>>> chartData = [];
-      projectData.forEach((data) {
-        chartData.add({
-          data.timestamp.toLocal() : {'y': '1', 'label': data.systemName, 'color': stringToHexColor(data.systemName)}
-        });
-      });
-      chart.updateChart(chartData);
-    }
+    var chart = view.contentView.systemEventsCharts[projectName];
+    Map<String, Map<DateTime, num>> chartData = {};
+    projectData.forEach((data) {
+      chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
+          systemNameProjects.indexOf(data.systemName) + 1;
+    });
+    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1);
   });
 }
 
@@ -445,11 +441,6 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['available']);
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
 }
-
-/*** Helpers */
-
-// Alpha 100%: FF 87%: DE70%: B3 54%: 8A 50%: 80 38%: 61 12%: 1F
-String stringToHexColor (str) => '#FF${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
 
 DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   DateTime now = new DateTime.now();

@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:html';
+
+import 'package:crypto/crypto.dart';
 import 'package:chartjs/chartjs.dart' as chartjs;
 
 class SingleIndicatorChartView {
@@ -180,7 +183,6 @@ class DailyTimeseriesLineChartView {
 }
 
 class SystemEventsTimeseriesLineChartView {
-  String project;
   DivElement chartContainer;
   DivElement title;
   CanvasElement canvas;
@@ -203,21 +205,19 @@ class SystemEventsTimeseriesLineChartView {
     chartContainer.append(title);
   }
 
-  void createEmptyChart({String projectName, String titleText = '', List<String> datasetLabels = const []}) {
+  void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
     title.text = titleText;
 
-    project = projectName;
-
     List<chartjs.ChartDataSets> chartDatasets = [];
-    datasetLabels.forEach((datasetLabel) => {
-          chartDatasets.add(new chartjs.ChartDataSets(
-              label: datasetLabel,
-              backgroundColor: 'rgba(36, 171, 184, 0.3)',
-              borderColor: '#2B8991',
-              data: [],
-              showLine: false,
-              pointRadius: 8))
-        });
+    datasetLabels.forEach((datasetLabel) {
+      chartDatasets.add(new chartjs.ChartDataSets(
+          label: datasetLabel,
+          backgroundColor: 'rgba(36, 171, 184, 0.3)',
+          borderColor: '#2B8991',
+          data: [],
+          showLine: false,
+          pointRadius: 8));
+      });
 
     chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets);
 
@@ -234,11 +234,9 @@ class SystemEventsTimeseriesLineChartView {
         ],
         yAxes: [
           new chartjs.ChartYAxe()
-            ..ticks = (new chartjs.LinearTickOptions()
-              ..beginAtZero = true
-              ..max = 2)
-              ..display = false
-              ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
+            ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
+            ..display = false
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0
     );
@@ -247,22 +245,31 @@ class SystemEventsTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(List<Map<DateTime, Map<String, String>>> updatedCountsAtTimestampList, {String chartLabel = '', String timeScaleUnit = 'day', num upperLimit}) {
-    for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
+  void updateChart(Map<String, Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit}) {
+    // Clearing up previous data
+    chartData.datasets.clear();
+
+    // Show new data
+    updatedCountsAtTimestampList.forEach((datasetLabel, data) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
-      List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
+      List<DateTime> sortedDateTimes = data.keys.toList()
         ..sort((t1, t2) => t1.compareTo(t2));
       for (var datetime in sortedDateTimes) {
-        double value = double.parse(updatedCountsAtTimestampList[i][datetime]['y']);
+        var value = data[datetime];
         timeseriesPoints.add(
             new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
-        chartData.datasets[i].label = updatedCountsAtTimestampList[i][datetime]['label'];
-        chartData.datasets[i].backgroundColor = updatedCountsAtTimestampList[i][datetime]['color'];
       }
-      chartData.datasets[i].data
-        ..clear()
-        ..addAll(timeseriesPoints);
-    }
+      var newChartDataset = new chartjs.ChartDataSets(
+        label: datasetLabel,
+        backgroundColor: '${_stringToHexColor(datasetLabel)}4D',
+        borderColor: _stringToHexColor(datasetLabel),
+        data: [],
+        showLine: false,
+        pointRadius: 8,
+        hoverRadius: 8);
+      newChartDataset.data.addAll(timeseriesPoints);
+      chartData.datasets.add(newChartDataset);
+    });
     var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
     if (timeScaleUnit == 'hour') {
       timeScaleOptions.stepSize = 2;
@@ -275,4 +282,7 @@ class SystemEventsTimeseriesLineChartView {
     }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
+
+  // Alpha 100%: FF 87%: DE70%: B3 54%: 8A 50%: 80 38%: 61 12%: 1F
+  String _stringToHexColor(str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
 }
