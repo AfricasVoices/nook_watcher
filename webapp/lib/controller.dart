@@ -356,12 +356,9 @@ List<model.SystemEventsData> filterSystemEventsData(List<model.SystemEventsData>
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
   if (filterDate != null) {
-    filteredSystemEventsDataList = systemEventsData.where((d) =>
-        d.project == selectedProject &&
-        d.timestamp.isAfter(filterDate)).toList();
+    filteredSystemEventsDataList = systemEventsData.where((d) => d.timestamp.isAfter(filterDate)).toList();
   } else {
-    filteredSystemEventsDataList = systemEventsData.where((d) =>
-        d.project == selectedProject).toList();
+    filteredSystemEventsDataList = systemEventsData;
   }
   return filteredSystemEventsDataList;
 }
@@ -406,22 +403,23 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 }
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
-  var rapidProEventData = filteredSystemEventsDataList.where((eventData) =>
-      eventData.systemName == 'rapidpro_adapter' &&
-      eventData.project == selectedProject);
-  var pubsubEventData = filteredSystemEventsDataList.where((eventData) =>
-      eventData.systemName == 'pubsub_handler' &&
-      eventData.project == selectedProject);
+  Set<String> systemEventsProjects = filteredSystemEventsDataList.map((d) => d.project).toSet();
+  List<String> systemNameProjects = filteredSystemEventsDataList.map((d) => d.systemName).toSet().toList()..sort();
+  Map<String, List<model.SystemEventsData>> systemEventsProjectsData = {};
 
-  Map<DateTime, int> data = new Map.fromIterable(rapidProEventData,
-      key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
-      value: (item) => 1);
-  view.contentView.rapidProSystemEventTimeseries.updateChart([data]);
+  systemEventsProjects.forEach((project) =>
+      systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
+  view.contentView.createSystemEventsCharts(systemEventsProjectsData);
 
-  data = new Map.fromIterable(pubsubEventData,
-      key: (item) => (item as model.SystemEventsData).timestamp.toLocal(),
-      value: (item) => 1);
-  view.contentView.pubsubSystemEventTimeseries.updateChart([data]);
+  systemEventsProjectsData.forEach((projectName, projectData) {
+    var chart = view.contentView.systemEventsCharts[projectName];
+    Map<String, Map<DateTime, num>> chartData = {};
+    projectData.forEach((data) {
+      chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
+          systemNameProjects.indexOf(data.systemName) + 1;
+    });
+    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1);
+  });
 }
 
 void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetricsDataList) {

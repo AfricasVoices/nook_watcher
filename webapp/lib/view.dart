@@ -4,6 +4,7 @@ import 'dart:html';
 import 'logger.dart';
 import 'controller.dart' as controller;
 import 'charts.dart' as charts;
+import 'model.dart' as model;
 
 Logger log = new Logger('view.dart');
 
@@ -307,9 +308,8 @@ class ContentView {
   charts.DailyTimeseriesLineChartView cpuPercentSystemMetricsTimeseries;
   charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
   charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
-  charts.SystemEventsTimeseriesLineChartView pubsubSystemEventTimeseries;
-  charts.SystemEventsTimeseriesLineChartView rapidProSystemEventTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
+  Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
 
   ContentView() {
     projectSelectorView = new ProjectSelectorView();
@@ -392,17 +392,7 @@ class ContentView {
     systemChartsTabContent = new DivElement()
       ..id = "systems";
 
-    rapidProSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
-    systemChartsTabContent.append(rapidProSystemEventTimeseries.chartContainer);
-    rapidProSystemEventTimeseries.createEmptyChart(
-      titleText: 'system events [rapidpro_adapter]',
-      datasetLabels: ['restart']);
-
-    pubsubSystemEventTimeseries = new charts.SystemEventsTimeseriesLineChartView();
-    systemChartsTabContent.append(pubsubSystemEventTimeseries.chartContainer);
-    pubsubSystemEventTimeseries.createEmptyChart(
-      titleText: 'system events [pubsub_handler]',
-      datasetLabels: ['restart']);
+    systemEventsCharts = {};
 
     cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
@@ -423,6 +413,20 @@ class ContentView {
       datasetLabels: ['RAM Usage (GB)']);
   }
 
+  void createSystemEventsCharts(Map<String, List<model.SystemEventsData>> systemEventsProjectsData) {
+    systemEventsProjectsData.forEach((projectName, projectData) {
+      systemEventsCharts.putIfAbsent(projectName, () {
+        var systemEventsChart = new charts.SystemEventsTimeseriesLineChartView();
+        systemChartsTabContent.insertAdjacentElement('afterbegin', systemEventsChart.chartContainer);
+        systemEventsChart.createEmptyChart(
+          titleText: '$projectName [system events]',
+          datasetLabels: List.filled(projectData.length, '', growable: true)
+        );
+        return systemEventsChart;
+      });
+    });
+  }
+
   void set stale (bool staleState) {
     if (staleState) {
       _conversationCharts.forEach((chart) => chart.classes.add('stale'));
@@ -441,10 +445,12 @@ class ContentView {
       case controller.ChartType.system:
         contentElement.append(systemChartsTabContent);
         _systemTabLink.classes.add('active');
+        projectSelectorView.projectSelector.classes.add('hidden');
       break;
       case controller.ChartType.conversation:
         contentElement.append(conversationChartsTabContent);
         _conversationTabLink.classes.add('active');
+        projectSelectorView.projectSelector.classes.remove('hidden');
       break;
     }
   }
