@@ -413,6 +413,18 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
   view.contentView.createSystemEventsCharts(systemEventsProjectsData);
 
+  Map<String, DateTime> periodLimits = {};
+  Map<ChartPeriodFilters, DateTime> periodFiltersDateMap = {};
+  var now = new DateTime.now();
+  periodFiltersDateMap[ChartPeriodFilters.alltime] = null;
+  periodFiltersDateMap[ChartPeriodFilters.days1] = new DateTime(now.year, now.month, now.day - 1, 00);
+  periodFiltersDateMap[ChartPeriodFilters.days8] = new DateTime(now.year, now.month, now.day - 8, 00);
+  periodFiltersDateMap[ChartPeriodFilters.days15] = new DateTime(now.year, now.month, now.day - 15, 00);
+  periodFiltersDateMap[ChartPeriodFilters.month1] = new DateTime(now.year, now.month - 1 , now.day, 00);
+  
+  periodLimits['min'] = periodFiltersDateMap[view.ChartFiltersView().selectedPeriodFilter];
+  periodLimits['max'] = new DateTime(now.year, now.month, now.day, 24);
+
   systemEventsProjectsData.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
     Map<String, Map<DateTime, num>> chartData = {};
@@ -420,7 +432,7 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
           systemNameProjects.indexOf(data.systemName) + 1;
     });
-    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1);
+    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1, periodLimits: periodLimits);
   });
 }
 
