@@ -249,7 +249,7 @@ class SystemEventsTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(Map<String, Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit, Map<String, DateTime> periodLimits}) {
+  void updateChart(Map<String, Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num upperLimit, DateTime xLowerLimit, DateTime xUpperLimit}) {
     // Clearing up previous data
     chartData.datasets.clear();
 
@@ -284,11 +284,10 @@ class SystemEventsTimeseriesLineChartView {
                                               ..beginAtZero = true
                                               ..max = upperLimit);
     }
-    if (periodLimits != null) {
-      chart.options.scales.xAxes[0].type = 'time';
-      chart.options.scales.xAxes[0].ticks.min = periodLimits["min"]?.toIso8601String();
-      chart.options.scales.xAxes[0].ticks.max = periodLimits["max"].toIso8601String();
-    }
+    chart.options.scales.xAxes[0].type = 'time';
+    chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
+    chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
+    
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 
