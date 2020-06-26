@@ -285,9 +285,9 @@ class SystemEventsTimeseriesLineChartView {
                                               ..max = upperLimit);
     }
     if (periodLimits != null) {
-      chart.options.scales.xAxes[0].ticks = (new chartjs.LinearTickOptions()
-                                              ..min = periodLimits['min']
-                                              ..max = periodLimits['max']);
+      chart.options.scales.xAxes[0].type = 'time';
+      chart.options.scales.xAxes[0].ticks.min = periodLimits["min"]?.toIso8601String();
+      chart.options.scales.xAxes[0].ticks.max = periodLimits["max"].toIso8601String();
     }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
