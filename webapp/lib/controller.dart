@@ -413,17 +413,20 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
   view.contentView.createSystemEventsCharts(systemEventsProjectsData);
 
-  Map<String, DateTime> periodLimits = {};
-  Map<ChartPeriodFilters, DateTime> periodFiltersDateMap = {};
   var now = new DateTime.now();
-  periodFiltersDateMap[ChartPeriodFilters.alltime] = null;
-  periodFiltersDateMap[ChartPeriodFilters.days1] = new DateTime(now.year, now.month, now.day - 1, 00);
-  periodFiltersDateMap[ChartPeriodFilters.days8] = new DateTime(now.year, now.month, now.day - 8, 00);
-  periodFiltersDateMap[ChartPeriodFilters.days15] = new DateTime(now.year, now.month, now.day - 15, 00);
-  periodFiltersDateMap[ChartPeriodFilters.month1] = new DateTime(now.year, now.month - 1 , now.day, 00);
   
-  periodLimits['min'] = periodFiltersDateMap[view.ChartFiltersView().selectedPeriodFilter];
-  periodLimits['max'] = new DateTime(now.year, now.month, now.day, 24);
+  Map<ChartPeriodFilters, DateTime> periodFiltersDateMap = {
+    ChartPeriodFilters.alltime: null,
+    ChartPeriodFilters.days1: new DateTime(now.year, now.month, now.day - 1, 00),
+    ChartPeriodFilters.days8: new DateTime(now.year, now.month, now.day - 8, 00),
+    ChartPeriodFilters.days15: new DateTime(now.year, now.month, now.day - 15, 00),
+    ChartPeriodFilters.month1: new DateTime(now.year, now.month - 1 , now.day, 00)
+  };
+
+  Map<String, DateTime> periodLimits = {
+    'min': periodFiltersDateMap[view.ChartFiltersView().selectedPeriodFilter],
+    'max': new DateTime(now.year, now.month, now.day, 24)
+  };
 
   systemEventsProjectsData.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
