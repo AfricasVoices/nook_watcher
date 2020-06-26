@@ -67,6 +67,7 @@ class UserData extends Data {
 
 
 Set<String> projectList;
+Set<String> systemEventsProjects;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
 List<model.SystemMetricsData> systemMetricsDataList;
@@ -87,6 +88,7 @@ void init() async {
 
 void initUI() {
   projectList = {};
+  systemEventsProjects = {};
   needsReplyDataList = [];
   systemEventsDataList = [];
   systemMetricsDataList = [];
@@ -351,6 +353,7 @@ List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsDa
 }
 
 List<model.SystemEventsData> filterSystemEventsData(List<model.SystemEventsData> systemEventsData) {
+  systemEventsProjects = systemEventsData.map((d) => d.project).toSet();
   List<model.SystemEventsData> filteredSystemEventsDataList = [];
 
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
@@ -403,7 +406,6 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 }
 
 void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
-  Set<String> systemEventsProjects = filteredSystemEventsDataList.map((d) => d.project).toSet();
   List<String> systemNameProjects = filteredSystemEventsDataList.map((d) => d.systemName).toSet().toList()..sort();
   Map<String, List<model.SystemEventsData>> systemEventsProjectsData = {};
 
