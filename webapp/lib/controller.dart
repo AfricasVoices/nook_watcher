@@ -372,25 +372,25 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
   Map<DateTime, int> data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-  DateTime xUpperLimitDateTime = getEndDateTimeFromTimestamps(data.keys.toList());
+  DateTime xUpperLimitDateTime = getEndDateTimeForPeriod();
   view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-  xUpperLimitDateTime = getEndDateTimeFromTimestamps(data.keys.toList());
+  xUpperLimitDateTime = getEndDateTimeForPeriod();
   view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-  xUpperLimitDateTime = getEndDateTimeFromTimestamps(data.keys.toList());
+  xUpperLimitDateTime = getEndDateTimeForPeriod();
   view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-  xUpperLimitDateTime = getEndDateTimeFromTimestamps(data.keys.toList());
+  xUpperLimitDateTime = getEndDateTimeForPeriod();
   view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
@@ -418,8 +418,7 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
   view.contentView.createSystemEventsCharts(systemEventsProjectsData);
 
   var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
-  var now = new DateTime.now();
-  var xUpperLimitDateTime = new DateTime(now.year, now.month, now.day + 1, 00);
+  var xUpperLimitDateTime = getEndDateTimeForPeriod();
 
   systemEventsProjectsData.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
@@ -452,10 +451,9 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
 }
 
-DateTime getEndDateTimeFromTimestamps(List<DateTime> timestamps) {
-  var sortedTimestamps = timestamps..sort();
-  var maxDateTime = sortedTimestamps.last;
-  var xUpperLimitDateTime = new DateTime(maxDateTime.year, maxDateTime.month, maxDateTime.day + 1, 00);
+DateTime getEndDateTimeForPeriod() {
+  var now = DateTime.now();
+  var xUpperLimitDateTime = new DateTime(now.year, now.month, now.day + 1, 00);
   return xUpperLimitDateTime;
 }
 
