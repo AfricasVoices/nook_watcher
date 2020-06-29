@@ -413,6 +413,10 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
   view.contentView.createSystemEventsCharts(systemEventsProjectsData);
 
+  var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+  var now = new DateTime.now();
+  var xUpperLimitDateTime = new DateTime(now.year, now.month, now.day + 1, 00);
+
   systemEventsProjectsData.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
     Map<String, Map<DateTime, num>> chartData = {};
@@ -420,7 +424,7 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
           systemNameProjects.indexOf(data.systemName) + 1;
     });
-    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1);
+    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
 }
 
@@ -442,6 +446,29 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
       value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).memoryUsage['used']));
   double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['available']);
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
+}
+
+DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
+  var startDate;
+  var now = new DateTime.now();
+  switch (period) {
+    case ChartPeriodFilters.alltime:
+      startDate = null;
+      break;
+    case ChartPeriodFilters.days1:
+      startDate = new DateTime(now.year, now.month, now.day - 1, 00);
+      break;
+    case ChartPeriodFilters.days8:
+      startDate = new DateTime(now.year, now.month, now.day - 8, 00);
+      break;
+    case ChartPeriodFilters.days15:
+      startDate = new DateTime(now.year, now.month, now.day - 15, 00);
+      break;
+    case ChartPeriodFilters.month1:
+      startDate = new DateTime(now.year, now.month - 1 , now.day, 00);
+      break;
+  }
+  return startDate;
 }
 
 DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
