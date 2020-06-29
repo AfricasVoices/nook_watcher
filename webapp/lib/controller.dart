@@ -372,22 +372,30 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
   Map<DateTime, int> data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
+  List<DateTime> timestamps = data.keys.toList()..sort();
+  DateTime xUpperLimitDateTime = new DateTime(timestamps.last.year, timestamps.last.month, timestamps.last.day + 1, 00);
+  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
+  timestamps = data.keys.toList()..sort();
+  xUpperLimitDateTime = new DateTime(timestamps.last.year, timestamps.last.month, timestamps.last.day + 1, 00);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
+  timestamps = data.keys.toList()..sort();
+  xUpperLimitDateTime = new DateTime(timestamps.last.year, timestamps.last.month, timestamps.last.day + 1, 00);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit);
+  timestamps = data.keys.toList()..sort();
+  xUpperLimitDateTime = new DateTime(timestamps.last.year, timestamps.last.month, timestamps.last.day + 1, 00);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
   var latestData = filteredNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
