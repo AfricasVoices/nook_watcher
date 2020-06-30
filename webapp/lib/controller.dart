@@ -453,8 +453,7 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
 
 DateTime getEndDateTimeForPeriod() {
   var now = DateTime.now();
-  var xUpperLimitDateTime = new DateTime(now.year, now.month, now.day + 1, 00);
-  return xUpperLimitDateTime;
+  return new DateTime(now.year, now.month, now.day + 1, 00);
 }
 
 DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
