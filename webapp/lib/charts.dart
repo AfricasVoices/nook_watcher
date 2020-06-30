@@ -173,12 +173,12 @@ class DailyTimeseriesLineChartView {
       timeScaleOptions.stepSize = 2;
     }
     chart.options.scales.xAxes[0].time = timeScaleOptions;
+    chart.options.scales.xAxes[0].type = 'time';
+    chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
+    chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
     if (timeScaleUnit == 'hour') {
       chart.options.scales.xAxes[0].time = (new chartjs.TimeScale()
                                               ..displayFormats = new chartjs.TimeDisplayFormat(hour: 'D/MM hA'));
-      chart.options.scales.xAxes[0].type = 'time';
-      chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
-      chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
     }
     if (upperLimit != null) {
       chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
