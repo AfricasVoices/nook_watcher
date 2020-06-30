@@ -177,6 +177,7 @@ class DailyTimeseriesLineChartView {
       chart.options.scales.xAxes[0].time = (new chartjs.TimeScale()
                                               ..displayFormats = new chartjs.TimeDisplayFormat(hour: 'D/MM hA'));
       chart.options.scales.xAxes[0].type = 'time';
+      chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
       chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
     }
     if (upperLimit != null) {
