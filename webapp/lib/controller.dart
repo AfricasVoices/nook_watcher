@@ -369,29 +369,28 @@ List<model.SystemEventsData> filterSystemEventsData(List<model.SystemEventsData>
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
   var timeScaleUnit = selectedPeriodFilter == ChartPeriodFilters.days1 ? 'hour' : 'day';
 
+  DateTime xUpperLimitDateTime = getEndDateTimeForPeriod();
+  DateTime xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+
   Map<DateTime, int> data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyCount);
-  DateTime xUpperLimitDateTime = getEndDateTimeForPeriod();
-  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
+  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
-  xUpperLimitDateTime = getEndDateTimeForPeriod();
-  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
-  xUpperLimitDateTime = getEndDateTimeForPeriod();
-  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
   data = new Map.fromIterable(filteredNeedsReplyDataList,
     key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
-  xUpperLimitDateTime = getEndDateTimeForPeriod();
-  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xUpperLimit: xUpperLimitDateTime);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
   var latestData = filteredNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
