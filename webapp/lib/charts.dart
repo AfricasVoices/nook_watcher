@@ -154,7 +154,7 @@ class DailyTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num yLowerLimit, num yUpperLimit, DateTime xLowerLimit, DateTime xUpperLimit}) {
+  void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num yLowerLimit = 0, num yUpperLimit, DateTime xLowerLimit, DateTime xUpperLimit}) {
     for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
       List<chartjs.ChartPoint> timeseriesPoints = [];
       List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
@@ -180,10 +180,9 @@ class DailyTimeseriesLineChartView {
       chart.options.scales.xAxes[0].time = (new chartjs.TimeScale()
                                               ..displayFormats = new chartjs.TimeDisplayFormat(hour: 'D/MM hA'));
     }
+    chart.options.scales.yAxes[0].ticks.min = yLowerLimit;
     if (yUpperLimit != null) {
-      chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
-                                              ..beginAtZero = true
-                                              ..max = yUpperLimit);
+      chart.options.scales.yAxes[0].ticks.max = yUpperLimit;
     }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
@@ -252,7 +251,7 @@ class SystemEventsTimeseriesLineChartView {
     chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
   }
 
-  void updateChart(Map<String, Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num yLowerLimit, num yUpperLimit, DateTime xLowerLimit, DateTime xUpperLimit}) {
+  void updateChart(Map<String, Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num yLowerLimit = 0 , num yUpperLimit, DateTime xLowerLimit, DateTime xUpperLimit}) {
     // Clearing up previous data
     chartData.datasets.clear();
 
@@ -282,14 +281,13 @@ class SystemEventsTimeseriesLineChartView {
       timeScaleOptions.stepSize = 2;
     }
     chart.options.scales.xAxes[0].time = timeScaleOptions;
-    if (yUpperLimit != null) {
-      chart.options.scales.yAxes[0].ticks = (new chartjs.LinearTickOptions()
-                                              ..beginAtZero = true
-                                              ..max = yUpperLimit);
-    }
     chart.options.scales.xAxes[0].type = 'time';
     chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
     chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
+    chart.options.scales.yAxes[0].ticks.min = yLowerLimit;
+    if (yUpperLimit != null) {
+      chart.options.scales.yAxes[0].ticks.max = yUpperLimit;
+    }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
   }
 
