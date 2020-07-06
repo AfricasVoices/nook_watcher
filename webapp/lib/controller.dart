@@ -426,7 +426,7 @@ void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsD
       chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
           systemNameProjects.indexOf(data.systemName) + 1;
     });
-    chart.updateChart(chartData, upperLimit: systemNameProjects.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+    chart.updateChart(chartData, yUpperLimit: systemNameProjects.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
 }
 
@@ -435,19 +435,19 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => (item as model.SystemMetricsData).cpuPercent);
   int maxPercentage = 100;
-  view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data], upperLimit: maxPercentage);
+  view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxPercentage);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).diskUsage['used']));
   double maxDiskSpace = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.diskUsage['total']);
-  view.contentView.diskUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxDiskSpace);
+  view.contentView.diskUsageSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxDiskSpace);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).memoryUsage['used']));
   double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['available']);
-  view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], upperLimit: maxMemory);
+  view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxMemory);
 }
 
 DateTime getEndDateTimeForPeriod() {
