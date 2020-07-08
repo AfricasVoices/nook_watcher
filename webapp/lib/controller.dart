@@ -275,15 +275,21 @@ void command(UIAction action, Data actionData) {
 
     /*** Data */
     case UIAction.needsReplyDataUpdated:
-      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      if (selectedTab == ChartType.conversation) {
+        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      }
       break;
 
     case UIAction.systemEventsDataUpdated:
-      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      if (selectedTab == ChartType.system) {
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      }
       break;
 
     case UIAction.systemMetricsDataUpdated:
-      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      if (selectedTab == ChartType.system) {
+        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      }
       break;
 
     case UIAction.dirSizeMetricsDataUpdated:
@@ -295,6 +301,12 @@ void command(UIAction action, Data actionData) {
       selectedTab = tabData.chartType;
       view.contentView.toogleTabView(selectedTab);
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      if (selectedTab == ChartType.conversation) {
+        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      } else if (selectedTab == ChartType.system) {
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      }
       break;
 
     case UIAction.projectSelected:
@@ -317,9 +329,12 @@ void command(UIAction action, Data actionData) {
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
-      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      if (selectedTab == ChartType.conversation) {
+        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      } else if (selectedTab == ChartType.system) {
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      }
       break;
   }
 }
