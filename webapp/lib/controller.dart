@@ -301,6 +301,12 @@ void command(UIAction action, Data actionData) {
       selectedTab = tabData.chartType;
       view.contentView.toogleTabView(selectedTab);
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      if (selectedTab == ChartType.conversation) {
+        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      } else if (selectedTab == ChartType.system) {
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      }
       break;
 
     case UIAction.projectSelected:
