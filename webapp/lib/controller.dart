@@ -159,6 +159,7 @@ void initUI() {
       systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
+      checkSystemMetricsStale(updatedData);
     }
   );
 
@@ -193,9 +194,16 @@ Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReply
   return latestProjectData;
 }
 
-bool isProjectStale(model.NeedsReplyData projectData) {
+bool isProjectStale<T>(T projectData) {
+  var data;
+  if (projectData is model.NeedsReplyData) {
+    data = projectData as model.NeedsReplyData;
+  } else if (projectData is model.SystemMetricsData) {
+    data = projectData as model.SystemMetricsData;
+  }
+
   var now = new DateTime.now();
-  int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
+  int lastUpdateTimeDiff =  now.difference(data.datetime).inHours;
 
   if (lastUpdateTimeDiff >= 2) {
     return true;
@@ -204,21 +212,37 @@ bool isProjectStale(model.NeedsReplyData projectData) {
   }
 }
 
-void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[projectData.project]?.cancel();
+String getProjectTimer(Object data) {
+  if (data is model.NeedsReplyData) {
+    return  (data as model.NeedsReplyData).project;
+  } else if(data is model.SystemMetricsData) {
+    return SYSTEM_METRICS_ROOT_COLLECTION_KEY;
+  }
+}
+
+void setupProjectTimer<T>(T projectData, [bool stale = false]) {
+  var data;
+  if (projectData is model.NeedsReplyData) {
+    data = projectData as model.NeedsReplyData;
+  } else if (projectData is model.SystemMetricsData) {
+    data = projectData as model.SystemMetricsData;
+  }
+
+  projectTimers[getProjectTimer(data)]?.cancel();
 
   if (stale) {
-    projectTimers[projectData.project] = null;
+    projectTimers[getProjectTimer(data)] = null;
   } else {
-    var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
+    var timeToExecute =  data.datetime.add(Duration(hours: 2));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      if (projectData.project == selectedProject) {
-        view.contentView.stale = true;
+      if (data?.project == selectedProject) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY, true);
       }
+      view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
     });
-    projectTimers[projectData.project] = timer;
+    projectTimers[getProjectTimer(data)] = timer;
   }
 }
 
@@ -243,9 +267,27 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
 
   var selectedProjectTimer = projectTimers[selectedProjectName];
   if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-    view.contentView.stale = false;
+    view.contentView.setStale(NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY, false);
   } else {
-    view.contentView.stale = true;
+    view.contentView.setStale(NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY, true);
+  }
+}
+
+void checkSystemMetricsStale(List<model.SystemMetricsData> updatedData) {
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  var latestData = updatedData.last;
+
+  if (isProjectStale(latestData)) {
+    setupProjectTimer(latestData, true);
+  } else {
+    setupProjectTimer(latestData);
+  }
+
+  var timer = projectTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+  if (timer != null && timer.isActive) {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+  } else {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
   }
 }
 
@@ -303,9 +345,11 @@ void command(UIAction action, Data actionData) {
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       if (selectedTab == ChartType.conversation) {
         updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+        checkNeedsReplyMetricsStale(needsReplyDataList);
       } else if (selectedTab == ChartType.system) {
         updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
         updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+        checkSystemMetricsStale(systemMetricsDataList);
       }
       break;
 
@@ -318,9 +362,9 @@ void command(UIAction action, Data actionData) {
 
       var selectedProjectTimer = projectTimers[selectedProject];
       if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-        view.contentView.stale = false;
+        view.contentView.setStale(NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY, false);
       } else {
-        view.contentView.stale = true;
+        view.contentView.setStale(NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY, true);
       }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       break;
