@@ -9,8 +9,8 @@ import 'view.dart' as view;
 
 Logger log = new Logger('controller.dart');
 
-final NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY = 'needs_reply_metrics';
-final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
+final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply';
+final SYSTEM_EVENTS_COLLECTION_KEY = 'system_events';
 final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
@@ -109,7 +109,7 @@ void initUI() {
 
   platform.listenForMetrics(
     selectedProject,
-    'needs_reply',
+    NEEDS_REPLY_METRICS_COLLECTION_KEY,
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -133,7 +133,7 @@ void initUI() {
   for (var project in PROJECTS) {
     platform.listenForMetrics(
       project,
-      'system_events',
+      SYSTEM_EVENTS_COLLECTION_KEY,
       (List<model.DocSnapshot> updatedEvents) {
         if (signedInUser == null) {
           log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
