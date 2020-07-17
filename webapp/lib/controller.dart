@@ -105,8 +105,7 @@ void initUI() {
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
   platform.listenForMetrics(
-    selectedProject,
-    NEEDS_REPLY_METRICS_COLLECTION_KEY,
+    '$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -129,8 +128,7 @@ void initUI() {
 
   for (var project in PROJECTS) {
     platform.listenForMetrics(
-      project,
-      SYSTEM_EVENTS_COLLECTION_KEY,
+      '$project/$SYSTEM_EVENTS_COLLECTION_KEY/metrics',
       (List<model.DocSnapshot> updatedEvents) {
         if (signedInUser == null) {
           log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -146,8 +144,7 @@ void initUI() {
   }
 
   platform.listenForMetrics(
-    SYSTEM_METRICS_ROOT_COLLECTION_KEY,
-    SYSTEM_METRICS_MACHINE_NAME,
+    '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -162,8 +159,7 @@ void initUI() {
   );
 
   platform.listenForMetrics(
-    DIR_SIZE_METRICS_ROOT_COLLECTION_KEY,
-    SYSTEM_METRICS_MACHINE_NAME,
+    '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");

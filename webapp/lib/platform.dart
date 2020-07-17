@@ -57,12 +57,10 @@ bool isUserSignedIn() {
 
 typedef CollectionListener(List<DocSnapshot> changes);
 
-void listenForMetrics(String collectionRoot, String collectionType, CollectionListener listener) {
+void listenForMetrics(String collectionRoot, CollectionListener listener) {
   log.verbose('Loading from metrics');
   _firestoreInstance
         .collection(collectionRoot)
-        .doc(collectionType)
-        .collection('metrics')
         .onSnapshot.listen((snapshots) {
           List<DocSnapshot> changes = [];
           log.verbose("Starting processing ${snapshots.docChanges().length} changes.");
