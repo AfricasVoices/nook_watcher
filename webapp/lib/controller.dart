@@ -11,7 +11,8 @@ Logger log = new Logger('controller.dart');
 
 final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply';
 final SYSTEM_EVENTS_COLLECTION_KEY = 'system_events';
-final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
+final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'system_metrics';
+final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
 // final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
@@ -150,6 +151,7 @@ void initUI() {
 
   platform.listenForMetrics(
     SYSTEM_METRICS_ROOT_COLLECTION_KEY,
+    SYSTEM_METRICS_MACHINE_NAME,
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -165,6 +167,7 @@ void initUI() {
 
   platform.listenForMetrics(
     DIR_SIZE_METRICS_ROOT_COLLECTION_KEY,
+    SYSTEM_METRICS_MACHINE_NAME,
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
