@@ -14,6 +14,11 @@ final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
 final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
+// final LARK_PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
+//   'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
+
+final LARK_PROJECTS = ['TEST_Lark_KK-Project-2020-COVID19', 'TEST_Lark_KK-Project-2020-COVID19-KE-URBAN'];
+
 enum UIAction {
   userSignedIn,
   userSignedOut,
@@ -66,7 +71,6 @@ class UserData extends Data {
 }
 
 
-Set<String> projectList;
 Set<String> systemEventsProjects;
 List<model.NeedsReplyData> needsReplyDataList;
 List<model.SystemEventsData> systemEventsDataList;
@@ -87,7 +91,6 @@ void init() async {
 }
 
 void initUI() {
-  projectList = {};
   systemEventsProjects = {};
   needsReplyDataList = [];
   systemEventsDataList = [];
@@ -101,12 +104,13 @@ void initUI() {
   view.ChartFiltersView().periodFilterOptions = ChartPeriodFilters.values;
   view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
 
-  selectedProject = view.contentView.getProjectFilter();
+  selectedProject = view.contentView.getProjectFilter() ?? LARK_PROJECTS.first;
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
   platform.listenForMetrics(
-    NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
+    selectedProject,
+    'needs_reply',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -117,13 +121,8 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
 
-      // Update project list and selected project if it's the first time
-      projectList.addAll(updatedData.map((m) => m.project).toSet());
-      if (selectedProject == null || !projectList.contains(selectedProject)) {
-        selectedProject = projectList.first;
-      }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      view.contentView.projectSelectorView.projectOptions = projectList.toList();
+      view.contentView.projectSelectorView.projectOptions = LARK_PROJECTS;
       view.contentView.projectSelectorView.selectedProject = selectedProject;
 
       // Update charts
@@ -133,7 +132,8 @@ void initUI() {
   );
 
   platform.listenForMetrics(
-    SYSTEM_EVENTS_ROOT_COLLECTION_KEY,
+    'TEST', //selectedProject ?? LARK_PROJECTS.first,
+    'system_events',
     (List<model.DocSnapshot> updatedEvents) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -178,21 +178,6 @@ void initUI() {
   );
 }
 
-Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReplyData> updatedData) {
-  Map<String, model.NeedsReplyData> latestProjectData = {};
-
-  for (var project in projectList) {
-    var data = updatedData.where((data) => data.project == project).toList();
-
-    if (data.isEmpty) {
-      latestProjectData[project] = null;
-    } else {
-      latestProjectData[project] = data.last;
-    }
-  }
-  return latestProjectData;
-}
-
 bool isProjectStale(model.NeedsReplyData projectData) {
   var now = new DateTime.now();
   int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
@@ -205,20 +190,18 @@ bool isProjectStale(model.NeedsReplyData projectData) {
 }
 
 void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[projectData.project]?.cancel();
+  projectTimers[projectData]?.cancel();
 
   if (stale) {
-    projectTimers[projectData.project] = null;
+    projectTimers[selectedProject] = null;
   } else {
     var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      if (projectData.project == selectedProject) {
-        view.contentView.stale = true;
-      }
+      view.contentView.stale = true;
     });
-    projectTimers[projectData.project] = timer;
+    projectTimers[selectedProject] = timer;
   }
 }
 
@@ -226,20 +209,16 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
   var selectedProjectName = selectedProject;
-  Map<String, model.NeedsReplyData> latestDataPerProject = getLatestDataForProjects(updatedData);
+  var latestProjectData = updatedData.last ?? null;
 
-  for (var project in latestDataPerProject.keys) {
-    var projectData = latestDataPerProject[project];
+  if (latestProjectData != null) {
 
-    if (projectData != null) {
-
-      if (isProjectStale(projectData)) {
-        setupProjectTimer(projectData, true);
+      if (isProjectStale(latestProjectData)) {
+        setupProjectTimer(latestProjectData, true);
       } else {
-        setupProjectTimer(projectData);
+        setupProjectTimer(latestProjectData);
       }
     }
-  }
 
   var selectedProjectTimer = projectTimers[selectedProjectName];
   if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
@@ -344,12 +323,9 @@ List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needs
 
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
   if (filterDate != null) {
-    filteredNeedsReplyData = needsReplyData.where((d) =>
-        d.project == selectedProject &&
-        d.datetime.isAfter(filterDate)).toList();
+    filteredNeedsReplyData = needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
   } else {
-    filteredNeedsReplyData = needsReplyData.where((d) =>
-        d.project == selectedProject).toList();
+    filteredNeedsReplyData = needsReplyData;
   }
   return filteredNeedsReplyData;
 }
