@@ -9,10 +9,14 @@ import 'view.dart' as view;
 
 Logger log = new Logger('controller.dart');
 
-final NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY = 'needs_reply_metrics';
-final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
-final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
+final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply';
+final SYSTEM_EVENTS_COLLECTION_KEY = 'system_events';
+final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'system_metrics';
+final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
+
+final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
+  'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
 
 enum UIAction {
   userSignedIn,
@@ -65,11 +69,8 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
-
-Set<String> projectList;
-Set<String> systemEventsProjects;
 List<model.NeedsReplyData> needsReplyDataList;
-List<model.SystemEventsData> systemEventsDataList;
+Map<String, List<model.SystemEventsData>> systemEventsDataMap;
 List<model.SystemMetricsData> systemMetricsDataList;
 List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 
@@ -87,10 +88,8 @@ void init() async {
 }
 
 void initUI() {
-  projectList = {};
-  systemEventsProjects = {};
   needsReplyDataList = [];
-  systemEventsDataList = [];
+  systemEventsDataMap = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
 
@@ -101,12 +100,12 @@ void initUI() {
   view.ChartFiltersView().periodFilterOptions = ChartPeriodFilters.values;
   view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
 
-  selectedProject = view.contentView.getProjectFilter();
+  selectedProject = view.contentView.getProjectFilter() ?? PROJECTS.first;
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
   platform.listenForMetrics(
-    NEEDS_REPLY_METRICS_ROOT_COLLECTION_KEY,
+    '$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -117,13 +116,8 @@ void initUI() {
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
 
-      // Update project list and selected project if it's the first time
-      projectList.addAll(updatedData.map((m) => m.project).toSet());
-      if (selectedProject == null || !projectList.contains(selectedProject)) {
-        selectedProject = projectList.first;
-      }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      view.contentView.projectSelectorView.projectOptions = projectList.toList();
+      view.contentView.projectSelectorView.projectOptions = PROJECTS;
       view.contentView.projectSelectorView.selectedProject = selectedProject;
 
       // Update charts
@@ -132,23 +126,25 @@ void initUI() {
     }
   );
 
-  platform.listenForMetrics(
-    SYSTEM_EVENTS_ROOT_COLLECTION_KEY,
-    (List<model.DocSnapshot> updatedEvents) {
-      if (signedInUser == null) {
-        log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
-        return;
+  for (var project in PROJECTS) {
+    platform.listenForMetrics(
+      '$project/$SYSTEM_EVENTS_COLLECTION_KEY/metrics',
+      (List<model.DocSnapshot> updatedEvents) {
+        if (signedInUser == null) {
+          log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
+          return;
+        }
+        var updatedIds = updatedEvents.map((m) => m.id).toSet();
+        var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
+        systemEventsDataMap[project]?.removeWhere((d) => updatedIds.contains(d.docId));
+        systemEventsDataMap[project] = updatedData;
+        command(UIAction.systemEventsDataUpdated, null);
       }
-      var updatedIds = updatedEvents.map((m) => m.id).toSet();
-      var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
-      systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
-      systemEventsDataList.addAll(updatedData);
-      command(UIAction.systemEventsDataUpdated, null);
-    }
-  );
+    );
+  }
 
   platform.listenForMetrics(
-    SYSTEM_METRICS_ROOT_COLLECTION_KEY,
+    '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -163,7 +159,7 @@ void initUI() {
   );
 
   platform.listenForMetrics(
-    DIR_SIZE_METRICS_ROOT_COLLECTION_KEY,
+    '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -178,21 +174,6 @@ void initUI() {
   );
 }
 
-Map<String, model.NeedsReplyData> getLatestDataForProjects(List<model.NeedsReplyData> updatedData) {
-  Map<String, model.NeedsReplyData> latestProjectData = {};
-
-  for (var project in projectList) {
-    var data = updatedData.where((data) => data.project == project).toList();
-
-    if (data.isEmpty) {
-      latestProjectData[project] = null;
-    } else {
-      latestProjectData[project] = data.last;
-    }
-  }
-  return latestProjectData;
-}
-
 bool isProjectStale(model.NeedsReplyData projectData) {
   var now = new DateTime.now();
   int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
@@ -205,20 +186,18 @@ bool isProjectStale(model.NeedsReplyData projectData) {
 }
 
 void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[projectData.project]?.cancel();
+  projectTimers[selectedProject]?.cancel();
 
   if (stale) {
-    projectTimers[projectData.project] = null;
+    projectTimers[selectedProject] = null;
   } else {
     var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      if (projectData.project == selectedProject) {
-        view.contentView.stale = true;
-      }
+      view.contentView.stale = true;
     });
-    projectTimers[projectData.project] = timer;
+    projectTimers[selectedProject] = timer;
   }
 }
 
@@ -226,20 +205,16 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
   var selectedProjectName = selectedProject;
-  Map<String, model.NeedsReplyData> latestDataPerProject = getLatestDataForProjects(updatedData);
+  var latestProjectData = updatedData.last ?? null;
 
-  for (var project in latestDataPerProject.keys) {
-    var projectData = latestDataPerProject[project];
+  if (latestProjectData != null) {
 
-    if (projectData != null) {
-
-      if (isProjectStale(projectData)) {
-        setupProjectTimer(projectData, true);
+      if (isProjectStale(latestProjectData)) {
+        setupProjectTimer(latestProjectData, true);
       } else {
-        setupProjectTimer(projectData);
+        setupProjectTimer(latestProjectData);
       }
     }
-  }
 
   var selectedProjectTimer = projectTimers[selectedProjectName];
   if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
@@ -282,7 +257,7 @@ void command(UIAction action, Data actionData) {
 
     case UIAction.systemEventsDataUpdated:
       if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       }
       break;
 
@@ -304,7 +279,7 @@ void command(UIAction action, Data actionData) {
       if (selectedTab == ChartType.conversation) {
         updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
         updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
       }
       break;
@@ -313,7 +288,7 @@ void command(UIAction action, Data actionData) {
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       // skip updating the system metrics as these are project independent
 
       var selectedProjectTimer = projectTimers[selectedProject];
@@ -332,7 +307,7 @@ void command(UIAction action, Data actionData) {
       if (selectedTab == ChartType.conversation) {
         updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
         updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
       }
       break;
@@ -344,12 +319,9 @@ List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needs
 
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
   if (filterDate != null) {
-    filteredNeedsReplyData = needsReplyData.where((d) =>
-        d.project == selectedProject &&
-        d.datetime.isAfter(filterDate)).toList();
+    filteredNeedsReplyData = needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
   } else {
-    filteredNeedsReplyData = needsReplyData.where((d) =>
-        d.project == selectedProject).toList();
+    filteredNeedsReplyData = needsReplyData;
   }
   return filteredNeedsReplyData;
 }
@@ -367,18 +339,19 @@ List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsDa
   return filteredSystemMetricsDataList;
 }
 
-List<model.SystemEventsData> filterSystemEventsData(List<model.SystemEventsData> systemEventsData) {
-  systemEventsProjects = systemEventsData.map((d) => d.project).toSet();
-  List<model.SystemEventsData> filteredSystemEventsDataList = [];
+Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, List<model.SystemEventsData>> systemEventsData) {
+  var filteredsystemEventsDataMap = {};
 
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
-  if (filterDate != null) {
-    filteredSystemEventsDataList = systemEventsData.where((d) => d.timestamp.isAfter(filterDate)).toList();
-  } else {
-    filteredSystemEventsDataList = systemEventsData;
-  }
-  return filteredSystemEventsDataList;
+  systemEventsData.keys.forEach((project) {
+    if (filterDate != null) {
+      filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
+    } else {
+      filteredsystemEventsDataMap = systemEventsData;
+    }
+  });
+  return filteredsystemEventsDataMap;
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
@@ -423,25 +396,25 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
 }
 
-void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
-  List<String> systemNameProjects = filteredSystemEventsDataList.map((d) => d.systemName).toSet().toList()..sort();
-  Map<String, List<model.SystemEventsData>> systemEventsProjectsData = {};
-
-  systemEventsProjects.forEach((project) =>
-      systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
-  view.contentView.createSystemEventsCharts(systemEventsProjectsData);
+void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap) {
+  List<String> systemNames = [];
+  filteredsystemEventsDataMap.values.forEach((List<model.SystemEventsData> data) {
+    systemNames.addAll(data.map((d) => d.systemName).toSet());
+  });
+  systemNames = systemNames.toSet().toList()..sort();
+  view.contentView.createSystemEventsCharts(filteredsystemEventsDataMap);
 
   var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
   var xUpperLimitDateTime = getEndDateTimeForPeriod();
 
-  systemEventsProjectsData.forEach((projectName, projectData) {
+  filteredsystemEventsDataMap.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
     Map<String, Map<DateTime, num>> chartData = {};
     projectData.forEach((data) {
       chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
-          systemNameProjects.indexOf(data.systemName) + 1;
+          systemNames.indexOf(data.systemName) + 1;
     });
-    chart.updateChart(chartData, yUpperLimit: systemNameProjects.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+    chart.updateChart(chartData, yUpperLimit: systemNames.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
 }
 
