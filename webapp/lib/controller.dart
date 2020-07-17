@@ -14,10 +14,12 @@ final SYSTEM_EVENTS_ROOT_COLLECTION_KEY = 'system_events';
 final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'pipeline_system_metrics';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
-// final LARK_PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
+// final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
 //   'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
 
-final LARK_PROJECTS = ['TEST_Lark_KK-Project-2020-COVID19', 'TEST_Lark_KK-Project-2020-COVID19-KE-URBAN'];
+// ignore: todo
+// TODO Replace this with full list above
+final PROJECTS = ['TEST_Lark_KK-Project-2020-COVID19', 'TEST_Lark_KK-Project-2020-COVID19-KE-URBAN'];
 
 enum UIAction {
   userSignedIn,
@@ -70,10 +72,8 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 }
 
-
-Set<String> systemEventsProjects;
 List<model.NeedsReplyData> needsReplyDataList;
-List<model.SystemEventsData> systemEventsDataList;
+Map<String, List<model.SystemEventsData>> systemEventsDataList;
 List<model.SystemMetricsData> systemMetricsDataList;
 List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 
@@ -91,9 +91,8 @@ void init() async {
 }
 
 void initUI() {
-  systemEventsProjects = {};
   needsReplyDataList = [];
-  systemEventsDataList = [];
+  systemEventsDataList = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
 
@@ -104,7 +103,7 @@ void initUI() {
   view.ChartFiltersView().periodFilterOptions = ChartPeriodFilters.values;
   view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
 
-  selectedProject = view.contentView.getProjectFilter() ?? LARK_PROJECTS.first;
+  selectedProject = view.contentView.getProjectFilter() ?? PROJECTS.first;
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
@@ -122,7 +121,7 @@ void initUI() {
       needsReplyDataList.addAll(updatedData);
 
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      view.contentView.projectSelectorView.projectOptions = LARK_PROJECTS;
+      view.contentView.projectSelectorView.projectOptions = PROJECTS;
       view.contentView.projectSelectorView.selectedProject = selectedProject;
 
       // Update charts
@@ -131,21 +130,23 @@ void initUI() {
     }
   );
 
-  platform.listenForMetrics(
-    'TEST', //selectedProject ?? LARK_PROJECTS.first,
-    'system_events',
-    (List<model.DocSnapshot> updatedEvents) {
-      if (signedInUser == null) {
-        log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
-        return;
+  for (var project in PROJECTS) {
+    platform.listenForMetrics(
+      project,
+      'system_events',
+      (List<model.DocSnapshot> updatedEvents) {
+        if (signedInUser == null) {
+          log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
+          return;
+        }
+        var updatedIds = updatedEvents.map((m) => m.id).toSet();
+        var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
+        systemEventsDataList[project]?.removeWhere((d) => updatedIds.contains(d.docId));
+        systemEventsDataList[project] = updatedData;
+        command(UIAction.systemEventsDataUpdated, null);
       }
-      var updatedIds = updatedEvents.map((m) => m.id).toSet();
-      var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
-      systemEventsDataList.removeWhere((d) => updatedIds.contains(d.docId));
-      systemEventsDataList.addAll(updatedData);
-      command(UIAction.systemEventsDataUpdated, null);
-    }
-  );
+    );
+  }
 
   platform.listenForMetrics(
     SYSTEM_METRICS_ROOT_COLLECTION_KEY,
@@ -343,17 +344,18 @@ List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsDa
   return filteredSystemMetricsDataList;
 }
 
-List<model.SystemEventsData> filterSystemEventsData(List<model.SystemEventsData> systemEventsData) {
-  systemEventsProjects = systemEventsData.map((d) => d.project).toSet();
-  List<model.SystemEventsData> filteredSystemEventsDataList = [];
+Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, List<model.SystemEventsData>> systemEventsData) {
+  var filteredSystemEventsDataList = {};
 
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
-  if (filterDate != null) {
-    filteredSystemEventsDataList = systemEventsData.where((d) => d.timestamp.isAfter(filterDate)).toList();
-  } else {
-    filteredSystemEventsDataList = systemEventsData;
-  }
+  systemEventsData.keys.forEach((project) {
+    if (filterDate != null) {
+      filteredSystemEventsDataList[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
+    } else {
+      filteredSystemEventsDataList = systemEventsData;
+    }
+  });
   return filteredSystemEventsDataList;
 }
 
@@ -399,25 +401,25 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
 }
 
-void updateSystemEventsCharts(List<model.SystemEventsData> filteredSystemEventsDataList) {
-  List<String> systemNameProjects = filteredSystemEventsDataList.map((d) => d.systemName).toSet().toList()..sort();
-  Map<String, List<model.SystemEventsData>> systemEventsProjectsData = {};
-
-  systemEventsProjects.forEach((project) =>
-      systemEventsProjectsData[project] = filteredSystemEventsDataList.where((d) => d.project == project).toList());
-  view.contentView.createSystemEventsCharts(systemEventsProjectsData);
+void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredSystemEventsDataList) {
+  List<String> systemNames = [];
+  filteredSystemEventsDataList.values.forEach((List<model.SystemEventsData> data) {
+    systemNames.addAll(data.map((d) => d.systemName).toSet());
+  });
+  systemNames = systemNames.toSet().toList()..sort();
+  view.contentView.createSystemEventsCharts(filteredSystemEventsDataList);
 
   var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
   var xUpperLimitDateTime = getEndDateTimeForPeriod();
 
-  systemEventsProjectsData.forEach((projectName, projectData) {
+  filteredSystemEventsDataList.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
     Map<String, Map<DateTime, num>> chartData = {};
     projectData.forEach((data) {
       chartData.putIfAbsent(data.systemName, () => {})[data.timestamp.toLocal()] =
-          systemNameProjects.indexOf(data.systemName) + 1;
+          systemNames.indexOf(data.systemName) + 1;
     });
-    chart.updateChart(chartData, yUpperLimit: systemNameProjects.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+    chart.updateChart(chartData, yUpperLimit: systemNames.length + 1, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
 }
 
