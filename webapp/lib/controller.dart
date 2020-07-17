@@ -70,7 +70,7 @@ class UserData extends Data {
 }
 
 List<model.NeedsReplyData> needsReplyDataList;
-Map<String, List<model.SystemEventsData>> systemEventsDataList;
+Map<String, List<model.SystemEventsData>> systemEventsDataMap;
 List<model.SystemMetricsData> systemMetricsDataList;
 List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 
@@ -89,7 +89,7 @@ void init() async {
 
 void initUI() {
   needsReplyDataList = [];
-  systemEventsDataList = {};
+  systemEventsDataMap = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
 
@@ -138,8 +138,8 @@ void initUI() {
         }
         var updatedIds = updatedEvents.map((m) => m.id).toSet();
         var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
-        systemEventsDataList[project]?.removeWhere((d) => updatedIds.contains(d.docId));
-        systemEventsDataList[project] = updatedData;
+        systemEventsDataMap[project]?.removeWhere((d) => updatedIds.contains(d.docId));
+        systemEventsDataMap[project] = updatedData;
         command(UIAction.systemEventsDataUpdated, null);
       }
     );
@@ -261,7 +261,7 @@ void command(UIAction action, Data actionData) {
 
     case UIAction.systemEventsDataUpdated:
       if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       }
       break;
 
@@ -283,7 +283,7 @@ void command(UIAction action, Data actionData) {
       if (selectedTab == ChartType.conversation) {
         updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
         updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
       }
       break;
@@ -292,7 +292,7 @@ void command(UIAction action, Data actionData) {
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       // skip updating the system metrics as these are project independent
 
       var selectedProjectTimer = projectTimers[selectedProject];
@@ -311,7 +311,7 @@ void command(UIAction action, Data actionData) {
       if (selectedTab == ChartType.conversation) {
         updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataList));
+        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
         updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
       }
       break;
@@ -344,18 +344,18 @@ List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsDa
 }
 
 Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, List<model.SystemEventsData>> systemEventsData) {
-  var filteredSystemEventsDataList = {};
+  var filteredsystemEventsDataMap = {};
 
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
   systemEventsData.keys.forEach((project) {
     if (filterDate != null) {
-      filteredSystemEventsDataList[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
+      filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
     } else {
-      filteredSystemEventsDataList = systemEventsData;
+      filteredsystemEventsDataMap = systemEventsData;
     }
   });
-  return filteredSystemEventsDataList;
+  return filteredsystemEventsDataMap;
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
@@ -400,18 +400,18 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
 }
 
-void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredSystemEventsDataList) {
+void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap) {
   List<String> systemNames = [];
-  filteredSystemEventsDataList.values.forEach((List<model.SystemEventsData> data) {
+  filteredsystemEventsDataMap.values.forEach((List<model.SystemEventsData> data) {
     systemNames.addAll(data.map((d) => d.systemName).toSet());
   });
   systemNames = systemNames.toSet().toList()..sort();
-  view.contentView.createSystemEventsCharts(filteredSystemEventsDataList);
+  view.contentView.createSystemEventsCharts(filteredsystemEventsDataMap);
 
   var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
   var xUpperLimitDateTime = getEndDateTimeForPeriod();
 
-  filteredSystemEventsDataList.forEach((projectName, projectData) {
+  filteredsystemEventsDataMap.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
     Map<String, Map<DateTime, num>> chartData = {};
     projectData.forEach((data) {
