@@ -15,12 +15,8 @@ final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'system_metrics';
 final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
-// final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
-//   'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
-
-// ignore: todo
-// TODO Replace this with full list above
-final PROJECTS = ['TEST_Lark_KK-Project-2020-COVID19', 'TEST_Lark_KK-Project-2020-COVID19-KE-URBAN'];
+final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
+  'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
 
 enum UIAction {
   userSignedIn,
@@ -194,7 +190,7 @@ bool isProjectStale(model.NeedsReplyData projectData) {
 }
 
 void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[projectData]?.cancel();
+  projectTimers[selectedProject]?.cancel();
 
   if (stale) {
     projectTimers[selectedProject] = null;
