@@ -36,12 +36,31 @@ enum UIAction {
 }
 
 enum ChartPeriodFilters {
-  alltime,
+  hours1,
+  hours4,
+  hours10,
   days1,
   days8,
   days15,
   month1,
+  alltime,
 }
+
+List<ChartPeriodFilters> hourFilters = [
+  ChartPeriodFilters.hours1,
+  ChartPeriodFilters.hours4,
+  ChartPeriodFilters.hours10,
+  ChartPeriodFilters.days1
+];
+
+List<ChartPeriodFilters> dayFilters = [
+  ChartPeriodFilters.days1,
+  ChartPeriodFilters.days8,
+  ChartPeriodFilters.days15,
+  ChartPeriodFilters.month1,
+  ChartPeriodFilters.alltime
+];
+
 
 enum ChartType {
   conversation,
@@ -105,15 +124,19 @@ void initUI() {
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
   view.contentView.toogleTabView(selectedTab);
 
-  selectedPeriodFilter = view.contentView.getChartPeriodFilter() ?? ChartPeriodFilters.alltime;
-  view.ChartFiltersView().periodFilterOptions = ChartPeriodFilters.values;
+  selectedPeriodFilter = view.contentView.getChartPeriodUrlFilter() ?? ChartPeriodFilters.days1;
+  var periodFilterOptions = selectedTab == ChartType.driver ? hourFilters : dayFilters;
+  view.ChartFiltersView().periodFilterOptions = periodFilterOptions;
+  if (!periodFilterOptions.contains(selectedPeriodFilter)) {
+    selectedPeriodFilter = selectedTab == ChartType.driver ? ChartPeriodFilters.hours1 : ChartPeriodFilters.days1;
+  }
   view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
 
-  selectedProject = view.contentView.getProjectFilter() ?? PROJECTS.first;
-
-  view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+  selectedProject = view.contentView.getProjectUrlFilter() ?? PROJECTS.first;
   view.contentView.projectSelectorView.projectOptions = PROJECTS;
   view.contentView.projectSelectorView.selectedProject = selectedProject;
+
+  view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
   listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
@@ -344,6 +367,12 @@ void command(UIAction action, Data actionData) {
       ChartTypeData tabData = actionData;
       selectedTab = tabData.chartType;
       view.contentView.toogleTabView(selectedTab);
+      var periodFilterOptions = selectedTab == ChartType.driver ? hourFilters : dayFilters;
+      view.ChartFiltersView().periodFilterOptions = periodFilterOptions;
+      if (!periodFilterOptions.contains(selectedPeriodFilter)) {
+        selectedPeriodFilter = selectedTab == ChartType.driver ? ChartPeriodFilters.hours1 : ChartPeriodFilters.days1;
+      }
+      view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       _updateChartsView();
       break;
@@ -437,7 +466,7 @@ Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, Lis
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
-  var timeScaleUnit = selectedPeriodFilter == ChartPeriodFilters.days1 ? 'hour' : 'day';
+  var timeScaleUnit = dayFilters.contains(selectedPeriodFilter) ? 'hour' : 'day';
 
   DateTime xUpperLimitDateTime = getEndDateTimeForPeriod();
   DateTime xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
@@ -509,7 +538,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
         chartData[metric][data.datetime.toLocal()] = value;
       });
     });
-    chart.updateChart(chartData, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+    chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
 }
 
@@ -564,8 +593,14 @@ DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
   var startDate;
   var now = new DateTime.now();
   switch (period) {
-    case ChartPeriodFilters.alltime:
-      startDate = null;
+    case ChartPeriodFilters.hours1:
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 1);
+      break;
+    case ChartPeriodFilters.hours4:
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 4);
+      break;
+    case ChartPeriodFilters.hours10:
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 8);
       break;
     case ChartPeriodFilters.days1:
       startDate = new DateTime(now.year, now.month, now.day - 1, 00);
@@ -579,6 +614,9 @@ DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
     case ChartPeriodFilters.month1:
       startDate = new DateTime(now.year, now.month - 1 , now.day, 00);
       break;
+    case ChartPeriodFilters.alltime:
+      startDate = null;
+      break;
   }
   return startDate;
 }
@@ -588,8 +626,17 @@ DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   DateTime filterDate;
 
   switch (periodFilter) {
-    case ChartPeriodFilters.alltime:
-      filterDate = null;
+    case ChartPeriodFilters.hours1:
+      var diff = now.subtract(Duration(hours: 1));
+      filterDate = new DateTime(diff.year, diff.month, diff.day, diff.hour);
+      break;
+    case ChartPeriodFilters.hours4:
+      var diff = now.subtract(Duration(hours: 4));
+      filterDate = new DateTime(diff.year, diff.month, diff.day, diff.hour);
+      break;
+    case ChartPeriodFilters.hours10:
+      var diff = now.subtract(Duration(hours: 10));
+      filterDate = new DateTime(diff.year, diff.month, diff.day, diff.hour);
       break;
     case ChartPeriodFilters.days1:
       var diff = now.subtract(Duration(days: 1));
@@ -606,6 +653,9 @@ DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
     case ChartPeriodFilters.month1:
       var diff = now.subtract(Duration(days: 31));
       filterDate = new DateTime(diff.year, diff.month, diff.day);
+      break;
+    case ChartPeriodFilters.alltime:
+      filterDate = null;
       break;
   }
 

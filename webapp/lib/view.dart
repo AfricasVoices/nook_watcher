@@ -265,21 +265,30 @@ class ChartFiltersView {
   String _periodFilterValue (controller.ChartPeriodFilters filter) {
     String filteredValue;
     switch (filter) {
-      case controller.ChartPeriodFilters.alltime:
-        filteredValue = 'All Time';
+      case controller.ChartPeriodFilters.hours1:
+        filteredValue = '1 hour';
+        break;
+      case controller.ChartPeriodFilters.hours4:
+        filteredValue = '4 hours';
+        break;
+      case controller.ChartPeriodFilters.hours10:
+        filteredValue = '10 hours';
         break;
       case controller.ChartPeriodFilters.days1:
         filteredValue = '1 Day';
-      break;
+        break;
       case controller.ChartPeriodFilters.days8:
         filteredValue = '8 days';
-      break;
+        break;
       case controller.ChartPeriodFilters.days15:
         filteredValue = '15 days';
-      break;
+        break;
       case controller.ChartPeriodFilters.month1:
         filteredValue = '1 month';
-      break;
+        break;
+      case controller.ChartPeriodFilters.alltime:
+        filteredValue = 'All Time';
+        break;
     }
     return filteredValue;
   }
@@ -506,11 +515,11 @@ class ContentView {
     return controller.ChartType.values.singleWhere((v) => v.toString() == 'ChartType.$type', orElse: () => null);
   }
 
-  String getProjectFilter() {
+  String getProjectUrlFilter() {
     return UrlView.getPageUrlFilters()['project'];
   }
 
-  controller.ChartPeriodFilters getChartPeriodFilter() {
+  controller.ChartPeriodFilters getChartPeriodUrlFilter() {
     String periodFilter = UrlView.getPageUrlFilters()['period-filter'];
     return controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == 'ChartPeriodFilters.$periodFilter', orElse: () => null);
   }
