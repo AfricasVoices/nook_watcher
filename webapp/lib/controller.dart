@@ -18,7 +18,7 @@ final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN',
   'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
 
-final DRIVERS = ['coda_adapter', 'firebase_adapter', 'pubsub_handler'];
+final DRIVERS = ['coda_adapter', 'pubsub_handler', 'firebase_adapter'];
 
 enum UIAction {
   userSignedIn,

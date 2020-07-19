@@ -452,7 +452,7 @@ class ContentView {
     driversData.forEach((driverName, driverData) {
       driverCharts.putIfAbsent(driverName, () {
         var driverChart = new charts.DriverTimeseriesBarChartView();
-        driverChartsTabContent.insertAdjacentElement('afterbegin', driverChart.chartContainer);
+        driverChartsTabContent.insertAdjacentElement('beforeend', driverChart.chartContainer);
         driverChart.createEmptyChart(
           titleText: '$driverName',
           datasetLabels: List.filled(0, '', growable: true)
