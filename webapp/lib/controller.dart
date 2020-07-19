@@ -514,6 +514,8 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     metricNames = metricNames.toSet().toList()..sort();
     datetimes = datetimes.toSet().toList()..sort();
 
+    // Initialise the data to zero for all metrics and timestamps,
+    // otherwise the bar chart doesn't work well.
     Map<String, Map<DateTime, num>> chartData = {};
     for (var metric in metricNames) {
       chartData[metric] = {};
