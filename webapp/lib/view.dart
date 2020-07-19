@@ -289,12 +289,14 @@ class ContentView {
   DivElement tabElement;
   ButtonElement _systemTabLink;
   ButtonElement _conversationTabLink;
+  ButtonElement _driverTabLink;
 
   ProjectSelectorView projectSelectorView;
 
   DivElement contentElement;
-  DivElement systemChartsTabContent;
   DivElement conversationChartsTabContent;
+  DivElement driverChartsTabContent;
+  DivElement systemChartsTabContent;
   DivElement chartDataLastUpdateTime;
 
   charts.SingleIndicatorChartView needsReplyLatestValue;
@@ -309,6 +311,7 @@ class ContentView {
   charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
   charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
+  Map<String, charts.DriverTimeseriesBarChartView> driverCharts;
   Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
 
   ContentView() {
@@ -322,6 +325,11 @@ class ContentView {
       ..text = "Conversations"
       ..onClick.listen((_) => controller.command(controller.UIAction.tabSwitched, new controller.ChartTypeData(controller.ChartType.conversation)));
     tabElement.append(_conversationTabLink);
+
+    _driverTabLink = new ButtonElement()
+      ..text = "Drivers"
+      ..onClick.listen((_) => controller.command(controller.UIAction.tabSwitched, new controller.ChartTypeData(controller.ChartType.driver)));
+    tabElement.append(_driverTabLink);
 
     _systemTabLink = new ButtonElement()
       ..text = "Systems"
@@ -389,6 +397,10 @@ class ContentView {
       titleText: 'needs reply messages by date',
       datasetLabel: 'needs reply messages by date');
 
+    driverChartsTabContent = new DivElement()
+      ..id = "drivers";
+    driverCharts = {};
+
     systemChartsTabContent = new DivElement()
       ..id = "systems";
 
@@ -427,6 +439,25 @@ class ContentView {
     });
   }
 
+  void createDriverCharts(Map<String, List<model.DriverData>> driversData) {
+    driversData.forEach((driverName, driverData) {
+      driverCharts.putIfAbsent(driverName, () {
+        var driverChart = new charts.DriverTimeseriesBarChartView();
+        driverChartsTabContent.insertAdjacentElement('afterbegin', driverChart.chartContainer);
+        driverChart.createEmptyChart(
+          titleText: '$driverName',
+          datasetLabels: List.filled(0, '', growable: true)
+        );
+        return driverChart;
+      });
+    });
+  }
+
+  clearDriverCharts() {
+    driverCharts.clear();
+    driverChartsTabContent.children.clear();
+  }
+
   void set stale (bool staleState) {
     if (staleState) {
       _conversationCharts.forEach((chart) => chart.classes.add('stale'));
@@ -446,12 +477,19 @@ class ContentView {
         contentElement.append(systemChartsTabContent);
         _systemTabLink.classes.add('active');
         projectSelectorView.projectSelector.classes.add('hidden');
-      break;
+        break;
+
       case controller.ChartType.conversation:
         contentElement.append(conversationChartsTabContent);
         _conversationTabLink.classes.add('active');
         projectSelectorView.projectSelector.classes.remove('hidden');
-      break;
+        break;
+
+      case controller.ChartType.driver:
+        contentElement.append(driverChartsTabContent);
+        _driverTabLink.classes.add('active');
+        projectSelectorView.projectSelector.classes.remove('hidden');
+        break;
     }
   }
 

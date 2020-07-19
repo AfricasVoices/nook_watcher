@@ -15,8 +15,10 @@ final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'system_metrics';
 final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
-final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
+final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN',
   'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
+
+final DRIVERS = ['coda_adapter', 'firebase_adapter', 'pubsub_handler'];
 
 enum UIAction {
   userSignedIn,
@@ -24,6 +26,7 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   needsReplyDataUpdated,
+  driversDataUpdated,
   systemMetricsDataUpdated,
   dirSizeMetricsDataUpdated,
   systemEventsDataUpdated,
@@ -41,8 +44,9 @@ enum ChartPeriodFilters {
 }
 
 enum ChartType {
+  conversation,
+  driver,
   system,
-  conversation
 }
 
 class Data {}
@@ -70,6 +74,7 @@ class UserData extends Data {
 }
 
 List<model.NeedsReplyData> needsReplyDataList;
+Map<String, List<model.DriverData>> driversDataMap;
 Map<String, List<model.SystemEventsData>> systemEventsDataMap;
 List<model.SystemMetricsData> systemMetricsDataList;
 List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
@@ -82,6 +87,9 @@ model.User signedInUser;
 
 Map<String, Timer> projectTimers = {};
 
+StreamSubscription needsReplyMetricsSubscription;
+List<StreamSubscription> driverMetricsSubscriptions = [];
+
 void init() async {
   view.init();
   await platform.init();
@@ -89,6 +97,7 @@ void init() async {
 
 void initUI() {
   needsReplyDataList = [];
+  driversDataMap = {};
   systemEventsDataMap = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
@@ -103,8 +112,29 @@ void initUI() {
   selectedProject = view.contentView.getProjectFilter() ?? PROJECTS.first;
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+  view.contentView.projectSelectorView.projectOptions = PROJECTS;
+  view.contentView.projectSelectorView.selectedProject = selectedProject;
 
-  platform.listenForMetrics(
+  listenForNeedsReplyMetrics(selectedProject);
+  listenForDriverMetrics(selectedProject, DRIVERS);
+  listenForSystemEvents(PROJECTS);
+  listenForSystemMetrics();
+  // listenForDirectoryMetrics(); // no longer in use
+}
+
+void listenForNeedsReplyMetrics(String project) {
+  // // don't start listening again if the new project is the same as the selected one
+  // if (project == selectedProject) {
+  //   log.warning('New project is the same as the selected one, skip resetting the needs reply collection listener');
+  //   return;
+  // }
+  // clear up the old data while the new data loads
+  needsReplyDataList.clear();
+  command(UIAction.needsReplyDataUpdated, null);
+
+  // start listening for the new project collection
+  needsReplyMetricsSubscription?.cancel();
+  needsReplyMetricsSubscription = platform.listenForMetrics(
     '$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
@@ -115,18 +145,47 @@ void initUI() {
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
-
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      view.contentView.projectSelectorView.projectOptions = PROJECTS;
-      view.contentView.projectSelectorView.selectedProject = selectedProject;
-
-      // Update charts
       command(UIAction.needsReplyDataUpdated, null);
       checkNeedsReplyMetricsStale(updatedData);
     }
   );
+}
 
-  for (var project in PROJECTS) {
+void listenForDriverMetrics(String project, List<String> drivers) {
+  print('listen for driver metrics');
+  // // don't start listening again if the new project is the same as the selected one
+  // if (project == selectedProject) {
+  //   log.warning('New project is the same as the selected one, skip resetting the needs reply collection listener');
+  //   return;
+  // }
+  // clear up the old data while the new data loads
+  driversDataMap.clear();
+  command(UIAction.driversDataUpdated, null);
+
+  // start listening for the new project collection
+  driverMetricsSubscriptions.forEach((subscription) => subscription?.cancel());
+  driverMetricsSubscriptions.clear();
+  for (var driver in drivers) {
+    driversDataMap[driver] = [];
+    driverMetricsSubscriptions.add(platform.listenForMetrics(
+      '$selectedProject/$driver/metrics',
+      (List<model.DocSnapshot> updatedMetrics) {
+        if (signedInUser == null) {
+          log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
+          return;
+        }
+        var updatedIds = updatedMetrics.map((m) => m.id).toSet();
+        var updatedData = updatedMetrics.map((doc) => model.DriverData.fromSnapshot(doc)).toList();
+        driversDataMap[driver].removeWhere((d) => updatedIds.contains(d.docId));
+        driversDataMap[driver].addAll(updatedData);
+        command(UIAction.driversDataUpdated, null);
+      }
+    ));
+  }
+}
+
+void listenForSystemEvents(List<String> projects) {
+  for (var project in projects) {
     platform.listenForMetrics(
       '$project/$SYSTEM_EVENTS_COLLECTION_KEY/metrics',
       (List<model.DocSnapshot> updatedEvents) {
@@ -142,7 +201,9 @@ void initUI() {
       }
     );
   }
+}
 
+void listenForSystemMetrics() {
   platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -157,7 +218,9 @@ void initUI() {
       command(UIAction.systemMetricsDataUpdated, null);
     }
   );
+}
 
+void listenForDirectoryMetrics() {
   platform.listenForMetrics(
     '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -255,6 +318,12 @@ void command(UIAction action, Data actionData) {
       }
       break;
 
+    case UIAction.driversDataUpdated:
+      if (selectedTab == ChartType.driver) {
+        updateDriverCharts(filterDriversData(driversDataMap));
+      }
+      break;
+
     case UIAction.systemEventsDataUpdated:
       if (selectedTab == ChartType.system) {
         updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
@@ -276,19 +345,18 @@ void command(UIAction action, Data actionData) {
       selectedTab = tabData.chartType;
       view.contentView.toogleTabView(selectedTab);
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      if (selectedTab == ChartType.conversation) {
-        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
-        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
-      }
+      _updateChartsView();
       break;
 
     case UIAction.projectSelected:
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
+      listenForNeedsReplyMetrics(selectedProject);
+      listenForDriverMetrics(selectedProject, DRIVERS);
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
+      view.contentView.clearDriverCharts();
+      updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
 
       var selectedProjectTimer = projectTimers[selectedProject];
@@ -304,52 +372,66 @@ void command(UIAction action, Data actionData) {
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      if (selectedTab == ChartType.conversation) {
-        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
-        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
-      }
+      _updateChartsView();
+      break;
+  }
+}
+
+void _updateChartsView() {
+  switch (selectedTab) {
+    case ChartType.conversation:
+      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      break;
+    case ChartType.driver:
+      updateDriverCharts(filterDriversData(driversDataMap));
+      break;
+    case ChartType.system:
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
+      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
       break;
   }
 }
 
 List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needsReplyData) {
-  List<model.NeedsReplyData> filteredNeedsReplyData = [];
-
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-  if (filterDate != null) {
-    filteredNeedsReplyData = needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
-  } else {
-    filteredNeedsReplyData = needsReplyData;
-  }
-  return filteredNeedsReplyData;
+
+  // early exit if there's no filtering needed
+  if (filterDate == null) return needsReplyData;
+
+  return needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
+}
+
+Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.DriverData>> driversData) {
+  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
+
+  // early exit if there's no filtering needed
+  if (filterDate == null) return driversData;
+
+  Map<String, List<model.DriverData>> filteredDriversDataMap = {};
+  driversData.keys.forEach((driver) {
+    filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
+  });
+  return filteredDriversDataMap;
 }
 
 List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsData> systemMetricsData) {
-  List<model.SystemMetricsData> filteredSystemMetricsDataList = [];
-
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-  if (filterDate != null) {
-    filteredSystemMetricsDataList = systemMetricsDataList.where((d) =>
-        d.datetime.isAfter(filterDate)).toList();
-  } else {
-    filteredSystemMetricsDataList = systemMetricsDataList;
-  }
-  return filteredSystemMetricsDataList;
+
+  // early exit if there's no filtering needed
+  if (filterDate == null) return systemMetricsData;
+
+  return systemMetricsDataList.where((d) => d.datetime.isAfter(filterDate)).toList();
 }
 
 Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, List<model.SystemEventsData>> systemEventsData) {
-  var filteredsystemEventsDataMap = {};
-
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
+  // early exit if there's no filtering needed
+  if (filterDate == null) return systemEventsData;
+
+  Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap = {};
   systemEventsData.keys.forEach((project) {
-    if (filterDate != null) {
-      filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
-    } else {
-      filteredsystemEventsDataMap = systemEventsData;
-    }
+    filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
   });
   return filteredsystemEventsDataMap;
 }
@@ -394,6 +476,41 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
   selectedNeedsReplyEntries.sort((a, b) => a.datetime.compareTo(b.datetime));
   DateTime lastUpdateTime = selectedNeedsReplyEntries.last.datetime;
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
+}
+
+void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
+  var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+  var xUpperLimitDateTime = getEndDateTimeForPeriod();
+
+  view.contentView.createDriverCharts(filteredDriversDataMap);
+
+  filteredDriversDataMap.forEach((driverName, driverData) {
+    var chart = view.contentView.driverCharts[driverName];
+
+    List<String> metricNames = [];
+    List<DateTime> datetimes = [];
+    for (var data in driverData) {
+      metricNames.addAll(data.metrics.keys);
+      datetimes.add(data.datetime);
+    }
+    metricNames = metricNames.toSet().toList()..sort();
+    datetimes = datetimes.toSet().toList()..sort();
+
+    Map<String, Map<DateTime, num>> chartData = {};
+    for (var metric in metricNames) {
+      chartData[metric] = {};
+      for (var datetime in datetimes) {
+        chartData[metric][datetime.toLocal()] = 0;
+      }
+    }
+
+    driverData.forEach((data) {
+      data.metrics.forEach((metric, value) {
+        chartData[metric][data.datetime.toLocal()] = value;
+      });
+    });
+    chart.updateChart(chartData, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+  });
 }
 
 void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap) {

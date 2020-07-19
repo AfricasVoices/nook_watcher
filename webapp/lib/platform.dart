@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:firebase/firestore.dart' as firestore;
 import 'package:nook_watcher/model.dart';
@@ -57,9 +59,9 @@ bool isUserSignedIn() {
 
 typedef CollectionListener(List<DocSnapshot> changes);
 
-void listenForMetrics(String collectionRoot, CollectionListener listener) {
+StreamSubscription listenForMetrics(String collectionRoot, CollectionListener listener) {
   log.verbose('Loading from metrics');
-  _firestoreInstance
+  return _firestoreInstance
         .collection(collectionRoot)
         .onSnapshot.listen((snapshots) {
           List<DocSnapshot> changes = [];

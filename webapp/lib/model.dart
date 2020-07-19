@@ -45,6 +45,40 @@ class NeedsReplyData {
   }
 }
 
+class DriverData {
+  String docId;
+  DateTime datetime;
+  Map<String, int> metrics;
+
+  static DriverData fromSnapshot(DocSnapshot doc) =>
+      fromData(doc.data)..docId = doc.id;
+
+  static DriverData fromData(Map data) {
+    if (data == null) return null;
+    DateTime datetime = DateTime_fromData(data['datetime']);
+    Map<String, int> metrics = {};
+    data.forEach((key, value) {
+      if (key == 'datetime') return;
+      metrics[String_fromData(key)] = int_fromData(value);
+    });
+    return DriverData()
+      ..datetime = datetime
+      ..metrics = metrics;
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      if (datetime != null) 'datetime': datetime.toIso8601String(),
+      ...metrics,
+    };
+  }
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
 class SystemEventsData {
   String docId;
   String event;
@@ -87,7 +121,7 @@ class SystemMetricsData {
   double cpuPercent;
   Map<String, double> diskUsage;
   Map<String, double> memoryUsage;
-  
+
   static SystemMetricsData fromSnapshot(DocSnapshot doc) =>
     fromData(doc.data)..docId = doc.id;
 
@@ -110,7 +144,7 @@ class SystemMetricsData {
       if (memoryUsage != null) 'memory_usage': memoryUsage
     };
   }
-  
+
   static double sizeInGB(double bytes) =>
       double.parse((bytes / (1024.0 * 1024.0 * 1024.0)).toStringAsFixed(1));
 
@@ -126,7 +160,7 @@ class DirectorySizeMetricsData {
   String dirname;
   DateTime timestamp;
   double sizeInMB;
-  
+
   static DirectorySizeMetricsData fromSnapshot(DocSnapshot doc) =>
       fromData(doc.data)..docId = doc.id;
 
