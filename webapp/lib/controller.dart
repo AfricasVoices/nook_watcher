@@ -146,11 +146,6 @@ void initUI() {
 }
 
 void listenForNeedsReplyMetrics(String project) {
-  // // don't start listening again if the new project is the same as the selected one
-  // if (project == selectedProject) {
-  //   log.warning('New project is the same as the selected one, skip resetting the needs reply collection listener');
-  //   return;
-  // }
   // clear up the old data while the new data loads
   needsReplyDataList.clear();
   command(UIAction.needsReplyDataUpdated, null);
@@ -175,12 +170,6 @@ void listenForNeedsReplyMetrics(String project) {
 }
 
 void listenForDriverMetrics(String project, List<String> drivers) {
-  print('listen for driver metrics');
-  // // don't start listening again if the new project is the same as the selected one
-  // if (project == selectedProject) {
-  //   log.warning('New project is the same as the selected one, skip resetting the needs reply collection listener');
-  //   return;
-  // }
   // clear up the old data while the new data loads
   driversDataMap.clear();
   command(UIAction.driversDataUpdated, null);
