@@ -142,7 +142,7 @@ void initUI() {
   listenForDriverMetrics(selectedProject, DRIVERS);
   listenForSystemEvents(PROJECTS);
   listenForSystemMetrics();
-  // listenForDirectoryMetrics(); // no longer in use
+  // listenForDirectoryMetrics(); // not yet in use
 }
 
 void listenForNeedsReplyMetrics(String project) {
