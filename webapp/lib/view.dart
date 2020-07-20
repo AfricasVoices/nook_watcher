@@ -479,8 +479,9 @@ class ContentView {
 
   void toogleTabView(controller.ChartType chartType) {
     contentElement.children.clear();
-    _systemTabLink.classes.remove('active');
+    _driverTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
+    _systemTabLink.classes.remove('active');
     switch (chartType) {
       case controller.ChartType.system:
         contentElement.append(systemChartsTabContent);
