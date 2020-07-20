@@ -277,9 +277,15 @@ void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
 }
 
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
+  if (updatedData.isEmpty) {
+    var selectedProjectTimer = projectTimers[selectedProject];
+    selectedProjectTimer?.cancel();
+    view.contentView.stale = false;
+    return;
+  }
+
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var selectedProjectName = selectedProject;
   var latestProjectData = updatedData.last ?? null;
 
   if (latestProjectData != null) {
@@ -291,7 +297,7 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
       }
     }
 
-  var selectedProjectTimer = projectTimers[selectedProjectName];
+  var selectedProjectTimer = projectTimers[selectedProject];
   if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
     view.contentView.stale = false;
   } else {
@@ -480,6 +486,16 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
   view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
+  if (filteredNeedsReplyDataList.isEmpty) {
+    view.contentView.chartDataLastUpdateTime.text = 'No data to show for selected project and time range';
+    view.contentView.needsReplyLatestValue.updateChart('-');
+    view.contentView.needsReplyAndEscalateLatestValue.updateChart('-');
+    view.contentView.needsReplyMoreThan24hLatestValue.updateChart('-');
+    view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('-');
+    // TODO: show a message on the timeseries charts saying that there's no data to show
+    return;
+  }
+
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
   var latestData = filteredNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
 
@@ -490,9 +506,8 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 
   view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
 
-  var selectedNeedsReplyEntries = filteredNeedsReplyDataList;
-  selectedNeedsReplyEntries.sort((a, b) => a.datetime.compareTo(b.datetime));
-  DateTime lastUpdateTime = selectedNeedsReplyEntries.last.datetime;
+  filteredNeedsReplyDataList.sort((a, b) => a.datetime.compareTo(b.datetime));
+  DateTime lastUpdateTime = filteredNeedsReplyDataList.last.datetime;
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
 }
 
@@ -556,10 +571,19 @@ void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filtered
 }
 
 void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetricsDataList) {
+  int maxPercentage = 100;
+
+  if (filteredSystemMetricsDataList.isEmpty) {
+    view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([{}], yUpperLimit: maxPercentage);
+    view.contentView.diskUsageSystemMetricsTimeseries.updateChart([{}], yUpperLimit: maxPercentage);
+    view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([{}], yUpperLimit: maxPercentage);
+    // TODO: show a message on each chart saying that there's no data to show
+    return;
+  }
+
   Map<DateTime, double> data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => (item as model.SystemMetricsData).cpuPercent);
-  int maxPercentage = 100;
   view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxPercentage);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
