@@ -15,8 +15,10 @@ final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'system_metrics';
 final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
-final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN', 
+final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN',
   'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
+
+final DRIVERS = ['coda_adapter', 'pubsub_handler', 'firebase_adapter'];
 
 enum UIAction {
   userSignedIn,
@@ -24,6 +26,7 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   needsReplyDataUpdated,
+  driversDataUpdated,
   systemMetricsDataUpdated,
   dirSizeMetricsDataUpdated,
   systemEventsDataUpdated,
@@ -33,16 +36,36 @@ enum UIAction {
 }
 
 enum ChartPeriodFilters {
-  alltime,
+  hours1,
+  hours4,
+  hours10,
   days1,
   days8,
   days15,
   month1,
+  alltime,
 }
 
+List<ChartPeriodFilters> hourFilters = [
+  ChartPeriodFilters.hours1,
+  ChartPeriodFilters.hours4,
+  ChartPeriodFilters.hours10,
+  ChartPeriodFilters.days1
+];
+
+List<ChartPeriodFilters> dayFilters = [
+  ChartPeriodFilters.days1,
+  ChartPeriodFilters.days8,
+  ChartPeriodFilters.days15,
+  ChartPeriodFilters.month1,
+  ChartPeriodFilters.alltime
+];
+
+
 enum ChartType {
+  conversation,
+  driver,
   system,
-  conversation
 }
 
 class Data {}
@@ -70,6 +93,7 @@ class UserData extends Data {
 }
 
 List<model.NeedsReplyData> needsReplyDataList;
+Map<String, List<model.DriverData>> driversDataMap;
 Map<String, List<model.SystemEventsData>> systemEventsDataMap;
 List<model.SystemMetricsData> systemMetricsDataList;
 List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
@@ -82,6 +106,9 @@ model.User signedInUser;
 
 Map<String, Timer> projectTimers = {};
 
+StreamSubscription needsReplyMetricsSubscription;
+List<StreamSubscription> driverMetricsSubscriptions = [];
+
 void init() async {
   view.init();
   await platform.init();
@@ -89,6 +116,7 @@ void init() async {
 
 void initUI() {
   needsReplyDataList = [];
+  driversDataMap = {};
   systemEventsDataMap = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
@@ -96,15 +124,35 @@ void initUI() {
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
   view.contentView.toogleTabView(selectedTab);
 
-  selectedPeriodFilter = view.contentView.getChartPeriodFilter() ?? ChartPeriodFilters.alltime;
-  view.ChartFiltersView().periodFilterOptions = ChartPeriodFilters.values;
+  selectedPeriodFilter = view.contentView.getChartPeriodUrlFilter() ?? ChartPeriodFilters.days1;
+  var periodFilterOptions = selectedTab == ChartType.driver ? hourFilters : dayFilters;
+  view.ChartFiltersView().periodFilterOptions = periodFilterOptions;
+  if (!periodFilterOptions.contains(selectedPeriodFilter)) {
+    selectedPeriodFilter = selectedTab == ChartType.driver ? ChartPeriodFilters.hours1 : ChartPeriodFilters.days1;
+  }
   view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
 
-  selectedProject = view.contentView.getProjectFilter() ?? PROJECTS.first;
+  selectedProject = view.contentView.getProjectUrlFilter() ?? PROJECTS.first;
+  view.contentView.projectSelectorView.projectOptions = PROJECTS;
+  view.contentView.projectSelectorView.selectedProject = selectedProject;
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  platform.listenForMetrics(
+  listenForNeedsReplyMetrics(selectedProject);
+  listenForDriverMetrics(selectedProject, DRIVERS);
+  listenForSystemEvents(PROJECTS);
+  listenForSystemMetrics();
+  // listenForDirectoryMetrics(); // not yet in use
+}
+
+void listenForNeedsReplyMetrics(String project) {
+  // clear up the old data while the new data loads
+  needsReplyDataList.clear();
+  command(UIAction.needsReplyDataUpdated, null);
+
+  // start listening for the new project collection
+  needsReplyMetricsSubscription?.cancel();
+  needsReplyMetricsSubscription = platform.listenForMetrics(
     '$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
@@ -115,18 +163,41 @@ void initUI() {
       var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
       needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
       needsReplyDataList.addAll(updatedData);
-
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      view.contentView.projectSelectorView.projectOptions = PROJECTS;
-      view.contentView.projectSelectorView.selectedProject = selectedProject;
-
-      // Update charts
       command(UIAction.needsReplyDataUpdated, null);
       checkNeedsReplyMetricsStale(updatedData);
     }
   );
+}
 
-  for (var project in PROJECTS) {
+void listenForDriverMetrics(String project, List<String> drivers) {
+  // clear up the old data while the new data loads
+  driversDataMap.clear();
+  command(UIAction.driversDataUpdated, null);
+
+  // start listening for the new project collection
+  driverMetricsSubscriptions.forEach((subscription) => subscription?.cancel());
+  driverMetricsSubscriptions.clear();
+  for (var driver in drivers) {
+    driversDataMap[driver] = [];
+    driverMetricsSubscriptions.add(platform.listenForMetrics(
+      '$selectedProject/$driver/metrics',
+      (List<model.DocSnapshot> updatedMetrics) {
+        if (signedInUser == null) {
+          log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
+          return;
+        }
+        var updatedIds = updatedMetrics.map((m) => m.id).toSet();
+        var updatedData = updatedMetrics.map((doc) => model.DriverData.fromSnapshot(doc)).toList();
+        driversDataMap[driver].removeWhere((d) => updatedIds.contains(d.docId));
+        driversDataMap[driver].addAll(updatedData);
+        command(UIAction.driversDataUpdated, null);
+      }
+    ));
+  }
+}
+
+void listenForSystemEvents(List<String> projects) {
+  for (var project in projects) {
     platform.listenForMetrics(
       '$project/$SYSTEM_EVENTS_COLLECTION_KEY/metrics',
       (List<model.DocSnapshot> updatedEvents) {
@@ -142,7 +213,9 @@ void initUI() {
       }
     );
   }
+}
 
+void listenForSystemMetrics() {
   platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -157,7 +230,9 @@ void initUI() {
       command(UIAction.systemMetricsDataUpdated, null);
     }
   );
+}
 
+void listenForDirectoryMetrics() {
   platform.listenForMetrics(
     '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -202,9 +277,15 @@ void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
 }
 
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
+  if (updatedData.isEmpty) {
+    var selectedProjectTimer = projectTimers[selectedProject];
+    selectedProjectTimer?.cancel();
+    view.contentView.stale = false;
+    return;
+  }
+
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var selectedProjectName = selectedProject;
   var latestProjectData = updatedData.last ?? null;
 
   if (latestProjectData != null) {
@@ -216,7 +297,7 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
       }
     }
 
-  var selectedProjectTimer = projectTimers[selectedProjectName];
+  var selectedProjectTimer = projectTimers[selectedProject];
   if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
     view.contentView.stale = false;
   } else {
@@ -255,6 +336,12 @@ void command(UIAction action, Data actionData) {
       }
       break;
 
+    case UIAction.driversDataUpdated:
+      if (selectedTab == ChartType.driver) {
+        updateDriverCharts(filterDriversData(driversDataMap));
+      }
+      break;
+
     case UIAction.systemEventsDataUpdated:
       if (selectedTab == ChartType.system) {
         updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
@@ -275,20 +362,25 @@ void command(UIAction action, Data actionData) {
       ChartTypeData tabData = actionData;
       selectedTab = tabData.chartType;
       view.contentView.toogleTabView(selectedTab);
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      if (selectedTab == ChartType.conversation) {
-        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
-        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      var periodFilterOptions = selectedTab == ChartType.driver ? hourFilters : dayFilters;
+      view.ChartFiltersView().periodFilterOptions = periodFilterOptions;
+      if (!periodFilterOptions.contains(selectedPeriodFilter)) {
+        selectedPeriodFilter = selectedTab == ChartType.driver ? ChartPeriodFilters.hours1 : ChartPeriodFilters.days1;
       }
+      view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      _updateChartsView();
       break;
 
     case UIAction.projectSelected:
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
+      listenForNeedsReplyMetrics(selectedProject);
+      listenForDriverMetrics(selectedProject, DRIVERS);
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
+      view.contentView.clearDriverCharts();
+      updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
 
       var selectedProjectTimer = projectTimers[selectedProject];
@@ -304,58 +396,72 @@ void command(UIAction action, Data actionData) {
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      if (selectedTab == ChartType.conversation) {
-        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      } else if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
-        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
-      }
+      _updateChartsView();
+      break;
+  }
+}
+
+void _updateChartsView() {
+  switch (selectedTab) {
+    case ChartType.conversation:
+      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      break;
+    case ChartType.driver:
+      updateDriverCharts(filterDriversData(driversDataMap));
+      break;
+    case ChartType.system:
+      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
+      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
       break;
   }
 }
 
 List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needsReplyData) {
-  List<model.NeedsReplyData> filteredNeedsReplyData = [];
-
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-  if (filterDate != null) {
-    filteredNeedsReplyData = needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
-  } else {
-    filteredNeedsReplyData = needsReplyData;
-  }
-  return filteredNeedsReplyData;
+
+  // early exit if there's no filtering needed
+  if (filterDate == null) return needsReplyData;
+
+  return needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
+}
+
+Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.DriverData>> driversData) {
+  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
+
+  // early exit if there's no filtering needed
+  if (filterDate == null) return driversData;
+
+  Map<String, List<model.DriverData>> filteredDriversDataMap = {};
+  driversData.keys.forEach((driver) {
+    filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
+  });
+  return filteredDriversDataMap;
 }
 
 List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsData> systemMetricsData) {
-  List<model.SystemMetricsData> filteredSystemMetricsDataList = [];
-
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-  if (filterDate != null) {
-    filteredSystemMetricsDataList = systemMetricsDataList.where((d) =>
-        d.datetime.isAfter(filterDate)).toList();
-  } else {
-    filteredSystemMetricsDataList = systemMetricsDataList;
-  }
-  return filteredSystemMetricsDataList;
+
+  // early exit if there's no filtering needed
+  if (filterDate == null) return systemMetricsData;
+
+  return systemMetricsDataList.where((d) => d.datetime.isAfter(filterDate)).toList();
 }
 
 Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, List<model.SystemEventsData>> systemEventsData) {
-  var filteredsystemEventsDataMap = {};
-
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
+  // early exit if there's no filtering needed
+  if (filterDate == null) return systemEventsData;
+
+  Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap = {};
   systemEventsData.keys.forEach((project) {
-    if (filterDate != null) {
-      filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
-    } else {
-      filteredsystemEventsDataMap = systemEventsData;
-    }
+    filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
   });
   return filteredsystemEventsDataMap;
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
-  var timeScaleUnit = selectedPeriodFilter == ChartPeriodFilters.days1 ? 'hour' : 'day';
+  var timeScaleUnit = dayFilters.contains(selectedPeriodFilter) ? 'hour' : 'day';
 
   DateTime xUpperLimitDateTime = getEndDateTimeForPeriod();
   DateTime xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
@@ -380,6 +486,16 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
     value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
   view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
+  if (filteredNeedsReplyDataList.isEmpty) {
+    view.contentView.chartDataLastUpdateTime.text = 'No data to show for selected project and time range';
+    view.contentView.needsReplyLatestValue.updateChart('-');
+    view.contentView.needsReplyAndEscalateLatestValue.updateChart('-');
+    view.contentView.needsReplyMoreThan24hLatestValue.updateChart('-');
+    view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('-');
+    // TODO: show a message on the timeseries charts saying that there's no data to show
+    return;
+  }
+
   DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
   var latestData = filteredNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
 
@@ -390,10 +506,46 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 
   view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
 
-  var selectedNeedsReplyEntries = filteredNeedsReplyDataList;
-  selectedNeedsReplyEntries.sort((a, b) => a.datetime.compareTo(b.datetime));
-  DateTime lastUpdateTime = selectedNeedsReplyEntries.last.datetime;
+  filteredNeedsReplyDataList.sort((a, b) => a.datetime.compareTo(b.datetime));
+  DateTime lastUpdateTime = filteredNeedsReplyDataList.last.datetime;
   view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
+}
+
+void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
+  var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+  var xUpperLimitDateTime = getEndDateTimeForPeriod();
+
+  view.contentView.createDriverCharts(filteredDriversDataMap);
+
+  filteredDriversDataMap.forEach((driverName, driverData) {
+    var chart = view.contentView.driverCharts[driverName];
+
+    List<String> metricNames = [];
+    List<DateTime> datetimes = [];
+    for (var data in driverData) {
+      metricNames.addAll(data.metrics.keys);
+      datetimes.add(data.datetime);
+    }
+    metricNames = metricNames.toSet().toList()..sort();
+    datetimes = datetimes.toSet().toList()..sort();
+
+    // Initialise the data to zero for all metrics and timestamps,
+    // otherwise the bar chart doesn't work well.
+    Map<String, Map<DateTime, num>> chartData = {};
+    for (var metric in metricNames) {
+      chartData[metric] = {};
+      for (var datetime in datetimes) {
+        chartData[metric][datetime.toLocal()] = 0;
+      }
+    }
+
+    driverData.forEach((data) {
+      data.metrics.forEach((metric, value) {
+        chartData[metric][data.datetime.toLocal()] = value;
+      });
+    });
+    chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+  });
 }
 
 void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap) {
@@ -419,10 +571,19 @@ void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filtered
 }
 
 void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetricsDataList) {
+  int maxPercentage = 100;
+
+  if (filteredSystemMetricsDataList.isEmpty) {
+    view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([{}], yUpperLimit: maxPercentage);
+    view.contentView.diskUsageSystemMetricsTimeseries.updateChart([{}], yUpperLimit: maxPercentage);
+    view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([{}], yUpperLimit: maxPercentage);
+    // TODO: show a message on each chart saying that there's no data to show
+    return;
+  }
+
   Map<DateTime, double> data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
       value: (item) => (item as model.SystemMetricsData).cpuPercent);
-  int maxPercentage = 100;
   view.contentView.cpuPercentSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxPercentage);
 
   data = new Map.fromIterable(filteredSystemMetricsDataList,
@@ -447,8 +608,14 @@ DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
   var startDate;
   var now = new DateTime.now();
   switch (period) {
-    case ChartPeriodFilters.alltime:
-      startDate = null;
+    case ChartPeriodFilters.hours1:
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 1);
+      break;
+    case ChartPeriodFilters.hours4:
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 4);
+      break;
+    case ChartPeriodFilters.hours10:
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 8);
       break;
     case ChartPeriodFilters.days1:
       startDate = new DateTime(now.year, now.month, now.day - 1, 00);
@@ -462,6 +629,9 @@ DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
     case ChartPeriodFilters.month1:
       startDate = new DateTime(now.year, now.month - 1 , now.day, 00);
       break;
+    case ChartPeriodFilters.alltime:
+      startDate = null;
+      break;
   }
   return startDate;
 }
@@ -471,8 +641,17 @@ DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   DateTime filterDate;
 
   switch (periodFilter) {
-    case ChartPeriodFilters.alltime:
-      filterDate = null;
+    case ChartPeriodFilters.hours1:
+      var diff = now.subtract(Duration(hours: 1));
+      filterDate = new DateTime(diff.year, diff.month, diff.day, diff.hour);
+      break;
+    case ChartPeriodFilters.hours4:
+      var diff = now.subtract(Duration(hours: 4));
+      filterDate = new DateTime(diff.year, diff.month, diff.day, diff.hour);
+      break;
+    case ChartPeriodFilters.hours10:
+      var diff = now.subtract(Duration(hours: 10));
+      filterDate = new DateTime(diff.year, diff.month, diff.day, diff.hour);
       break;
     case ChartPeriodFilters.days1:
       var diff = now.subtract(Duration(days: 1));
@@ -489,6 +668,9 @@ DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
     case ChartPeriodFilters.month1:
       var diff = now.subtract(Duration(days: 31));
       filterDate = new DateTime(diff.year, diff.month, diff.day);
+      break;
+    case ChartPeriodFilters.alltime:
+      filterDate = null;
       break;
   }
 

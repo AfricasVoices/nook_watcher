@@ -265,21 +265,30 @@ class ChartFiltersView {
   String _periodFilterValue (controller.ChartPeriodFilters filter) {
     String filteredValue;
     switch (filter) {
-      case controller.ChartPeriodFilters.alltime:
-        filteredValue = 'All Time';
+      case controller.ChartPeriodFilters.hours1:
+        filteredValue = '1 hour';
+        break;
+      case controller.ChartPeriodFilters.hours4:
+        filteredValue = '4 hours';
+        break;
+      case controller.ChartPeriodFilters.hours10:
+        filteredValue = '10 hours';
         break;
       case controller.ChartPeriodFilters.days1:
         filteredValue = '1 Day';
-      break;
+        break;
       case controller.ChartPeriodFilters.days8:
         filteredValue = '8 days';
-      break;
+        break;
       case controller.ChartPeriodFilters.days15:
         filteredValue = '15 days';
-      break;
+        break;
       case controller.ChartPeriodFilters.month1:
         filteredValue = '1 month';
-      break;
+        break;
+      case controller.ChartPeriodFilters.alltime:
+        filteredValue = 'All Time';
+        break;
     }
     return filteredValue;
   }
@@ -289,12 +298,14 @@ class ContentView {
   DivElement tabElement;
   ButtonElement _systemTabLink;
   ButtonElement _conversationTabLink;
+  ButtonElement _driverTabLink;
 
   ProjectSelectorView projectSelectorView;
 
   DivElement contentElement;
-  DivElement systemChartsTabContent;
   DivElement conversationChartsTabContent;
+  DivElement driverChartsTabContent;
+  DivElement systemChartsTabContent;
   DivElement chartDataLastUpdateTime;
 
   charts.SingleIndicatorChartView needsReplyLatestValue;
@@ -309,6 +320,7 @@ class ContentView {
   charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
   charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
+  Map<String, charts.DriverTimeseriesBarChartView> driverCharts;
   Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
 
   ContentView() {
@@ -322,6 +334,11 @@ class ContentView {
       ..text = "Conversations"
       ..onClick.listen((_) => controller.command(controller.UIAction.tabSwitched, new controller.ChartTypeData(controller.ChartType.conversation)));
     tabElement.append(_conversationTabLink);
+
+    _driverTabLink = new ButtonElement()
+      ..text = "Drivers"
+      ..onClick.listen((_) => controller.command(controller.UIAction.tabSwitched, new controller.ChartTypeData(controller.ChartType.driver)));
+    tabElement.append(_driverTabLink);
 
     _systemTabLink = new ButtonElement()
       ..text = "Systems"
@@ -389,6 +406,10 @@ class ContentView {
       titleText: 'needs reply messages by date',
       datasetLabel: 'needs reply messages by date');
 
+    driverChartsTabContent = new DivElement()
+      ..id = "drivers";
+    driverCharts = {};
+
     systemChartsTabContent = new DivElement()
       ..id = "systems";
 
@@ -427,6 +448,25 @@ class ContentView {
     });
   }
 
+  void createDriverCharts(Map<String, List<model.DriverData>> driversData) {
+    driversData.forEach((driverName, driverData) {
+      driverCharts.putIfAbsent(driverName, () {
+        var driverChart = new charts.DriverTimeseriesBarChartView();
+        driverChartsTabContent.insertAdjacentElement('beforeend', driverChart.chartContainer);
+        driverChart.createEmptyChart(
+          titleText: '$driverName',
+          datasetLabels: List.filled(0, '', growable: true)
+        );
+        return driverChart;
+      });
+    });
+  }
+
+  clearDriverCharts() {
+    driverCharts.clear();
+    driverChartsTabContent.children.clear();
+  }
+
   void set stale (bool staleState) {
     if (staleState) {
       _conversationCharts.forEach((chart) => chart.classes.add('stale'));
@@ -439,19 +479,27 @@ class ContentView {
 
   void toogleTabView(controller.ChartType chartType) {
     contentElement.children.clear();
-    _systemTabLink.classes.remove('active');
+    _driverTabLink.classes.remove('active');
     _conversationTabLink.classes.remove('active');
+    _systemTabLink.classes.remove('active');
     switch (chartType) {
       case controller.ChartType.system:
         contentElement.append(systemChartsTabContent);
         _systemTabLink.classes.add('active');
         projectSelectorView.projectSelector.classes.add('hidden');
-      break;
+        break;
+
       case controller.ChartType.conversation:
         contentElement.append(conversationChartsTabContent);
         _conversationTabLink.classes.add('active');
         projectSelectorView.projectSelector.classes.remove('hidden');
-      break;
+        break;
+
+      case controller.ChartType.driver:
+        contentElement.append(driverChartsTabContent);
+        _driverTabLink.classes.add('active');
+        projectSelectorView.projectSelector.classes.remove('hidden');
+        break;
     }
   }
 
@@ -468,11 +516,11 @@ class ContentView {
     return controller.ChartType.values.singleWhere((v) => v.toString() == 'ChartType.$type', orElse: () => null);
   }
 
-  String getProjectFilter() {
+  String getProjectUrlFilter() {
     return UrlView.getPageUrlFilters()['project'];
   }
 
-  controller.ChartPeriodFilters getChartPeriodFilter() {
+  controller.ChartPeriodFilters getChartPeriodUrlFilter() {
     String periodFilter = UrlView.getPageUrlFilters()['period-filter'];
     return controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == 'ChartPeriodFilters.$periodFilter', orElse: () => null);
   }
