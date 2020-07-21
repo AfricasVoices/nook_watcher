@@ -9,9 +9,9 @@ import 'view.dart' as view;
 
 Logger log = new Logger('controller.dart');
 
-final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply';
+final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics';
 final SYSTEM_EVENTS_COLLECTION_KEY = 'system_events';
-final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'system_metrics';
+final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'systems';
 final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
@@ -153,7 +153,7 @@ void listenForNeedsReplyMetrics(String project) {
   // start listening for the new project collection
   needsReplyMetricsSubscription?.cancel();
   needsReplyMetricsSubscription = platform.listenForMetrics(
-    '$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY/metrics',
+    'projects/$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -180,7 +180,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
   for (var driver in drivers) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
-      '$selectedProject/$driver/metrics',
+      'projects/$selectedProject/driver_metrics/$driver/metrics',
       (List<model.DocSnapshot> updatedMetrics) {
         if (signedInUser == null) {
           log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -200,7 +200,7 @@ void listenForSystemEvents(List<String> projects) {
   for (var project in projects) {
     systemEventsDataMap[project] = [];
     platform.listenForMetrics(
-      '$project/$SYSTEM_EVENTS_COLLECTION_KEY/metrics',
+      'projects/$project/$SYSTEM_EVENTS_COLLECTION_KEY',
       (List<model.DocSnapshot> updatedEvents) {
         if (signedInUser == null) {
           log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
