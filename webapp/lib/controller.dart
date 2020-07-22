@@ -198,6 +198,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
 
 void listenForSystemEvents(List<String> projects) {
   for (var project in projects) {
+    systemEventsDataMap[project] = [];
     platform.listenForMetrics(
       '$project/$SYSTEM_EVENTS_COLLECTION_KEY/metrics',
       (List<model.DocSnapshot> updatedEvents) {
@@ -207,8 +208,8 @@ void listenForSystemEvents(List<String> projects) {
         }
         var updatedIds = updatedEvents.map((m) => m.id).toSet();
         var updatedData = updatedEvents.map((doc) => model.SystemEventsData.fromSnapshot(doc)).toList();
-        systemEventsDataMap[project]?.removeWhere((d) => updatedIds.contains(d.docId));
-        systemEventsDataMap[project] = updatedData;
+        systemEventsDataMap[project].removeWhere((d) => updatedIds.contains(d.docId));
+        systemEventsDataMap[project].addAll(updatedData);
         command(UIAction.systemEventsDataUpdated, null);
       }
     );
