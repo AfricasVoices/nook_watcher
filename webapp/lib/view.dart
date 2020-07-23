@@ -452,6 +452,7 @@ class ContentView {
     driversData.forEach((driverName, driverData) {
       driverCharts.putIfAbsent(driverName, () {
         var driverChart = new charts.DriverTimeseriesBarChartView();
+        driverChart.chartContainer.insertAdjacentElement('afterbegin', new DriverMetricsSelectorView().metricsSelector);
         driverChartsTabContent.insertAdjacentElement('beforeend', driverChart.chartContainer);
         driverChart.createEmptyChart(
           titleText: '$driverName',
@@ -587,5 +588,39 @@ class StatusView {
   void showWarningStatus(String text) {
     statusElement.text = text;
     statusElement.classes.toggle('status--warning', true);
+  }
+}
+
+class DriverMetricsSelectorView {
+  DivElement metricsSelector;
+  Set<String> _metricsOptions = {'a', 'b', 'c', 'd'};
+  Set<String> _selectedMetricsOptions = {};
+
+  DriverMetricsSelectorView() {
+    metricsSelector = new DivElement()
+      ..id = 'driver-metrics-selector'
+      ..classes.add('dropdown-checkbox');
+    metricsSelector.append(Element.span()
+      ..classes.add('anchor')
+      ..text = 'Filter Metrics');
+    var metricsList = Element.ul();
+    _metricsOptions.forEach((option) {
+      var metricOption = new CheckboxInputElement()
+        ..id = option
+        ..classes.add('metric-option');
+      metricOption.onClick.listen((_) {
+        if (_selectedMetricsOptions.contains(option)) {
+          _selectedMetricsOptions.remove(option);
+        } else {
+          _selectedMetricsOptions.add(option);
+        }
+        print(_selectedMetricsOptions);
+        //controller.command(controller.UIAction.driverMetricsSelected, new controller.ProjectData(option));
+      });
+      metricsList.append(Element.li()
+        ..append(metricOption)
+        ..appendText(option));
+    });
+    metricsSelector.append(metricsList);
   }
 }
