@@ -101,6 +101,7 @@ List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
+Map<String, List<String>> selectedDriversMetrics;
 
 model.User signedInUser;
 
@@ -138,10 +139,16 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  listenForNeedsReplyMetrics(selectedProject);
+  selectedDriversMetrics = {
+    'coda_adapter': ['message_change', 'skipped_message'],
+    'pubsub_handler': ['process_message_impl'],
+    'firebase_adapter': ['commit_batch'],
+    };
+
+  //listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
-  listenForSystemEvents(PROJECTS);
-  listenForSystemMetrics();
+  //listenForSystemEvents(PROJECTS);
+  //listenForSystemMetrics();
   // listenForDirectoryMetrics(); // not yet in use
 }
 
@@ -434,7 +441,9 @@ Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.Dri
 
   Map<String, List<model.DriverData>> filteredDriversDataMap = {};
   driversData.keys.forEach((driver) {
-    filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
+    filteredDriversDataMap[driver] = driversData[driver].where((d) {
+      return d.datetime.isAfter(filterDate) && d.metrics.keys.every((k) => selectedDriversMetrics[driver].contains(k));
+    }).toList();
   });
   return filteredDriversDataMap;
 }
