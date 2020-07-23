@@ -452,7 +452,6 @@ class ContentView {
     driversData.forEach((driverName, driverData) {
       driverCharts.putIfAbsent(driverName, () {
         var driverChart = new charts.DriverTimeseriesBarChartView();
-        driverChart.chartContainer.insertAdjacentElement('afterbegin', new DriverMetricsSelectorView().metricsSelector);
         driverChartsTabContent.insertAdjacentElement('beforeend', driverChart.chartContainer);
         driverChart.createEmptyChart(
           titleText: '$driverName',
@@ -461,6 +460,27 @@ class ContentView {
         return driverChart;
       });
     });
+  }
+  void populateDriverChartsMetricsOptions(charts.DriverTimeseriesBarChartView chart, Map<String, bool> metricsOptions) {
+    print(metricsOptions);
+    chart.metricsSelector.children.removeWhere((el) => el is UListElement );
+    var metricsList = Element.ul();
+    metricsOptions.forEach((option, checked) {
+      var metricOption = new CheckboxInputElement()
+        ..classes.add('metric-option')
+        ..checked = checked;
+      metricOption.onClick.listen((e) {
+        var selectedOptions = metricsList.children.where(
+          (el) => (el.children.first as CheckboxInputElement).checked
+        ).map((el) => el.text.trim());//.toList();
+        controller.command(controller.UIAction.driverMetricsSelected,
+          new controller.DriverMetricsData({chart.title.text.trim():  List.from(selectedOptions)}));
+      });
+      metricsList.append(Element.li()
+        ..append(metricOption)
+        ..appendText(option));
+    });
+    chart.metricsSelector.append(metricsList);
   }
 
   clearDriverCharts() {
@@ -508,7 +528,7 @@ class ContentView {
     UrlView.setPageUrlFilters({
       'type': type.toString().split('.')[1],
       'project': project,
-      'period-filter': periodFilter.toString().split('.')[1]
+      'period-filter': periodFilter.toString().split('.')[1],
     });
   }
 
@@ -588,39 +608,5 @@ class StatusView {
   void showWarningStatus(String text) {
     statusElement.text = text;
     statusElement.classes.toggle('status--warning', true);
-  }
-}
-
-class DriverMetricsSelectorView {
-  DivElement metricsSelector;
-  Set<String> _metricsOptions = {'a', 'b', 'c', 'd'};
-  Set<String> _selectedMetricsOptions = {};
-
-  DriverMetricsSelectorView() {
-    metricsSelector = new DivElement()
-      ..id = 'driver-metrics-selector'
-      ..classes.add('dropdown-checkbox');
-    metricsSelector.append(Element.span()
-      ..classes.add('anchor')
-      ..text = 'Filter Metrics');
-    var metricsList = Element.ul();
-    _metricsOptions.forEach((option) {
-      var metricOption = new CheckboxInputElement()
-        ..id = option
-        ..classes.add('metric-option');
-      metricOption.onClick.listen((_) {
-        if (_selectedMetricsOptions.contains(option)) {
-          _selectedMetricsOptions.remove(option);
-        } else {
-          _selectedMetricsOptions.add(option);
-        }
-        print(_selectedMetricsOptions);
-        //controller.command(controller.UIAction.driverMetricsSelected, new controller.ProjectData(option));
-      });
-      metricsList.append(Element.li()
-        ..append(metricOption)
-        ..appendText(option));
-    });
-    metricsSelector.append(metricsList);
   }
 }

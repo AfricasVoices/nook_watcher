@@ -26,14 +26,14 @@
     visibility: hidden;
 }
 
-#driver-metrics-selector.dropdown-checkbox{
+.driver-metrics-selector.dropdown-checkbox{
     position:relative;
     display:inline-block;
     padding-bottom: 5px;
     margin-left: 7px;
   }
 
-  #driver-metrics-selector.dropdown-checkbox .anchor {
+  .driver-metrics-selector.dropdown-checkbox .anchor {
     position: relative;
     cursor: pointer;
     display: inline-block;
@@ -42,7 +42,7 @@
     font-size: 0.8rem;
   }
 
-  #driver-metrics-selector.dropdown-checkbox .anchor:after{
+  .driver-metrics-selector.dropdown-checkbox .anchor:after{
     position: absolute;
     content: "";
     border-left: 1px solid black;
@@ -57,11 +57,10 @@
     transform: rotate(-135deg);
   }
 
-  #driver-metrics-selector.dropdown-checkbox ul{
+  .driver-metrics-selector.dropdown-checkbox ul{
       position: absolute;
       background: #ffffff;
       list-style: none;
-      min-width: 110px;
       margin: 0px;
       padding:0px;
       left:0px;
@@ -70,17 +69,18 @@
       border: 1px solid #cecccc;
   }
 
-  #driver-metrics-selector.dropdown-checkbox ul li{
+  .driver-metrics-selector.dropdown-checkbox ul li{
       font-size: 15px;
-      padding: 0px;
+      padding-right: 2px;
       border-bottom: 1px solid #cecccc;
       margin: 0px;
+      white-space: nowrap;
   }
 
-  #driver-metrics-selector.dropdown-checkbox ul li input{
+  .driver-metrics-selector.dropdown-checkbox ul li input{
     margin-right:5px;
   }
 
-  #driver-metrics-selector.dropdown-checkbox:hover ul{
+  .driver-metrics-selector.dropdown-checkbox:hover ul{
     display:block
   }

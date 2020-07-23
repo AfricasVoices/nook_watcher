@@ -297,6 +297,7 @@ class SystemEventsTimeseriesLineChartView {
 class DriverTimeseriesBarChartView {
   DivElement chartContainer;
   DivElement title;
+  DivElement metricsSelector;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -315,6 +316,12 @@ class DriverTimeseriesBarChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
+
+    metricsSelector = new DivElement()..classes.addAll(['driver-metrics-selector', 'dropdown-checkbox']);
+    metricsSelector.append(Element.span()
+      ..classes.add('anchor')
+      ..text = 'Filter Metrics');
+    chartContainer.insertAdjacentElement('afterbegin', metricsSelector);
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {

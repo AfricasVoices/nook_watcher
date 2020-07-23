@@ -33,6 +33,7 @@ enum UIAction {
   projectSelected,
   chartsFiltered,
   tabSwitched,
+  driverMetricsSelected
 }
 
 enum ChartPeriodFilters {
@@ -85,6 +86,11 @@ class ProjectData extends Data {
   ProjectData(this.project);
 }
 
+class DriverMetricsData extends Data {
+  Map<String, List<String>> driverMetricsDataMap;
+  DriverMetricsData(this.driverMetricsDataMap);
+}
+
 class UserData extends Data {
   String displayName;
   String email;
@@ -101,7 +107,7 @@ List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
-Map<String, List<String>> selectedDriversMetrics;
+Map<String, List<String>> selectedDriverMetrics;
 
 model.User signedInUser;
 
@@ -121,6 +127,7 @@ void initUI() {
   systemEventsDataMap = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
+  selectedDriverMetrics = {};
 
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
   view.contentView.toogleTabView(selectedTab);
@@ -138,12 +145,6 @@ void initUI() {
   view.contentView.projectSelectorView.selectedProject = selectedProject;
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-
-  selectedDriversMetrics = {
-    'coda_adapter': ['message_change', 'skipped_message'],
-    'pubsub_handler': ['process_message_impl'],
-    'firebase_adapter': ['commit_batch'],
-    };
 
   //listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
@@ -406,6 +407,13 @@ void command(UIAction action, Data actionData) {
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       _updateChartsView();
       break;
+
+    case UIAction.driverMetricsSelected:
+    DriverMetricsData driverMetricsData = actionData;
+      selectedDriverMetrics = driverMetricsData.driverMetricsDataMap;
+      updateDriverCharts(filterDriversData(driversDataMap));
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      break;
   }
 }
 
@@ -442,7 +450,7 @@ Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.Dri
   Map<String, List<model.DriverData>> filteredDriversDataMap = {};
   driversData.keys.forEach((driver) {
     filteredDriversDataMap[driver] = driversData[driver].where((d) {
-      return d.datetime.isAfter(filterDate) && d.metrics.keys.every((k) => selectedDriversMetrics[driver].contains(k));
+      return d.datetime.isAfter(filterDate);// && d.metrics.keys.every((k) => selectedDriverMetrics[driver]?.contains(k));
     }).toList();
   });
   return filteredDriversDataMap;
@@ -538,6 +546,13 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     }
     metricNames = metricNames.toSet().toList()..sort();
     datetimes = datetimes.toSet().toList()..sort();
+
+    Map<String, bool> metricsOptions = {};
+    metricNames.forEach((d) {
+      metricsOptions[d] = selectedDriverMetrics[driverName] == null ? false : selectedDriverMetrics[driverName].contains(d);
+    });
+
+    view.contentView.populateDriverChartsMetricsOptions(chart, metricsOptions);
 
     // Initialise the data to zero for all metrics and timestamps,
     // otherwise the bar chart doesn't work well.
