@@ -380,8 +380,7 @@ class DriverTimeseriesBarChartView {
         pointRadius: 2,
         hoverRadius: 4,
         spanGaps: false,
-        barPercentage: 1.0,
-        barThickness: 750 / xUpperLimit.difference(xLowerLimit).inMinutes);
+        barPercentage: 1.0);
       newChartDataset.data.addAll(timeseriesPoints);
       chartData.datasets.add(newChartDataset);
     });
