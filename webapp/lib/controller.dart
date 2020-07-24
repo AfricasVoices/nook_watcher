@@ -464,7 +464,7 @@ Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, Lis
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
   var timeScaleUnit = dayFilters.contains(selectedPeriodFilter) ? 'hour' : 'day';
 
-  DateTime xUpperLimitDateTime = getEndDateTimeForPeriod();
+  DateTime xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
   DateTime xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
 
   Map<DateTime, int> data = new Map.fromIterable(filteredNeedsReplyDataList,
@@ -514,7 +514,7 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 
 void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
   var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
-  var xUpperLimitDateTime = getEndDateTimeForPeriod();
+  var xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
 
   view.contentView.createDriverCharts(filteredDriversDataMap);
 
@@ -558,7 +558,7 @@ void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filtered
   view.contentView.createSystemEventsCharts(filteredsystemEventsDataMap);
 
   var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
-  var xUpperLimitDateTime = getEndDateTimeForPeriod();
+  var xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
 
   filteredsystemEventsDataMap.forEach((projectName, projectData) {
     var chart = view.contentView.systemEventsCharts[projectName];
@@ -600,9 +600,24 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxMemory);
 }
 
-DateTime getEndDateTimeForPeriod() {
+DateTime getEndDateTimeForPeriod(ChartPeriodFilters period) {
+  var endDate;
   var now = DateTime.now();
-  return new DateTime(now.year, now.month, now.day + 1, 00);
+  switch (period) {
+    case ChartPeriodFilters.hours1:
+    case ChartPeriodFilters.hours4:
+    case ChartPeriodFilters.hours10:
+      endDate = new DateTime(now.year, now.month, now.day, now.hour + 1);
+      break;
+    case ChartPeriodFilters.days1:
+    case ChartPeriodFilters.days8:
+    case ChartPeriodFilters.days15:
+    case ChartPeriodFilters.month1:
+    case ChartPeriodFilters.alltime:
+      endDate = new DateTime(now.year, now.month, now.day + 1, 00);
+      break;
+  }
+  return endDate;
 }
 
 DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
