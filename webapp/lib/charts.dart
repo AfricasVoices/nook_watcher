@@ -392,7 +392,7 @@ class DriverTimeseriesBarChartView {
     chart.options.scales.xAxes[0].time = timeScaleOptions;
     chart.options.scales.xAxes[0].type = 'time';
     chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
-    chart.options.scales.xAxes[0].ticks.suggestedMax = xUpperLimit?.toIso8601String();
+    chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
     chart.options.scales.xAxes[0].stacked = true;
 
     chart.options.scales.yAxes[0].stacked = true;
