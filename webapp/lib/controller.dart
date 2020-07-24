@@ -1,6 +1,7 @@
 library controller;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -87,8 +88,8 @@ class ProjectData extends Data {
 }
 
 class DriverMetricsData extends Data {
-  Map<String, List<String>> driverMetricsDataMap;
-  DriverMetricsData(this.driverMetricsDataMap);
+  Map<String, List<String>> metricsData;
+  DriverMetricsData(this.metricsData);
 }
 
 class UserData extends Data {
@@ -144,7 +145,9 @@ void initUI() {
   view.contentView.projectSelectorView.projectOptions = PROJECTS;
   view.contentView.projectSelectorView.selectedProject = selectedProject;
 
-  view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+  selectedDriverMetrics = view.contentView.getDriverMetricsFilter() ?? {};
+
+  view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter, encodeDriverMetricURLFilter(selectedDriverMetrics));
 
   //listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
@@ -377,7 +380,7 @@ void command(UIAction action, Data actionData) {
         selectedPeriodFilter = selectedTab == ChartType.driver ? ChartPeriodFilters.hours1 : ChartPeriodFilters.days1;
       }
       view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter, encodeDriverMetricURLFilter(selectedDriverMetrics));
       _updateChartsView();
       break;
 
@@ -398,21 +401,31 @@ void command(UIAction action, Data actionData) {
       } else {
         view.contentView.stale = true;
       }
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter, encodeDriverMetricURLFilter(selectedDriverMetrics));
       break;
 
     case UIAction.chartsFiltered:
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter, encodeDriverMetricURLFilter(selectedDriverMetrics));
       _updateChartsView();
       break;
 
     case UIAction.driverMetricsSelected:
-    DriverMetricsData driverMetricsData = actionData;
-      selectedDriverMetrics = driverMetricsData.driverMetricsDataMap;
+      DriverMetricsData driverMetricsData = actionData;
+      selectedDriverMetrics = driverMetricsData.metricsData;
+      var previousDriverMetrics = view.contentView.getDriverMetricsFilter();
+      if (previousDriverMetrics != null) {
+        previousDriverMetrics.forEach((driver, metrics) {
+          if (selectedDriverMetrics.containsKey(driver)) {
+            selectedDriverMetrics[driver] = [...metrics, ...selectedDriverMetrics[driver]].toSet().toList();
+          } else {
+            selectedDriverMetrics[driver] = metrics;
+          }
+        });
+      }
       updateDriverCharts(filterDriversData(driversDataMap));
-      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter, encodeDriverMetricURLFilter(selectedDriverMetrics));
       break;
   }
 }
@@ -547,13 +560,6 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     metricNames = metricNames.toSet().toList()..sort();
     datetimes = datetimes.toSet().toList()..sort();
 
-    Map<String, bool> metricsOptions = {};
-    metricNames.forEach((d) {
-      metricsOptions[d] = selectedDriverMetrics[driverName] == null ? false : selectedDriverMetrics[driverName].contains(d);
-    });
-
-    view.contentView.populateDriverChartsMetricsOptions(chart, metricsOptions);
-
     // Initialise the data to zero for all metrics and timestamps,
     // otherwise the bar chart doesn't work well.
     Map<String, Map<DateTime, num>> chartData = {};
@@ -571,6 +577,17 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     });
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
+
+  print(selectedDriverMetrics);
+
+  Map<String, Map<String, bool>> metricsOptions = {};
+  DRIVERS.forEach((driverName) {
+    var metricNames = filteredDriversDataMap[driverName]?.map((d) => d.metrics.keys)?.toSet()?.expand((m) => m)?.toSet();
+    if(metricNames != null && !metricNames.isEmpty) {
+      metricsOptions[driverName] = getMetricsOptions(driverName, metricNames);
+    }
+  });
+  view.contentView.populateDriverChartsMetricsOptions(metricsOptions);
 }
 
 void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap) {
@@ -700,4 +717,53 @@ DateTime getFilteredDate(ChartPeriodFilters periodFilter) {
   }
 
   return filterDate;
+}
+
+Map<String, bool> getMetricsOptions(String driverName, Set<String> metricNames) {
+  Map<String, bool> metricsOptions = {};
+  metricNames.forEach((metric) {
+    if (!selectedDriverMetrics.containsKey(driverName)) {
+        metricsOptions[metric] = false;
+    } else {
+        if (selectedDriverMetrics[driverName].contains(metric)) {
+          metricsOptions[metric] = true;
+        } else {
+          metricsOptions[metric] = false;
+        }
+    }
+  });
+  return metricsOptions;
+}
+
+String encodeDriverMetricURLFilter(Map<String, List<String>> driverMetrics) {
+  if (driverMetrics.isEmpty) return null;
+  var previousDriverMetrics = view.contentView.getDriverMetricsFilter();
+  if (previousDriverMetrics != null) {
+    previousDriverMetrics.forEach((driver, metrics) {
+      if (driverMetrics.containsKey(driver)) {
+        driverMetrics[driver] = [...metrics, ...driverMetrics[driver]].toSet().toList();
+      } else {
+        driverMetrics[driver] = metrics;
+      }
+    });
+  }
+  var driverMetricsJsonMap = [];
+  driverMetrics.forEach((driver, metrics) => {
+    driverMetricsJsonMap.add({'driver': driver, 'metrics': metrics})
+  });
+  var jsonEncodedSelectedDriverMetrics = jsonEncode(driverMetricsJsonMap);
+  return base64.encode(utf8.encode(jsonEncodedSelectedDriverMetrics));
+}
+
+Map<String, List<String>> decodeDriverMetricURLFilter(String encodedDriverMetricsFilter) {
+  if (encodedDriverMetricsFilter == null) return null;
+  var jsonEncodedSelectedDriverMetrics = utf8.decode(base64.decode(encodedDriverMetricsFilter));
+  var selectedDriverMetricsJsonMap = (jsonDecode(jsonEncodedSelectedDriverMetrics) as List<dynamic>);
+  Map<String, List<String>> decodedMetricsFilter = {};
+  selectedDriverMetricsJsonMap.forEach((m) {
+    String driver = m['driver'].toString();
+    List<String> metrics = List<String>.from(m['metrics']);
+    decodedMetricsFilter[driver] = metrics;
+  });
+  return decodedMetricsFilter;
 }

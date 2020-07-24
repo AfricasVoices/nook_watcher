@@ -461,26 +461,26 @@ class ContentView {
       });
     });
   }
-  void populateDriverChartsMetricsOptions(charts.DriverTimeseriesBarChartView chart, Map<String, bool> metricsOptions) {
-    print(metricsOptions);
-    chart.metricsSelector.children.removeWhere((el) => el is UListElement );
-    var metricsList = Element.ul();
-    metricsOptions.forEach((option, checked) {
-      var metricOption = new CheckboxInputElement()
-        ..classes.add('metric-option')
-        ..checked = checked;
-      metricOption.onClick.listen((e) {
-        var selectedOptions = metricsList.children.where(
-          (el) => (el.children.first as CheckboxInputElement).checked
-        ).map((el) => el.text.trim());//.toList();
-        controller.command(controller.UIAction.driverMetricsSelected,
-          new controller.DriverMetricsData({chart.title.text.trim():  List.from(selectedOptions)}));
+  void populateDriverChartsMetricsOptions(Map<String, Map<String, bool>> metricsOptions) {
+    if (driverCharts.isNotEmpty) {
+      driverCharts.forEach((driverName, chart) {
+        var options = metricsOptions[driverName];
+        var metricsList = Element.ul();
+        chart.metricsSelector.children.removeWhere((el) => el is UListElement);
+        options?.forEach((option, checked) {
+          var metricOption = new CheckboxInputElement()
+            ..classes.add('metric-option')
+            ..checked = checked;
+          metricsList.append(Element.li()
+            ..append(metricOption)
+            ..appendText(option));
+          metricOption.onClick.listen((e) {
+            controller.command(controller.UIAction.driverMetricsSelected, new controller.DriverMetricsData({driverName: [option]}));
+          });
+        });
+        chart.metricsSelector.append(metricsList);
       });
-      metricsList.append(Element.li()
-        ..append(metricOption)
-        ..appendText(option));
-    });
-    chart.metricsSelector.append(metricsList);
+    }
   }
 
   clearDriverCharts() {
@@ -524,11 +524,12 @@ class ContentView {
     }
   }
 
-  void setUrlFilters(controller.ChartType type, String project, controller.ChartPeriodFilters periodFilter) {
+  void setUrlFilters(controller.ChartType type, String project, controller.ChartPeriodFilters periodFilter, String selectedDriverMetric) {
     UrlView.setPageUrlFilters({
       'type': type.toString().split('.')[1],
       'project': project,
       'period-filter': periodFilter.toString().split('.')[1],
+      'drivers-metrics-filter': selectedDriverMetric
     });
   }
 
@@ -544,6 +545,14 @@ class ContentView {
   controller.ChartPeriodFilters getChartPeriodUrlFilter() {
     String periodFilter = UrlView.getPageUrlFilters()['period-filter'];
     return controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == 'ChartPeriodFilters.$periodFilter', orElse: () => null);
+  }
+
+  Map<String, List<String>> getDriverMetricsFilter() {
+    String driverMetricsFilter = UrlView.getPageUrlFilters()['drivers-metrics-filter']?.trim();
+    if (driverMetricsFilter == '' || driverMetricsFilter == null) {
+      return controller.decodeDriverMetricURLFilter(null);
+    }
+    return controller.decodeDriverMetricURLFilter(driverMetricsFilter);
   }
 }
 
