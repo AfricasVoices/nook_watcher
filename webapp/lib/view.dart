@@ -461,28 +461,26 @@ class ContentView {
       });
     });
   }
-  void populateDriverChartsMetricsOptions(Map<String, Map<String, bool>> metricsOptions) {
-    if (driverCharts.isNotEmpty) {
-      driverCharts.forEach((driverName, chart) {
-        var options = metricsOptions[driverName];
+  void populateDriverChartsMetricsOptions() {
+    controller.driverMetricsFilters.forEach((driver, filters) {
+        var chart = driverCharts[driver];
         var metricsList = Element.ul();
         chart.metricsSelector.children.removeWhere((el) => el is UListElement);
-        options?.forEach((option, checked) {
+        filters.forEach((filter, checked) {
           var metricOption = new CheckboxInputElement()
             ..classes.add('metric-option')
             ..checked = checked;
           metricsList.append(Element.li()
             ..append(metricOption)
-            ..appendText(option));
+            ..appendText(filter));
           metricOption.onClick.listen((e) {
             var selectedOption = (e.target as CheckboxInputElement).checked ? true : false;
-            metricsOptions[driverName][option] = selectedOption;
-            controller.command(controller.UIAction.driverMetricsSelected, new controller.DriverMetricsData(metricsOptions));
+            controller.driverMetricsFilters[driver][filter] = selectedOption;
+            controller.command(controller.UIAction.driverMetricsSelected, null);
           });
         });
         chart.metricsSelector.append(metricsList);
       });
-    }
   }
 
   clearDriverCharts() {
@@ -526,12 +524,11 @@ class ContentView {
     }
   }
 
-  void setUrlFilters(controller.ChartType type, String project, controller.ChartPeriodFilters periodFilter, String selectedDriverMetric) {
+  void setUrlFilters(controller.ChartType type, String project, controller.ChartPeriodFilters periodFilter) {
     UrlView.setPageUrlFilters({
       'type': type.toString().split('.')[1],
       'project': project,
-      'period-filter': periodFilter.toString().split('.')[1],
-      'drivers-metrics-filter': selectedDriverMetric
+      'period-filter': periodFilter.toString().split('.')[1]
     });
   }
 
@@ -547,14 +544,6 @@ class ContentView {
   controller.ChartPeriodFilters getChartPeriodUrlFilter() {
     String periodFilter = UrlView.getPageUrlFilters()['period-filter'];
     return controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == 'ChartPeriodFilters.$periodFilter', orElse: () => null);
-  }
-
-  Map<String, Map<String, bool>> getDriverMetricsFilter() {
-    String driverMetricsFilter = UrlView.getPageUrlFilters()['drivers-metrics-filter']?.trim();
-    if (driverMetricsFilter == '' || driverMetricsFilter == null) {
-      return controller.decodeDriverMetricURLFilter(null);
-    }
-    return controller.decodeDriverMetricURLFilter(driverMetricsFilter);
   }
 }
 
