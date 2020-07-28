@@ -153,7 +153,7 @@ void initUI() {
   listenForDriverMetrics(selectedProject, DRIVERS);
   listenForSystemEvents(PROJECTS);
   listenForSystemMetrics();
-  listenForDirectoryMetrics(); // not yet in use
+  //listenForDirectoryMetrics(); // not yet in use
 }
 
 void listenForNeedsReplyMetrics(String project) {
@@ -580,7 +580,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
   Map<String, Map<String, bool>> metricsOptions = {};
   DRIVERS.forEach((driverName) {
     var metricNames = driversDataMap[driverName]?.map((d) => d.metrics.keys)?.toSet()?.expand((m) => m)?.toSet();
-    if(metricNames != null && !metricNames.isEmpty) {
+    if (metricNames != null && !metricNames.isEmpty) {
       metricsOptions[driverName] = Map.fromIterable(metricNames, key: (d) => d, value: (d) => false);
 
       if (selectedDriverMetrics.containsKey(driverName)) {
