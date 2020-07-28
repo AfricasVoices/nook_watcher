@@ -70,19 +70,35 @@ enum ChartType {
 
 class Data {}
 
+
 class ChartFilterData extends Data {
   ChartPeriodFilters periodFilter;
   ChartFilterData(this.periodFilter);
+
+  @override
+  String toString() {
+    return "ChartFilterData($periodFilter)";
+  }
 }
 
 class ChartTypeData extends Data {
   ChartType chartType;
   ChartTypeData(this.chartType);
+
+  @override
+  String toString() {
+    return "ChartTypeData($chartType)";
+  }
 }
 
 class ProjectData extends Data {
   String project;
   ProjectData(this.project);
+
+  @override
+  String toString() {
+    return "ProjectData($project)";
+  }
 }
 
 class UserData extends Data {
@@ -90,6 +106,11 @@ class UserData extends Data {
   String email;
   String photoUrl;
   UserData(this.displayName, this.email, this.photoUrl);
+
+  @override
+  String toString() {
+    return "UserData($displayName, $email, $photoUrl)";
+  }
 }
 
 List<model.NeedsReplyData> needsReplyDataList;
@@ -307,6 +328,7 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
 }
 
 void command(UIAction action, Data actionData) {
+  log.verbose('command => $action : $actionData');
   switch (action) {
     /*** User */
     case UIAction.userSignedOut:
