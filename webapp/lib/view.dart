@@ -475,7 +475,9 @@ class ContentView {
             ..append(metricOption)
             ..appendText(option));
           metricOption.onClick.listen((e) {
-            controller.command(controller.UIAction.driverMetricsSelected, new controller.DriverMetricsData({driverName: [option]}));
+            var selectedOption = (e.target as CheckboxInputElement).checked ? true : false;
+            metricsOptions[driverName][option] = selectedOption;
+            controller.command(controller.UIAction.driverMetricsSelected, new controller.DriverMetricsData(metricsOptions));
           });
         });
         chart.metricsSelector.append(metricsList);
@@ -547,7 +549,7 @@ class ContentView {
     return controller.ChartPeriodFilters.values.singleWhere((v) => v.toString() == 'ChartPeriodFilters.$periodFilter', orElse: () => null);
   }
 
-  Map<String, List<String>> getDriverMetricsFilter() {
+  Map<String, Map<String, bool>> getDriverMetricsFilter() {
     String driverMetricsFilter = UrlView.getPageUrlFilters()['drivers-metrics-filter']?.trim();
     if (driverMetricsFilter == '' || driverMetricsFilter == null) {
       return controller.decodeDriverMetricURLFilter(null);
