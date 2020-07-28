@@ -72,7 +72,6 @@ enum ChartType {
 
 class Data {}
 
-
 class ChartFilterData extends Data {
   ChartPeriodFilters periodFilter;
   ChartFilterData(this.periodFilter);
