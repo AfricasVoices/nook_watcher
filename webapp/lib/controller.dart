@@ -1,7 +1,6 @@
 library controller;
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -104,6 +103,7 @@ ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
 Map<String, Map<String, bool>> driverMetricsFilters;
+bool driverMetricsSelected = false;
 
 model.User signedInUser;
 
@@ -145,7 +145,7 @@ void initUI() {
   //listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
   //listenForSystemEvents(PROJECTS);
-  listenForSystemMetrics();
+  //listenForSystemMetrics();
   // listenForDirectoryMetrics(); // not yet in use
 }
 
@@ -405,6 +405,7 @@ void command(UIAction action, Data actionData) {
       break;
 
     case UIAction.driverMetricsSelected:
+      driverMetricsSelected = true;
       updateDriverCharts(filterDriversData(driversDataMap));
       break;
   }
@@ -566,14 +567,17 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     });
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
-
-  if (driverMetricsFilters.isEmpty && filteredDriversDataMap.isNotEmpty) {
+  var previousFilters = driverMetricsSelected ? new Map.from(driverMetricsFilters) : {};
+  if (filteredDriversDataMap.isNotEmpty) {
     DRIVERS.forEach((driver) {
       var metricNames = filteredDriversDataMap[driver].map((d) => d.metrics.keys).toSet().expand((m) => m).toSet();
       driverMetricsFilters[driver] =  Map.fromIterable(metricNames, key: (m) => m, value: (_)=> true);
   });
   }
-  print(driverMetricsFilters);
+  if(previousFilters.isNotEmpty) {
+    previousFilters.forEach((driver, filters) => driverMetricsFilters[driver] = filters);
+  }
+  driverMetricsSelected = false;
   view.contentView.populateDriverChartsMetricsOptions();
 }
 
