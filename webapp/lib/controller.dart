@@ -103,7 +103,6 @@ ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
 Map<String, Map<String, bool>> driverMetricsFilters;
-bool driverMetricsSelected = false;
 
 model.User signedInUser;
 
@@ -405,10 +404,16 @@ void command(UIAction action, Data actionData) {
       break;
 
     case UIAction.driverMetricsSelected:
-      driverMetricsSelected = true;
       updateDriverCharts(filterDriversData(driversDataMap));
       break;
   }
+}
+
+void _resetDriverMetricFilters() {
+  driverMetricsFilters.keys.forEach((driver) {
+    var filters = driverMetricsFilters[driver] ;
+    driverMetricsFilters[driver] = new Map.fromIterable(filters.keys, key: (metric) => metric, value: (_) => true);
+  });
 }
 
 void _updateChartsView() {
@@ -417,6 +422,7 @@ void _updateChartsView() {
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       break;
     case ChartType.driver:
+      _resetDriverMetricFilters();
       updateDriverCharts(filterDriversData(driversDataMap));
       break;
     case ChartType.system:
@@ -447,14 +453,14 @@ Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.Dri
     filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
   });
 
-  // if (filteredDriversDataMap.isNotEmpty && driverMetricsFilters.isNotEmpty) {
-  //   filteredDriversDataMap.forEach((driver, data) {
-  //     var selectedMetrics = Map.fromEntries(driverMetricsFilters[driver].entries.where((m) => m.value == true));
-  //     data.forEach((d) {
-  //       return d.metrics = Map.fromEntries(d.metrics.entries.where((m) => selectedMetrics.keys.contains( m.key)));
-  //     });
-  //   });
-  // }
+  if (filteredDriversDataMap.isNotEmpty && driverMetricsFilters.isNotEmpty) {
+    filteredDriversDataMap.forEach((driver, data) {
+      var selectedMetrics = Map.fromEntries(driverMetricsFilters[driver].entries.where((m) => m.value == true));
+      data.forEach((d) {
+        return d.metrics = Map.fromEntries(d.metrics.entries.where((m) => selectedMetrics.keys.contains( m.key)));
+      });
+    });
+  }
 
   return filteredDriversDataMap;
 }
@@ -567,7 +573,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     });
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
-  var previousFilters = driverMetricsSelected ? new Map.from(driverMetricsFilters) : {};
+  var previousFilters = new Map.from(driverMetricsFilters);
   if (filteredDriversDataMap.isNotEmpty) {
     DRIVERS.forEach((driver) {
       var metricNames = filteredDriversDataMap[driver].map((d) => d.metrics.keys).toSet().expand((m) => m).toSet();
@@ -575,9 +581,9 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
   });
   }
   if(previousFilters.isNotEmpty) {
-    previousFilters.forEach((driver, filters) => driverMetricsFilters[driver] = filters);
+    driverMetricsFilters.forEach((driver, filters) =>
+        driverMetricsFilters[driver] = {}..addAll(filters)..addAll(previousFilters[driver]));
   }
-  driverMetricsSelected = false;
   view.contentView.populateDriverChartsMetricsOptions();
 }
 
