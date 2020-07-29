@@ -141,10 +141,10 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  //listenForNeedsReplyMetrics(selectedProject);
+  listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
-  //listenForSystemEvents(PROJECTS);
-  //listenForSystemMetrics();
+  listenForSystemEvents(PROJECTS);
+  listenForSystemMetrics();
   // listenForDirectoryMetrics(); // not yet in use
 }
 
@@ -457,7 +457,7 @@ Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.Dri
     filteredDriversDataMap.forEach((driver, data) {
       var selectedMetrics = Map.fromEntries(driverMetricsFilters[driver].entries.where((m) => m.value == true));
       data.forEach((d) {
-        return d.metrics = Map.fromEntries(d.metrics.entries.where((m) => selectedMetrics.keys.contains( m.key)));
+        return d.metrics = Map.fromEntries(d.metrics.entries.where((m) => selectedMetrics.keys.contains(m.key)));
       });
     });
   }
