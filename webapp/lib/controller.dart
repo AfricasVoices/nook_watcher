@@ -544,7 +544,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
   });
   }
 
-  if(previousFilters.isNotEmpty) {
+  if (previousFilters.isNotEmpty) {
     driverMetricsFilters.forEach((driver, filters) {
       var updatedFilters = {}..addAll(filters)..addAll(previousFilters[driver]);
       var sortedFilters = Map<String, bool>.fromIterable(updatedFilters.keys.toList()..sort(), key: (m) => m, value: (m) => updatedFilters[m]);
@@ -572,7 +572,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
 
     driverData.forEach((data) {
       data.metrics.forEach((metric, value) {
-        if(metricNames.contains(metric)) {
+        if (metricNames.contains(metric)) {
           chartData[metric][data.datetime.toLocal()] = value;
         }
       });
