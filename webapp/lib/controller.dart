@@ -404,7 +404,7 @@ void command(UIAction action, Data actionData) {
       break;
 
     case UIAction.driverMetricsSelected:
-      updateDriverCharts(filterDriversData(driversDataMap));
+      updateDriverCharts(filterDriversData(driversDataMap, true));
       break;
   }
 }
@@ -441,7 +441,7 @@ List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needs
   return needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
 }
 
-Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.DriverData>> driversData) {
+Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.DriverData>> driversData, [bool metricsFiltered = false]) {
   DateTime filterDate = getFilteredDate(selectedPeriodFilter);
 
   // early exit if there's no filtering needed
@@ -453,7 +453,7 @@ Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.Dri
     filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
   });
 
-  if (filteredDriversDataMap.isNotEmpty && driverMetricsFilters.isNotEmpty) {
+  if (filteredDriversDataMap.isNotEmpty && driverMetricsFilters.isNotEmpty && metricsFiltered) {
     filteredDriversDataMap.forEach((driver, data) {
       var selectedMetrics = Map.fromEntries(driverMetricsFilters[driver].entries.where((m) => m.value == true));
       data.forEach((d) {
@@ -581,8 +581,11 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
   });
   }
   if(previousFilters.isNotEmpty) {
-    driverMetricsFilters.forEach((driver, filters) =>
-        driverMetricsFilters[driver] = {}..addAll(filters)..addAll(previousFilters[driver]));
+    driverMetricsFilters.forEach((driver, filters) {
+      var updatedFilters = {}..addAll(filters)..addAll(previousFilters[driver]);
+      var sortedFilters = Map<String, bool>.fromIterable(updatedFilters.keys.toList()..sort(), key: (m) => m, value: (m) => updatedFilters[m]);
+      driverMetricsFilters[driver] = sortedFilters;
+  });
   }
   view.contentView.populateDriverChartsMetricsOptions();
 }
