@@ -297,6 +297,7 @@ class SystemEventsTimeseriesLineChartView {
 class DriverTimeseriesBarChartView {
   DivElement chartContainer;
   DivElement title;
+  DivElement yUpperLimitRangeSlider;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -315,6 +316,12 @@ class DriverTimeseriesBarChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
+
+    yUpperLimitRangeSlider = new DivElement()
+      ..classes.add('range-slider-container')
+      ..append(new DivElement()..classes.add('range-value')..text='100000')
+      ..append(new RangeInputElement());
+    chartContainer.append(yUpperLimitRangeSlider);
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {

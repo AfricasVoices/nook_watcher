@@ -138,10 +138,10 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  listenForNeedsReplyMetrics(selectedProject);
+  //listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
-  listenForSystemEvents(PROJECTS);
-  listenForSystemMetrics();
+  //listenForSystemEvents(PROJECTS);
+  //listenForSystemMetrics();
   // listenForDirectoryMetrics(); // not yet in use
 }
 
@@ -545,7 +545,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
         chartData[metric][data.datetime.toLocal()] = value;
       });
     });
-    chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+    chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime, yUpperLimit: 10);
   });
 }
 
