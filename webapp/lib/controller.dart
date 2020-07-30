@@ -33,6 +33,7 @@ enum UIAction {
   projectSelected,
   chartsFiltered,
   tabSwitched,
+  driverMetricsSelected
 }
 
 enum ChartPeriodFilters {
@@ -101,6 +102,7 @@ List<model.DirectorySizeMetricsData> dirSizeMetricsDataList;
 ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
+Map<String, Map<String, bool>> driverMetricsFilters;
 
 model.User signedInUser;
 
@@ -120,6 +122,7 @@ void initUI() {
   systemEventsDataMap = {};
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
+  driverMetricsFilters = {};
 
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
   view.contentView.toogleTabView(selectedTab);
@@ -369,6 +372,7 @@ void command(UIAction action, Data actionData) {
         selectedPeriodFilter = selectedTab == ChartType.driver ? ChartPeriodFilters.hours1 : ChartPeriodFilters.days1;
       }
       view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
+      _resetDriverMetricFilters();
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       _updateChartsView();
       break;
@@ -381,6 +385,7 @@ void command(UIAction action, Data actionData) {
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       view.contentView.clearDriverCharts();
+      driverMetricsFilters.clear();
       updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
 
@@ -399,7 +404,18 @@ void command(UIAction action, Data actionData) {
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       _updateChartsView();
       break;
+
+    case UIAction.driverMetricsSelected:
+      updateDriverCharts(filterDriversData(driversDataMap));
+      break;
   }
+}
+
+void _resetDriverMetricFilters() {
+  driverMetricsFilters.keys.forEach((driver) {
+    var filters = driverMetricsFilters[driver] ;
+    driverMetricsFilters[driver] = new Map.fromIterable(filters.keys, key: (metric) => metric, value: (_) => true);
+  });
 }
 
 void _updateChartsView() {
@@ -433,9 +449,11 @@ Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.Dri
   if (filterDate == null) return driversData;
 
   Map<String, List<model.DriverData>> filteredDriversDataMap = {};
+
   driversData.keys.forEach((driver) {
     filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
   });
+
   return filteredDriversDataMap;
 }
 
@@ -518,17 +536,29 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
 
   view.contentView.createDriverCharts(filteredDriversDataMap);
 
+  var previousFilters = new Map.from(driverMetricsFilters);
+  if (filteredDriversDataMap.isNotEmpty) {
+    DRIVERS.forEach((driver) {
+      var metricNames = filteredDriversDataMap[driver].map((d) => d.metrics.keys).toSet().expand((m) => m).toSet();
+      driverMetricsFilters[driver] =  Map.fromIterable(metricNames, key: (m) => m, value: (_)=> true);
+  });
+  }
+
+  if (previousFilters.isNotEmpty) {
+    driverMetricsFilters.forEach((driver, filters) {
+      var updatedFilters = {}..addAll(filters)..addAll(previousFilters[driver]);
+      var sortedFilters = Map<String, bool>.fromIterable(updatedFilters.keys.toList()..sort(), key: (m) => m, value: (m) => updatedFilters[m]);
+      driverMetricsFilters[driver] = sortedFilters;
+  });
+  }
+
   filteredDriversDataMap.forEach((driverName, driverData) {
     var chart = view.contentView.driverCharts[driverName];
 
-    List<String> metricNames = [];
-    List<DateTime> datetimes = [];
-    for (var data in driverData) {
-      metricNames.addAll(data.metrics.keys);
-      datetimes.add(data.datetime);
-    }
-    metricNames = metricNames.toSet().toList()..sort();
-    datetimes = datetimes.toSet().toList()..sort();
+    var selectedMetrics = Map.fromEntries(driverMetricsFilters[driverName].entries.where((m) => m.value == true));
+
+    List<String> metricNames = selectedMetrics.keys.toList()..sort();
+    List<DateTime> datetimes = driverData.map((d) => d.datetime).toSet().toList()..sort();
 
     // Initialise the data to zero for all metrics and timestamps,
     // otherwise the bar chart doesn't work well.
@@ -542,11 +572,14 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
 
     driverData.forEach((data) {
       data.metrics.forEach((metric, value) {
-        chartData[metric][data.datetime.toLocal()] = value;
+        if (metricNames.contains(metric)) {
+          chartData[metric][data.datetime.toLocal()] = value;
+        }
       });
     });
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   });
+  view.contentView.populateDriverChartsMetricsOptions();
 }
 
 void updateSystemEventsCharts(Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap) {
