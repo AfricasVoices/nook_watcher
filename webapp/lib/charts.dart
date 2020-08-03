@@ -423,6 +423,8 @@ class DriverTimeseriesBarChartView {
       chart.options.scales.yAxes[0].ticks.max = yUpperLimit;
     }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
+
+    (yUpperLimitRangeSlider.children[1] as RangeInputElement).max = yUpperLimit.toString();
   }
 
   String _stringToHexColor(str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';

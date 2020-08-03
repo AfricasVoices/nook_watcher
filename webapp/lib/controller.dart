@@ -545,7 +545,15 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
         chartData[metric][data.datetime.toLocal()] = value;
       });
     });
-    chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime, yUpperLimit: 10);
+
+    var yUpperLimit = 0;
+    metricNames.forEach((metric) {
+      var metricData = chartData[metric];
+      var max = (metricData.values.toList()..sort()).last;
+      yUpperLimit += max;
+    });
+
+    chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime, yUpperLimit: yUpperLimit);
   });
 }
 
