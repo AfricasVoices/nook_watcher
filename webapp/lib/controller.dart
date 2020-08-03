@@ -33,7 +33,8 @@ enum UIAction {
   projectSelected,
   chartsFiltered,
   tabSwitched,
-  driverMetricsSelected
+  driverMetricsSelected,
+  driverYUpperLimitSet
 }
 
 enum ChartPeriodFilters {
@@ -103,6 +104,7 @@ ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
 Map<String, Map<String, bool>> driverMetricsFilters;
+Map<String, num> driverYUpperLimitFilters;
 
 model.User signedInUser;
 
@@ -123,6 +125,7 @@ void initUI() {
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
   driverMetricsFilters = {};
+  driverYUpperLimitFilters = {};
 
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
   view.contentView.toogleTabView(selectedTab);
@@ -141,10 +144,10 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  //listenForNeedsReplyMetrics(selectedProject);
+  listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
-  //listenForSystemEvents(PROJECTS);
-  //listenForSystemMetrics();
+  listenForSystemEvents(PROJECTS);
+  listenForSystemMetrics();
   // listenForDirectoryMetrics(); // not yet in use
 }
 
@@ -386,6 +389,7 @@ void command(UIAction action, Data actionData) {
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       view.contentView.clearDriverCharts();
       driverMetricsFilters.clear();
+      driverYUpperLimitFilters.clear();
       updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
 
@@ -408,6 +412,9 @@ void command(UIAction action, Data actionData) {
     case UIAction.driverMetricsSelected:
       updateDriverCharts(filterDriversData(driversDataMap));
       break;
+
+    case UIAction.driverYUpperLimitSet:
+      updateDriverCharts(filterDriversData(driversDataMap));
   }
 }
 
@@ -579,11 +586,15 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     });
 
     var yUpperLimit = 0;
-    metricNames.forEach((metric) {
-      var metricData = chartData[metric];
-      var max = (metricData.values.toList()..sort()).last;
-      yUpperLimit += max;
-    });
+    if (driverYUpperLimitFilters[driverName] != null) {
+      yUpperLimit = driverYUpperLimitFilters[driverName];
+    } else {
+      metricNames.forEach((metric) {
+        var metricData = chartData[metric];
+        var max = (metricData.values.toList()..sort()).last;
+        yUpperLimit += max;
+      });
+    }
 
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime, yUpperLimit: yUpperLimit);
   });
