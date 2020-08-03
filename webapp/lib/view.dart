@@ -461,6 +461,27 @@ class ContentView {
       });
     });
   }
+  void populateDriverChartsMetricsOptions() {
+    controller.driverMetricsFilters.forEach((driver, filters) {
+        var chart = driverCharts[driver];
+        var metricsList = Element.ul();
+        chart.metricsSelector.children.removeWhere((el) => el is UListElement);
+        filters.forEach((filter, checked) {
+          var metricOption = new CheckboxInputElement()
+            ..classes.add('metric-option')
+            ..checked = checked;
+          metricsList.append(Element.li()
+            ..append(metricOption)
+            ..appendText(filter));
+          metricOption.onClick.listen((e) {
+            var selectedOption = (e.target as CheckboxInputElement).checked ? true : false;
+            controller.driverMetricsFilters[driver][filter] = selectedOption;
+            controller.command(controller.UIAction.driverMetricsSelected, null);
+          });
+        });
+        chart.metricsSelector.append(metricsList);
+      });
+  }
 
   clearDriverCharts() {
     driverCharts.clear();

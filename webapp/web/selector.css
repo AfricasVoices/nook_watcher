@@ -2,7 +2,7 @@
     margin: auto;
 }
 
-#project-selector select, 
+#project-selector select,
 .period-filter {
     margin: 4px 10px;
     display: flex;
@@ -25,3 +25,62 @@
  #project-selector.hidden {
     visibility: hidden;
 }
+
+.driver-metrics-selector.dropdown-checkbox {
+    position:relative;
+    display:inline-block;
+    padding-bottom: 5px;
+    margin-left: 7px;
+  }
+
+  .driver-metrics-selector.dropdown-checkbox .anchor {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0px 27px 0px 2px;
+    border: 1px solid #ccc;
+    font-size: 0.8rem;
+  }
+
+  .driver-metrics-selector.dropdown-checkbox .anchor:after {
+    position: absolute;
+    content: "";
+    border-left: 1px solid black;
+    border-top: 1px solid black;
+    padding: 4px;
+    right: 12px;
+    top: 12%;
+    -moz-transform: rotate(-135deg);
+    -ms-transform: rotate(-135deg);
+    -o-transform: rotate(-135deg);
+    -webkit-transform: rotate(-135deg);
+    transform: rotate(-135deg);
+  }
+
+  .driver-metrics-selector.dropdown-checkbox ul {
+      position: absolute;
+      background: #ffffff;
+      list-style: none;
+      margin: 0px;
+      padding:0px;
+      left:0px;
+      display:none;
+      z-index:1;
+      border: 1px solid #cecccc;
+  }
+
+  .driver-metrics-selector.dropdown-checkbox ul li {
+      font-size: 15px;
+      padding-right: 2px;
+      border-bottom: 1px solid #cecccc;
+      margin: 0px;
+      white-space: nowrap;
+  }
+
+  .driver-metrics-selector.dropdown-checkbox ul li input {
+    margin-right:5px;
+  }
+
+  .driver-metrics-selector.dropdown-checkbox:hover ul {
+    display:block
+  }
