@@ -332,7 +332,6 @@ class DriverTimeseriesBarChartView {
         ..value = '0'
         ..step = '1'
         ..min = '0'
-        ..max = '1000'
         ..onInput.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
           var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
@@ -430,8 +429,6 @@ class DriverTimeseriesBarChartView {
       chart.options.scales.yAxes[0].ticks.max = yUpperLimit;
     }
     chart.update(new chartjs.ChartUpdateProps(duration: 0));
-
-    (yUpperLimitRangeSlider.children[1] as RangeInputElement).max = yUpperLimit.toString();
   }
 
   String _stringToHexColor(str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';

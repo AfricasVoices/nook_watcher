@@ -594,8 +594,10 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
         var max = (metricData.values.toList()..sort()).last;
         yUpperLimit += max;
       });
+      view.contentView.setDriverChartsYAxisFilterMax(driverName, yUpperLimit);
     }
 
+    if (yUpperLimit == 0) yUpperLimit = null;
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime, yUpperLimit: yUpperLimit);
   });
   view.contentView.populateDriverChartsMetricsOptions();
