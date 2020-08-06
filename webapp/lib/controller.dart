@@ -406,6 +406,7 @@ void command(UIAction action, Data actionData) {
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      driverYUpperLimitFilters.clear();
       _updateChartsView();
       break;
 
@@ -594,10 +595,14 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
         var max = (metricData.values.toList()..sort()).last;
         yUpperLimit += max;
       });
-      view.contentView.setDriverChartsYAxisFilterMax(driverName, yUpperLimit);
     }
 
-    if (yUpperLimit == 0) yUpperLimit = null;
+    if (yUpperLimit != 0) {
+      view.contentView.setDriverChartsYAxisFilterMax(driverName, yUpperLimit);
+    } else {
+      yUpperLimit = null;
+    }
+
     chart.updateChart(chartData, timeScaleUnit: 'hour', xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime, yUpperLimit: yUpperLimit);
   });
   view.contentView.populateDriverChartsMetricsOptions();

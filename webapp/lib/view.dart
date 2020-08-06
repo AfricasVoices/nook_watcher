@@ -476,8 +476,11 @@ class ContentView {
   }
 
   void setDriverChartsYAxisFilterMax(String driverName, num max) {
-    var chartSlider = driverCharts[driverName].yUpperLimitRangeSlider.children[1] as RangeInputElement;
-    chartSlider.max = max.toString();
+    var slider = driverCharts[driverName].yUpperLimitRangeSlider.children[1] as RangeInputElement;
+    var sliderIndicator = slider.previousElementSibling;
+    slider.max = max.toString();
+    slider.value = max.toString();
+    sliderIndicator.children.clear();
   }
 
   void populateDriverChartsMetricsOptions() {
