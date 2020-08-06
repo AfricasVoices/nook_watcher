@@ -298,6 +298,7 @@ class DriverTimeseriesBarChartView {
   DivElement chartContainer;
   DivElement title;
   DivElement metricsSelector;
+  DivElement yUpperLimitRangeSlider;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -322,6 +323,26 @@ class DriverTimeseriesBarChartView {
       ..classes.add('anchor')
       ..text = 'Filter Metrics');
     chartContainer.insertAdjacentElement('afterbegin', metricsSelector);
+
+    yUpperLimitRangeSlider = new DivElement()
+      ..classes.add('range-slider-container')
+      ..append(new DivElement()..classes.add('range-value'))
+      ..append(
+        new RangeInputElement()
+        ..value = '0'
+        ..step = '1'
+        ..min = '1'
+        ..onInput.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 150 - (newValue * 2.15);
+          sliderIndicator.children.clear();
+          sliderIndicator.append(new Element.span()..text = slider.value);
+          sliderIndicator.style.setProperty('top', 'calc(${-newValue}% + (${newPosition}px))');
+        })
+      );
+    chartContainer.append(yUpperLimitRangeSlider);
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {

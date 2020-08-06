@@ -457,10 +457,28 @@ class ContentView {
           titleText: '$driverName',
           datasetLabels: List.filled(0, '', growable: true)
         );
+        driverChart.yUpperLimitRangeSlider.children[1].onChange.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
+          controller.driverYUpperLimitFilters[driverName] = int.parse(slider.value);
+          controller.command(controller.UIAction.driverYUpperLimitSet, null);
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 150 - (newValue * 2.15);
+          sliderIndicator.style.setProperty('top', 'calc(${-newValue}% + (${newPosition}px))');
+        });
         return driverChart;
       });
     });
   }
+
+  void setDriverChartsYAxisFilterMax(String driverName, num max) {
+    var slider = driverCharts[driverName].yUpperLimitRangeSlider.children[1] as RangeInputElement;
+    var sliderIndicator = slider.previousElementSibling;
+    slider.max = max.toString();
+    slider.value = max.toString();
+    sliderIndicator.children.clear();
+  }
+
   void populateDriverChartsMetricsOptions() {
     controller.driverMetricsFilters.forEach((driver, filters) {
         var chart = driverCharts[driver];
