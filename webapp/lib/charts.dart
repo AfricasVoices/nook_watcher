@@ -331,7 +331,7 @@ class DriverTimeseriesBarChartView {
         new RangeInputElement()
         ..value = '0'
         ..step = '1'
-        ..min = '0'
+        ..min = '1'
         ..onInput.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
           var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
