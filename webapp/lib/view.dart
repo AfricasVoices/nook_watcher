@@ -459,17 +459,25 @@ class ContentView {
         );
         driverChart.xUpperLimitRangeSlider.children[1].onChange.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
           controller.driverXLimitFilters[driverName] = {}
             ..addAll(controller.driverXLimitFilters[driverName] ?? {})
             ..addAll({'min': new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value))});
           controller.command(controller.UIAction.driverXLowerLimitSet, null);
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 742 - (newValue * 0.1);
+          sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
         });
         driverChart.xUpperLimitRangeSlider.children[3].onChange.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
           controller.driverXLimitFilters[driverName] = {}
             ..addAll(controller.driverXLimitFilters[driverName] ?? {})
             ..addAll({'max': new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value))});
           controller.command(controller.UIAction.driverXUpperLimitSet, null);
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 742 - (newValue * 0.1);
+          sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
         });
         driverChart.yUpperLimitRangeSlider.children[1].onChange.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);

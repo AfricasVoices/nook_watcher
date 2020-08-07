@@ -152,7 +152,7 @@ void initUI() {
   listenForDriverMetrics(selectedProject, DRIVERS);
   listenForSystemEvents(PROJECTS);
   listenForSystemMetrics();
-  listenForDirectoryMetrics(); // not yet in use
+  //listenForDirectoryMetrics(); // not yet in use
 }
 
 void listenForNeedsReplyMetrics(String project) {
@@ -602,14 +602,12 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     });
 
     if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['min'] != null) {
-      print('minX: ${driverXLimitFilters[driverName]['min']}');
       xLowerLimitDateTime = driverXLimitFilters[driverName]['min'];
     } else {
       view.contentView.setDriverChartsXAxisFilterMinMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
     }
 
     if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['max'] != null) {
-      print('maX: ${driverXLimitFilters[driverName]['max']}');
       xUpperLimitDateTime = driverXLimitFilters[driverName]['max'];
     } else {
       view.contentView.setDriverChartsXAxisFilterMinMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
