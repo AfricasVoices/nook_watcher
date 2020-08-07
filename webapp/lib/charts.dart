@@ -298,6 +298,7 @@ class DriverTimeseriesBarChartView {
   DivElement chartContainer;
   DivElement title;
   DivElement metricsSelector;
+  DivElement xUpperLimitRangeSlider;
   DivElement yUpperLimitRangeSlider;
   CanvasElement canvas;
   chartjs.Chart chart;
@@ -323,6 +324,44 @@ class DriverTimeseriesBarChartView {
       ..classes.add('anchor')
       ..text = 'Filter Metrics');
     chartContainer.insertAdjacentElement('afterbegin', metricsSelector);
+
+    xUpperLimitRangeSlider = new DivElement()
+      ..classes.add('x-range-slider-container')
+      ..append(new DivElement()..classes.add('range-value'))
+      ..append(
+        new RangeInputElement()
+        ..value = '0'
+        ..step = '1'
+        ..min = '1'
+        ..max = '1000'
+        ..onInput.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 742 - (newValue * 0.1);
+          sliderIndicator.children.clear();
+          sliderIndicator.append(new Element.span()..text = slider.value);
+          sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
+        })
+      )
+      ..append(new DivElement()..classes.add('range-value'))
+      ..append(
+        new RangeInputElement()
+        ..value = '1000'
+        ..step = '1'
+        ..min = '1'
+        ..max = '1000'
+        ..onInput.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 742 - (newValue * 0.1);
+          sliderIndicator.children.clear();
+          sliderIndicator.append(new Element.span()..text = slider.value);
+          sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
+        })
+      );
+    chartContainer.append(xUpperLimitRangeSlider);
 
     yUpperLimitRangeSlider = new DivElement()
       ..classes.add('y-range-slider-container')
