@@ -12,9 +12,8 @@
 }
 
 .x-range-slider-container .range-value span {
-  min-width: 30px;
+  min-width: 160px;
   height: 24px;
-  padding: 0px 2px;
   line-height: 24px;
   text-align: center;
   background: #333333;
@@ -23,7 +22,8 @@
   display: block;
   position: absolute;
   left: 60%;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 0)
+              rotate(180deg);
   border-radius: 6px;
 }
 
@@ -35,10 +35,11 @@
   border-top: 10px solid #333333;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   margin-left: -5px;
   margin-top: -1px;
+  transform: rotate(180deg);
 }
 
 .x-range-slider-container input[type="range"] {
