@@ -333,14 +333,14 @@ class DriverTimeseriesBarChartView {
         ..value = '0'
         ..step = '1'
         ..min = '1'
-        ..max = '1000'
         ..onInput.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
           var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
           var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
           var newPosition = 742 - (newValue * 0.1);
           sliderIndicator.children.clear();
-          sliderIndicator.append(new Element.span()..text = slider.value);
+          var isoDate = new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value)).toIso8601String();
+          sliderIndicator.append(new Element.span()..text = isoDate);
           sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
         })
       )
@@ -350,14 +350,14 @@ class DriverTimeseriesBarChartView {
         ..value = '1000'
         ..step = '1'
         ..min = '1'
-        ..max = '1000'
         ..onInput.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
           var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
           var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
           var newPosition = 742 - (newValue * 0.1);
           sliderIndicator.children.clear();
-          sliderIndicator.append(new Element.span()..text = slider.value);
+          var isoDate = new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value)).toIso8601String();
+          sliderIndicator.append(new Element.span()..text = isoDate);
           sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
         })
       );

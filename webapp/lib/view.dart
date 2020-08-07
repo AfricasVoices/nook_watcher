@@ -457,6 +457,20 @@ class ContentView {
           titleText: '$driverName',
           datasetLabels: List.filled(0, '', growable: true)
         );
+        driverChart.xUpperLimitRangeSlider.children[1].onChange.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          controller.driverXLimitFilters[driverName] = {}
+            ..addAll(controller.driverXLimitFilters[driverName] ?? {})
+            ..addAll({'min': new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value))});
+          controller.command(controller.UIAction.driverXLowerLimitSet, null);
+        });
+        driverChart.xUpperLimitRangeSlider.children[3].onChange.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          controller.driverXLimitFilters[driverName] = {}
+            ..addAll(controller.driverXLimitFilters[driverName] ?? {})
+            ..addAll({'max': new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value))});
+          controller.command(controller.UIAction.driverXUpperLimitSet, null);
+        });
         driverChart.yUpperLimitRangeSlider.children[1].onChange.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
           var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
@@ -469,6 +483,17 @@ class ContentView {
         return driverChart;
       });
     });
+  }
+
+  void setDriverChartsXAxisFilterMinMax(String driverName, DateTime min, DateTime max) {
+    var minSlider = driverCharts[driverName].xUpperLimitRangeSlider.children[1] as RangeInputElement;
+    var maxSlider = driverCharts[driverName].xUpperLimitRangeSlider.children[3] as RangeInputElement;
+    minSlider.min = min.millisecondsSinceEpoch.toString();
+    minSlider.max = max.millisecondsSinceEpoch.toString();
+    minSlider.value = minSlider.min;
+    maxSlider.min = min.millisecondsSinceEpoch.toString();
+    maxSlider.max = max.millisecondsSinceEpoch.toString();
+    maxSlider.value = maxSlider.max;
   }
 
   void setDriverChartsYAxisFilterMax(String driverName, num max) {
