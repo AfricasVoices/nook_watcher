@@ -34,7 +34,9 @@ enum UIAction {
   chartsFiltered,
   tabSwitched,
   driverMetricsSelected,
-  driverYUpperLimitSet
+  driverYUpperLimitSet,
+  driverXLowerLimitSet,
+  driverXUpperLimitSet
 }
 
 enum ChartPeriodFilters {
@@ -104,6 +106,7 @@ ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
 Map<String, Map<String, bool>> driverMetricsFilters;
+Map<String, Map<String, DateTime>> driverXLimitFilters;
 Map<String, num> driverYUpperLimitFilters;
 
 model.User signedInUser;
@@ -125,6 +128,7 @@ void initUI() {
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
   driverMetricsFilters = {};
+  driverXLimitFilters = {};
   driverYUpperLimitFilters = {};
 
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
@@ -144,11 +148,11 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  //listenForNeedsReplyMetrics(selectedProject);
+  listenForNeedsReplyMetrics(selectedProject);
   listenForDriverMetrics(selectedProject, DRIVERS);
-  //listenForSystemEvents(PROJECTS);
-  //listenForSystemMetrics();
-  // listenForDirectoryMetrics(); // not yet in use
+  listenForSystemEvents(PROJECTS);
+  listenForSystemMetrics();
+  listenForDirectoryMetrics(); // not yet in use
 }
 
 void listenForNeedsReplyMetrics(String project) {
@@ -389,6 +393,7 @@ void command(UIAction action, Data actionData) {
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       view.contentView.clearDriverCharts();
       driverMetricsFilters.clear();
+      driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
       updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
@@ -406,6 +411,7 @@ void command(UIAction action, Data actionData) {
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
       _updateChartsView();
       break;
@@ -416,6 +422,15 @@ void command(UIAction action, Data actionData) {
 
     case UIAction.driverYUpperLimitSet:
       updateDriverCharts(filterDriversData(driversDataMap));
+      break;
+
+    case UIAction.driverXLowerLimitSet:
+      updateDriverCharts(filterDriversData(driversDataMap));
+      break;
+
+    case UIAction.driverXUpperLimitSet:
+      updateDriverCharts(filterDriversData(driversDataMap));
+      break;
   }
 }
 
@@ -539,7 +554,7 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 }
 
 void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
-  var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+  var xLowerLimitDateTime= getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
   var xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
 
   view.contentView.createDriverCharts(filteredDriversDataMap);
@@ -586,14 +601,28 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
       });
     });
 
+    if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['min'] != null) {
+      print('minX: ${driverXLimitFilters[driverName]['min']}');
+      xLowerLimitDateTime = driverXLimitFilters[driverName]['min'];
+    } else {
+      view.contentView.setDriverChartsXAxisFilterMinMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
+    }
+
+    if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['max'] != null) {
+      print('maX: ${driverXLimitFilters[driverName]['max']}');
+      xUpperLimitDateTime = driverXLimitFilters[driverName]['max'];
+    } else {
+      view.contentView.setDriverChartsXAxisFilterMinMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
+    }
+
     var yUpperLimit = 0;
     if (driverYUpperLimitFilters[driverName] != null) {
       yUpperLimit = driverYUpperLimitFilters[driverName];
     } else {
       metricNames.forEach((metric) {
         var metricData = chartData[metric];
-        var max = (metricData.values.toList()..sort()).last;
-        yUpperLimit += max;
+        var maxY = (metricData.values.toList()..sort()).last;
+        yUpperLimit += maxY;
       });
       view.contentView.setDriverChartsYAxisFilterMax(driverName, yUpperLimit);
     }
