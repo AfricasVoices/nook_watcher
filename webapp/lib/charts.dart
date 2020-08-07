@@ -325,7 +325,7 @@ class DriverTimeseriesBarChartView {
     chartContainer.insertAdjacentElement('afterbegin', metricsSelector);
 
     yUpperLimitRangeSlider = new DivElement()
-      ..classes.add('range-slider-container')
+      ..classes.add('y-range-slider-container')
       ..append(new DivElement()..classes.add('range-value'))
       ..append(
         new RangeInputElement()
