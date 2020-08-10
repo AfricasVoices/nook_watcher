@@ -380,6 +380,8 @@ void command(UIAction action, Data actionData) {
       }
       view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
       _resetDriverMetricFilters();
+      driverXLimitFilters.clear();
+      driverYUpperLimitFilters.clear();
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       _updateChartsView();
       break;
@@ -601,16 +603,16 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
       });
     });
 
-    if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['min'] != null) {
+    if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName].containsKey('min')) {
       xLowerLimitDateTime = driverXLimitFilters[driverName]['min'];
     } else {
-      view.contentView.setDriverChartsXAxisFilterMinMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
+      view.contentView.setDriverChartsXAxisFilterMin(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
     }
 
     if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['max'] != null) {
       xUpperLimitDateTime = driverXLimitFilters[driverName]['max'];
     } else {
-      view.contentView.setDriverChartsXAxisFilterMinMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
+      view.contentView.setDriverChartsXAxisFilterMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
     }
 
     var yUpperLimit = 0;

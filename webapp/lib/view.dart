@@ -493,15 +493,22 @@ class ContentView {
     });
   }
 
-  void setDriverChartsXAxisFilterMinMax(String driverName, DateTime min, DateTime max) {
-    var minSlider = driverCharts[driverName].xUpperLimitRangeSlider.children[1] as RangeInputElement;
-    var maxSlider = driverCharts[driverName].xUpperLimitRangeSlider.children[3] as RangeInputElement;
-    minSlider.min = min.millisecondsSinceEpoch.toString();
-    minSlider.max = max.millisecondsSinceEpoch.toString();
-    minSlider.value = minSlider.min;
-    maxSlider.min = min.millisecondsSinceEpoch.toString();
-    maxSlider.max = max.millisecondsSinceEpoch.toString();
-    maxSlider.value = maxSlider.max;
+  void setDriverChartsXAxisFilterMin(String driverName, DateTime min, DateTime max) {
+    var slider = driverCharts[driverName].xUpperLimitRangeSlider.children[1] as RangeInputElement;
+    var sliderIndicator = slider.previousElementSibling;
+    slider.min = min.millisecondsSinceEpoch.toString();
+    slider.max = max.millisecondsSinceEpoch.toString();
+    slider.value = slider.min;
+    sliderIndicator.children.clear();
+  }
+
+  void setDriverChartsXAxisFilterMax(String driverName, DateTime min, DateTime max) {
+    var slider = driverCharts[driverName].xUpperLimitRangeSlider.children[3] as RangeInputElement;
+    var sliderIndicator = slider.previousElementSibling;
+    slider.min = min.millisecondsSinceEpoch.toString();
+    slider.max = max.millisecondsSinceEpoch.toString();
+    slider.value = slider.max;
+    sliderIndicator.children.clear();
   }
 
   void setDriverChartsYAxisFilterMax(String driverName, num max) {
