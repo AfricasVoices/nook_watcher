@@ -144,15 +144,7 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  listenForAllMetrics();
-}
-
-void listenForAllMetrics() {
-  listenForNeedsReplyMetrics(selectedProject);
-  listenForDriverMetrics(selectedProject, DRIVERS);
-  listenForSystemEvents(PROJECTS);
-  listenForSystemMetrics();
-  // listenForDirectoryMetrics(); // not yet in use
+  command(UIAction.tabSwitched, null);
 }
 
 void listenForNeedsReplyMetrics(String project) {
@@ -380,8 +372,10 @@ void command(UIAction action, Data actionData) {
 
     /*** Filtering */
     case UIAction.tabSwitched:
-      ChartTypeData tabData = actionData;
-      selectedTab = tabData.chartType;
+      if (actionData != null) {
+        ChartTypeData tabData = actionData;
+        selectedTab = tabData.chartType;
+      }
       view.contentView.toogleTabView(selectedTab);
       var periodFilterOptions = selectedTab == ChartType.driver ? hourFilters : dayFilters;
       view.ChartFiltersView().periodFilterOptions = periodFilterOptions;
@@ -397,16 +391,24 @@ void command(UIAction action, Data actionData) {
     case UIAction.projectSelected:
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
-      listenForNeedsReplyMetrics(selectedProject);
-      listenForDriverMetrics(selectedProject, DRIVERS);
-      updateNeedsReplyCharts(needsReplyDataList);
-      updateSystemEventsCharts(systemEventsDataMap);
       view.contentView.clearDriverCharts();
       driverMetricsFilters.clear();
       driverYUpperLimitFilters.clear();
-      updateDriverCharts(driversDataMap);
+      switch (selectedTab) {
+        case ChartType.conversation:
+          listenForNeedsReplyMetrics(selectedProject);
+          updateNeedsReplyCharts(needsReplyDataList);
+          break;
+        case ChartType.driver:
+          listenForDriverMetrics(selectedProject, DRIVERS);
+          updateDriverCharts(driversDataMap);
+          break;
+        case ChartType.system:
+          listenForSystemEvents(PROJECTS);
+          updateSystemEventsCharts(systemEventsDataMap);
+          break;
+      }
       // skip updating the system metrics as these are project independent
-
       var selectedProjectTimer = projectTimers[selectedProject];
       if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
         view.contentView.stale = false;
@@ -421,7 +423,6 @@ void command(UIAction action, Data actionData) {
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       driverYUpperLimitFilters.clear();
-      listenForAllMetrics();
       _updateChartsView();
       break;
 
@@ -444,13 +445,17 @@ void _resetDriverMetricFilters() {
 void _updateChartsView() {
   switch (selectedTab) {
     case ChartType.conversation:
+      listenForNeedsReplyMetrics(selectedProject);
       updateNeedsReplyCharts(needsReplyDataList);
       break;
     case ChartType.driver:
+      listenForDriverMetrics(selectedProject, DRIVERS);
       updateDriverCharts(driversDataMap);
       break;
     case ChartType.system:
+      listenForSystemEvents(PROJECTS);
       updateSystemEventsCharts(systemEventsDataMap);
+      listenForSystemMetrics();
       updateSystemMetricsCharts(systemMetricsDataList);
       break;
   }
@@ -533,7 +538,6 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     var chart = view.contentView.driverCharts[driverName];
 
     var selectedMetrics = Map.fromEntries(driverMetricsFilters[driverName].entries.where((m) => m.value == true));
-
     List<String> metricNames = selectedMetrics.keys.toList()..sort();
     List<DateTime> datetimes = driverData.map((d) => d.datetime).toSet().toList()..sort();
 
