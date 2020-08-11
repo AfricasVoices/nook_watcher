@@ -193,6 +193,11 @@ class User {
   String userEmail;
 }
 
+class ModelDoesNotExistException implements Exception {
+  String cause;
+  ModelDoesNotExistException(this.cause);
+}
+
 // ======================================================================
 // Core firebase/yaml utilities
 

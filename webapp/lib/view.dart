@@ -416,18 +416,21 @@ class ContentView {
     systemEventsCharts = {};
 
     cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    cpuPercentSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
       titleText: 'CPU Percentage (%)',
       datasetLabels: ['CPU Percentage (%)']);
 
     diskUsageSystemMetricsTimeseries= new charts.DailyTimeseriesLineChartView();
+    diskUsageSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(diskUsageSystemMetricsTimeseries.chartContainer);
     diskUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'Disk Usage (GB)',
       datasetLabels: ['Disk Usage (GB)']);
 
     memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    memoryUsageSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
     memoryUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'RAM Usage (GB)',
@@ -461,6 +464,7 @@ class ContentView {
       });
     });
   }
+
   void populateDriverChartsMetricsOptions() {
     controller.driverMetricsFilters.forEach((driver, filters) {
         var chart = driverCharts[driver];
@@ -488,15 +492,27 @@ class ContentView {
     driverChartsTabContent.children.clear();
   }
 
-  void set stale (bool staleState) {
-    if (staleState) {
-      _conversationCharts.forEach((chart) => chart.classes.add('stale'));
-    } else {
-      _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+  void setStale (String type, bool staleState) {
+    switch (type) {
+      case 'needs_reply_metrics':
+        if (staleState) {
+          _conversationCharts.forEach((chart) => chart.classes.add('stale'));
+        } else {
+          _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+        }
+        break;
+      case 'systems':
+        if (staleState) {
+          _systemCharts.forEach((chart) => chart.classes.add('stale'));
+        } else {
+          _systemCharts.forEach((chart) => chart.classes.remove('stale'));
+        }
+        break;
     }
   }
 
   List<Element> get _conversationCharts => querySelectorAll('#conversations .chart');
+  List<Element> get _systemCharts => querySelectorAll('#systems .chart.system-metrics');
 
   void toogleTabView(controller.ChartType chartType) {
     contentElement.children.clear();

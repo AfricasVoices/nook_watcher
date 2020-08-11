@@ -106,7 +106,7 @@ Map<String, Map<String, bool>> driverMetricsFilters;
 
 model.User signedInUser;
 
-Map<String, Timer> projectTimers = {};
+Map<String, Timer> watchdogTimers = {};
 
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
@@ -141,9 +141,9 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  listenForNeedsReplyMetrics(selectedProject);
-  listenForDriverMetrics(selectedProject, DRIVERS);
-  listenForSystemEvents(PROJECTS);
+  //listenForNeedsReplyMetrics(selectedProject);
+  //listenForDriverMetrics(selectedProject, DRIVERS);
+  //listenForSystemEvents(PROJECTS);
   listenForSystemMetrics();
   // listenForDirectoryMetrics(); // not yet in use
 }
@@ -232,6 +232,7 @@ void listenForSystemMetrics() {
       systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
+      checkSystemMetricsStale(updatedData);
     }
   );
 }
@@ -253,9 +254,18 @@ void listenForDirectoryMetrics() {
   );
 }
 
-bool isProjectStale(model.NeedsReplyData projectData) {
+bool isDataStale<T>(T projectData) {
+  var data;
+  if (projectData is model.NeedsReplyData) {
+    data = projectData as model.NeedsReplyData;
+  } else if (projectData is model.SystemMetricsData) {
+    data = projectData as model.SystemMetricsData;
+  } else {
+    throw new model.ModelDoesNotExistException('Model does not exist');
+  }
+
   var now = new DateTime.now();
-  int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
+  int lastUpdateTimeDiff =  now.difference(data.datetime).inHours;
 
   if (lastUpdateTimeDiff >= 2) {
     return true;
@@ -264,48 +274,86 @@ bool isProjectStale(model.NeedsReplyData projectData) {
   }
 }
 
-void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[selectedProject]?.cancel();
+String getWatchdogTimer(Object data) {
+  if (data is model.NeedsReplyData) {
+    return  selectedProject;
+  } else if (data is model.SystemMetricsData) {
+    return SYSTEM_METRICS_ROOT_COLLECTION_KEY;
+  } else {
+    throw new model.ModelDoesNotExistException('Model does not exist');
+  }
+}
+
+void setupWatchdogTimer<T>(T latestData, [bool stale = false]) {
+  var data;
+  if (latestData is model.NeedsReplyData) {
+    data = latestData as model.NeedsReplyData;
+  } else if (latestData is model.SystemMetricsData) {
+    data = latestData as model.SystemMetricsData;
+  }
+
+  watchdogTimers[getWatchdogTimer(data)]?.cancel();
 
   if (stale) {
-    projectTimers[selectedProject] = null;
+    watchdogTimers[getWatchdogTimer(data)] = null;
   } else {
-    var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
+    var timeToExecute =  data.datetime.add(Duration(hours: 2));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      view.contentView.stale = true;
+      if (data?.project == selectedProject) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+      }
+      view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
     });
-    projectTimers[selectedProject] = timer;
+    watchdogTimers[getWatchdogTimer(data)] = timer;
   }
 }
 
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   if (updatedData.isEmpty) {
-    var selectedProjectTimer = projectTimers[selectedProject];
-    selectedProjectTimer?.cancel();
-    view.contentView.stale = false;
+    var selectedTimer = watchdogTimers[selectedProject];
+    selectedTimer?.cancel();
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
     return;
   }
 
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var latestProjectData = updatedData.last ?? null;
+  var latestData = updatedData.last ?? null;
 
-  if (latestProjectData != null) {
+  if (latestData != null) {
 
-      if (isProjectStale(latestProjectData)) {
-        setupProjectTimer(latestProjectData, true);
+      if (isDataStale(latestData)) {
+        setupWatchdogTimer(latestData, true);
       } else {
-        setupProjectTimer(latestProjectData);
+        setupWatchdogTimer(latestData);
       }
     }
 
-  var selectedProjectTimer = projectTimers[selectedProject];
-  if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-    view.contentView.stale = false;
+  var selectedTimer = watchdogTimers[selectedProject];
+  if (selectedTimer != null && selectedTimer.isActive) {
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
   } else {
-    view.contentView.stale = true;
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+  }
+}
+
+void checkSystemMetricsStale(List<model.SystemMetricsData> updatedData) {
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  var latestData = updatedData.last;
+
+  if (isDataStale(latestData)) {
+    setupWatchdogTimer(latestData, true);
+  } else {
+    setupWatchdogTimer(latestData);
+  }
+
+  var timer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+  if (timer != null && timer.isActive) {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+  } else {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
   }
 }
 
@@ -381,7 +429,7 @@ void command(UIAction action, Data actionData) {
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
       listenForNeedsReplyMetrics(selectedProject);
-      listenForDriverMetrics(selectedProject, DRIVERS);
+      //listenForDriverMetrics(selectedProject, DRIVERS);
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       view.contentView.clearDriverCharts();
@@ -389,11 +437,11 @@ void command(UIAction action, Data actionData) {
       updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
 
-      var selectedProjectTimer = projectTimers[selectedProject];
-      if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-        view.contentView.stale = false;
+      var selectedTimer = watchdogTimers[selectedProject];
+      if (selectedTimer != null && selectedTimer.isActive) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
       } else {
-        view.contentView.stale = true;
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
       }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       break;
