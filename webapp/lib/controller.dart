@@ -294,7 +294,7 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
   } else if (latestData is model.SystemMetricsData) {
     data = latestData as model.SystemMetricsData;
   } else {
-    throw new model.ModelDoesNotExistException('Model does not exist');
+    throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
   }
 
   watchdogTimers[getWatchdogTimerKey(data)]?.cancel();
