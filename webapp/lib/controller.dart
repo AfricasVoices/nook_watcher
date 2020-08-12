@@ -283,7 +283,7 @@ String getWatchdogTimerKey(Object data) {
   } else if (data is model.SystemMetricsData) {
     return SYSTEM_METRICS_ROOT_COLLECTION_KEY;
   } else {
-    throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
+    throw new model.DataModelNotSupported('Data object of type "${data.runtimeType}" not supported for staleness monitoring');
   }
 }
 
@@ -294,7 +294,7 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
   } else if (latestData is model.SystemMetricsData) {
     data = latestData as model.SystemMetricsData;
   } else {
-    throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
+    throw new model.DataModelNotSupported('Data object of type "${latestData.runtimeType}" not supported for staleness monitoring');
   }
 
   watchdogTimers[getWatchdogTimerKey(data)]?.cancel();
