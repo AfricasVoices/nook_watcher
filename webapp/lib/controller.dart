@@ -297,10 +297,10 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
     throw new model.ModelDoesNotExistException('Model does not exist');
   }
 
-  watchdogTimers[getWatchdogTimer(data)]?.cancel();
+  watchdogTimers[getWatchdogTimerKey(data)]?.cancel();
 
   if (stale) {
-    watchdogTimers[getWatchdogTimer(data)] = null;
+    watchdogTimers[getWatchdogTimerKey(data)] = null;
   } else {
     var timeToExecute =  data.datetime.add(Duration(hours: 2));
     var now = new DateTime.now();
@@ -311,7 +311,7 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
       }
       view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
     });
-    watchdogTimers[getWatchdogTimer(data)] = timer;
+    watchdogTimers[getWatchdogTimerKey(data)] = timer;
   }
 }
 
@@ -327,11 +327,7 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
 
   var latestData = updatedData.last;
 
-  if (isDataStale(latestData)) {
-    setupWatchdogTimer(latestData, true);
-  } else {
-    setupWatchdogTimer(latestData);
-  }
+  setupWatchdogTimer(latestData, isDataStale(latestData));
 
   var selectedTimer = watchdogTimers[selectedProject];
   if (selectedTimer != null && selectedTimer.isActive) {
