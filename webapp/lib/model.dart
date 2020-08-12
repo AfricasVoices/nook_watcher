@@ -193,9 +193,9 @@ class User {
   String userEmail;
 }
 
-class ModelDoesNotExistException implements Exception {
+class DataModelNotSupported implements Exception {
   String cause;
-  ModelDoesNotExistException(this.cause);
+  DataModelNotSupported(this.cause);
 }
 
 // ======================================================================
