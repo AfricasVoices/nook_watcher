@@ -302,7 +302,7 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
   if (stale) {
     watchdogTimers[getWatchdogTimerKey(data)] = null;
   } else {
-    var timeToExecute =  data.datetime.add(Duration(hours: 2));
+    var timeToExecute =  data.datetime.add(Duration(minutes: 30));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
