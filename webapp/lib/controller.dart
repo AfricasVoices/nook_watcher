@@ -264,7 +264,7 @@ bool isDataStale(Object projectData) {
   } else if (projectData is model.SystemMetricsData) {
     data = projectData as model.SystemMetricsData;
   } else {
-    throw new model.ModelDoesNotExistException('Model does not exist');
+    throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
   }
 
   var now = new DateTime.now();
