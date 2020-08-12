@@ -430,7 +430,7 @@ void command(UIAction action, Data actionData) {
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
       listenForNeedsReplyMetrics(selectedProject);
-      //listenForDriverMetrics(selectedProject, DRIVERS);
+      listenForDriverMetrics(selectedProject, DRIVERS);
       updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
       updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       view.contentView.clearDriverCharts();
