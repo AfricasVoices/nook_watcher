@@ -144,7 +144,8 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  command(UIAction.tabSwitched, null);
+  //selectedTab already initialized at this point. Doing this for the purpose of pulling data from firestore
+  command(UIAction.tabSwitched, new ChartTypeData(ChartType.conversation));
 }
 
 void listenForNeedsReplyMetrics(String project) {
@@ -372,10 +373,8 @@ void command(UIAction action, Data actionData) {
 
     /*** Filtering */
     case UIAction.tabSwitched:
-      if (actionData != null) {
-        ChartTypeData tabData = actionData;
-        selectedTab = tabData.chartType;
-      }
+      ChartTypeData tabData = actionData;
+      selectedTab = tabData.chartType;
       view.contentView.toogleTabView(selectedTab);
       var periodFilterOptions = selectedTab == ChartType.driver ? hourFilters : dayFilters;
       view.ChartFiltersView().periodFilterOptions = periodFilterOptions;
