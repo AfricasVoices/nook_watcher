@@ -416,18 +416,21 @@ class ContentView {
     systemEventsCharts = {};
 
     cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    cpuPercentSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
       titleText: 'CPU Percentage (%)',
       datasetLabels: ['CPU Percentage (%)']);
 
     diskUsageSystemMetricsTimeseries= new charts.DailyTimeseriesLineChartView();
+    diskUsageSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(diskUsageSystemMetricsTimeseries.chartContainer);
     diskUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'Disk Usage (GB)',
       datasetLabels: ['Disk Usage (GB)']);
 
     memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    memoryUsageSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
     memoryUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'RAM Usage (GB)',
@@ -457,6 +460,28 @@ class ContentView {
           titleText: '$driverName',
           datasetLabels: List.filled(0, '', growable: true)
         );
+        driverChart.xUpperLimitRangeSlider.children[1].onChange.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
+          controller.driverXLimitFilters[driverName] = {}
+            ..addAll(controller.driverXLimitFilters[driverName] ?? {})
+            ..addAll({'min': new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value))});
+          controller.command(controller.UIAction.driverXLowerLimitSet, null);
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 742 - (newValue * 0.1);
+          sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
+        });
+        driverChart.xUpperLimitRangeSlider.children[3].onChange.listen((e) {
+          var slider = (e.currentTarget as RangeInputElement);
+          var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
+          controller.driverXLimitFilters[driverName] = {}
+            ..addAll(controller.driverXLimitFilters[driverName] ?? {})
+            ..addAll({'max': new DateTime.fromMillisecondsSinceEpoch(int.parse(slider.value))});
+          controller.command(controller.UIAction.driverXUpperLimitSet, null);
+          var newValue = (int.parse(slider.value) - int.parse(slider.min)) * 100 / (int.parse(slider.max) - int.parse(slider.min));
+          var newPosition = 742 - (newValue * 0.1);
+          sliderIndicator.style.setProperty('right', 'calc(${-newValue}% + (${newPosition}px))');
+        });
         driverChart.yUpperLimitRangeSlider.children[1].onChange.listen((e) {
           var slider = (e.currentTarget as RangeInputElement);
           var sliderIndicator = (e.currentTarget as Element).previousElementSibling;
@@ -469,6 +494,24 @@ class ContentView {
         return driverChart;
       });
     });
+  }
+
+  void setDriverChartsXAxisFilterMin(String driverName, DateTime min, DateTime max) {
+    var slider = driverCharts[driverName].xUpperLimitRangeSlider.children[1] as RangeInputElement;
+    var sliderIndicator = slider.previousElementSibling;
+    slider.min = min.millisecondsSinceEpoch.toString();
+    slider.max = max.millisecondsSinceEpoch.toString();
+    slider.value = slider.min;
+    sliderIndicator.children.clear();
+  }
+
+  void setDriverChartsXAxisFilterMax(String driverName, DateTime min, DateTime max) {
+    var slider = driverCharts[driverName].xUpperLimitRangeSlider.children[3] as RangeInputElement;
+    var sliderIndicator = slider.previousElementSibling;
+    slider.min = min.millisecondsSinceEpoch.toString();
+    slider.max = max.millisecondsSinceEpoch.toString();
+    slider.value = slider.max;
+    sliderIndicator.children.clear();
   }
 
   void setDriverChartsYAxisFilterMax(String driverName, num max) {
@@ -506,15 +549,27 @@ class ContentView {
     driverChartsTabContent.children.clear();
   }
 
-  void set stale (bool staleState) {
-    if (staleState) {
-      _conversationCharts.forEach((chart) => chart.classes.add('stale'));
-    } else {
-      _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+  void setStale (String type, bool staleState) {
+    switch (type) {
+      case 'needs_reply_metrics':
+        if (staleState) {
+          _conversationCharts.forEach((chart) => chart.classes.add('stale'));
+        } else {
+          _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+        }
+        break;
+      case 'systems':
+        if (staleState) {
+          _systemCharts.forEach((chart) => chart.classes.add('stale'));
+        } else {
+          _systemCharts.forEach((chart) => chart.classes.remove('stale'));
+        }
+        break;
     }
   }
 
   List<Element> get _conversationCharts => querySelectorAll('#conversations .chart');
+  List<Element> get _systemCharts => querySelectorAll('#systems .chart.system-metrics');
 
   void toogleTabView(controller.ChartType chartType) {
     contentElement.children.clear();

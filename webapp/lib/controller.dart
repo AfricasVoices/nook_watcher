@@ -34,7 +34,9 @@ enum UIAction {
   chartsFiltered,
   tabSwitched,
   driverMetricsSelected,
-  driverYUpperLimitSet
+  driverYUpperLimitSet,
+  driverXLowerLimitSet,
+  driverXUpperLimitSet
 }
 
 enum ChartPeriodFilters {
@@ -75,16 +77,31 @@ class Data {}
 class ChartFilterData extends Data {
   ChartPeriodFilters periodFilter;
   ChartFilterData(this.periodFilter);
+
+  @override
+  String toString() {
+    return "ChartFilterData($periodFilter)";
+  }
 }
 
 class ChartTypeData extends Data {
   ChartType chartType;
   ChartTypeData(this.chartType);
+
+  @override
+  String toString() {
+    return "ChartTypeData($chartType)";
+  }
 }
 
 class ProjectData extends Data {
   String project;
   ProjectData(this.project);
+
+  @override
+  String toString() {
+    return "ProjectData($project)";
+  }
 }
 
 class UserData extends Data {
@@ -92,6 +109,11 @@ class UserData extends Data {
   String email;
   String photoUrl;
   UserData(this.displayName, this.email, this.photoUrl);
+
+  @override
+  String toString() {
+    return "UserData($displayName, $email, $photoUrl)";
+  }
 }
 
 List<model.NeedsReplyData> needsReplyDataList;
@@ -104,11 +126,12 @@ ChartType selectedTab;
 String selectedProject;
 ChartPeriodFilters selectedPeriodFilter;
 Map<String, Map<String, bool>> driverMetricsFilters;
+Map<String, Map<String, DateTime>> driverXLimitFilters;
 Map<String, num> driverYUpperLimitFilters;
 
 model.User signedInUser;
 
-Map<String, Timer> projectTimers = {};
+Map<String, Timer> watchdogTimers = {};
 
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
@@ -125,6 +148,7 @@ void initUI() {
   systemMetricsDataList = [];
   dirSizeMetricsDataList = [];
   driverMetricsFilters = {};
+  driverXLimitFilters = {};
   driverYUpperLimitFilters = {};
 
   selectedTab = view.contentView.getChartTypeUrlFilter() ?? ChartType.conversation;
@@ -240,6 +264,7 @@ void listenForSystemMetrics() {
       systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
+      checkSystemMetricsStale(updatedData);
     }
   );
 }
@@ -263,9 +288,18 @@ void listenForDirectoryMetrics() {
   );
 }
 
-bool isProjectStale(model.NeedsReplyData projectData) {
+bool isDataStale(Object projectData) {
+  var data;
+  if (projectData is model.NeedsReplyData) {
+    data = projectData as model.NeedsReplyData;
+  } else if (projectData is model.SystemMetricsData) {
+    data = projectData as model.SystemMetricsData;
+  } else {
+    throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
+  }
+
   var now = new DateTime.now();
-  int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
+  int lastUpdateTimeDiff =  now.difference(data.datetime).inHours;
 
   if (lastUpdateTimeDiff >= 2) {
     return true;
@@ -274,52 +308,89 @@ bool isProjectStale(model.NeedsReplyData projectData) {
   }
 }
 
-void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[selectedProject]?.cancel();
+String getWatchdogTimerKey(Object data) {
+  if (data is model.NeedsReplyData) {
+    return  selectedProject;
+  } else if (data is model.SystemMetricsData) {
+    return SYSTEM_METRICS_ROOT_COLLECTION_KEY;
+  } else {
+    throw new model.DataModelNotSupported('Data object of type "${data.runtimeType}" not supported for staleness monitoring');
+  }
+}
+
+void setupWatchdogTimer(Object latestData, [bool stale = false]) {
+  var data;
+  if (latestData is model.NeedsReplyData) {
+    data = latestData as model.NeedsReplyData;
+  } else if (latestData is model.SystemMetricsData) {
+    data = latestData as model.SystemMetricsData;
+  } else {
+    throw new model.DataModelNotSupported('Data object of type "${latestData.runtimeType}" not supported for staleness monitoring');
+  }
+
+  watchdogTimers[getWatchdogTimerKey(data)]?.cancel();
 
   if (stale) {
-    projectTimers[selectedProject] = null;
+    watchdogTimers[getWatchdogTimerKey(data)] = null;
   } else {
-    var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
+    var timeToExecute =  data.datetime.add(Duration(minutes: 30));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      view.contentView.stale = true;
+      if (data.project == selectedProject) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+      }
+      view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
     });
-    projectTimers[selectedProject] = timer;
+    watchdogTimers[getWatchdogTimerKey(data)] = timer;
   }
 }
 
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   if (updatedData.isEmpty) {
-    var selectedProjectTimer = projectTimers[selectedProject];
-    selectedProjectTimer?.cancel();
-    view.contentView.stale = false;
+    var selectedTimer = watchdogTimers[selectedProject];
+    selectedTimer?.cancel();
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
     return;
   }
 
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var latestProjectData = updatedData.last ?? null;
+  var latestData = updatedData.last;
 
-  if (latestProjectData != null) {
+  setupWatchdogTimer(latestData, isDataStale(latestData));
 
-      if (isProjectStale(latestProjectData)) {
-        setupProjectTimer(latestProjectData, true);
-      } else {
-        setupProjectTimer(latestProjectData);
-      }
-    }
-
-  var selectedProjectTimer = projectTimers[selectedProject];
-  if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-    view.contentView.stale = false;
+  var selectedTimer = watchdogTimers[selectedProject];
+  if (selectedTimer != null && selectedTimer.isActive) {
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
   } else {
-    view.contentView.stale = true;
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+  }
+}
+
+void checkSystemMetricsStale(List<model.SystemMetricsData> updatedData) {
+  if (updatedData.isEmpty) {
+    var selectedTimer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+    selectedTimer?.cancel();
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+    return;
+  }
+
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  var latestData = updatedData.last;
+
+  setupWatchdogTimer(latestData, isDataStale(latestData));
+
+  var timer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+  if (timer != null && timer.isActive) {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+  } else {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
   }
 }
 
 void command(UIAction action, Data actionData) {
+  log.verbose('command => $action : $actionData');
   switch (action) {
     /*** User */
     case UIAction.userSignedOut:
@@ -383,6 +454,8 @@ void command(UIAction action, Data actionData) {
       }
       view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
       _resetDriverMetricFilters();
+      driverXLimitFilters.clear();
+      driverYUpperLimitFilters.clear();
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       _updateChartsView(true);
       break;
@@ -392,13 +465,14 @@ void command(UIAction action, Data actionData) {
       selectedProject = projectData.project;
       view.contentView.clearDriverCharts();
       driverMetricsFilters.clear();
+      driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
       _updateChartsView();
-      var selectedProjectTimer = projectTimers[selectedProject];
-      if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-        view.contentView.stale = false;
+      var selectedTimer = watchdogTimers[selectedProject];
+      if (selectedTimer != null && selectedTimer.isActive) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
       } else {
-        view.contentView.stale = true;
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
       }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       break;
@@ -407,6 +481,7 @@ void command(UIAction action, Data actionData) {
       ChartFilterData chartFilterData = actionData;
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
+      driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
       _updateChartsView(true);
       break;
@@ -417,6 +492,15 @@ void command(UIAction action, Data actionData) {
 
     case UIAction.driverYUpperLimitSet:
       updateDriverCharts(driversDataMap);
+      break;
+
+    case UIAction.driverXLowerLimitSet:
+      updateDriverCharts(driversDataMap);
+      break;
+
+    case UIAction.driverXUpperLimitSet:
+      updateDriverCharts(driversDataMap);
+      break;
   }
 }
 
@@ -500,7 +584,7 @@ void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataLis
 }
 
 void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
-  var xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+  var xLowerLimitDateTime= getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
   var xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
 
   view.contentView.createDriverCharts(filteredDriversDataMap);
@@ -546,14 +630,26 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
       });
     });
 
+    if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName].containsKey('min')) {
+      xLowerLimitDateTime = driverXLimitFilters[driverName]['min'];
+    } else {
+      view.contentView.setDriverChartsXAxisFilterMin(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
+    }
+
+    if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['max'] != null) {
+      xUpperLimitDateTime = driverXLimitFilters[driverName]['max'];
+    } else {
+      view.contentView.setDriverChartsXAxisFilterMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
+    }
+
     var yUpperLimit = 0;
     if (driverYUpperLimitFilters[driverName] != null) {
       yUpperLimit = driverYUpperLimitFilters[driverName];
     } else {
       metricNames.forEach((metric) {
         var metricData = chartData[metric];
-        var max = (metricData.values.toList()..sort()).last;
-        yUpperLimit += max;
+        var maxY = (metricData.values.toList()..sort()).last;
+        yUpperLimit += maxY;
       });
       view.contentView.setDriverChartsYAxisFilterMax(driverName, yUpperLimit);
     }
