@@ -193,6 +193,11 @@ class User {
   String userEmail;
 }
 
+class DataModelNotSupported implements Exception {
+  String cause;
+  DataModelNotSupported(this.cause);
+}
+
 // ======================================================================
 // Core firebase/yaml utilities
 

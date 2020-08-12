@@ -128,7 +128,7 @@ Map<String, num> driverYUpperLimitFilters;
 
 model.User signedInUser;
 
-Map<String, Timer> projectTimers = {};
+Map<String, Timer> watchdogTimers = {};
 
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
@@ -255,6 +255,7 @@ void listenForSystemMetrics() {
       systemMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
+      checkSystemMetricsStale(updatedData);
     }
   );
 }
@@ -276,9 +277,18 @@ void listenForDirectoryMetrics() {
   );
 }
 
-bool isProjectStale(model.NeedsReplyData projectData) {
+bool isDataStale(Object projectData) {
+  var data;
+  if (projectData is model.NeedsReplyData) {
+    data = projectData as model.NeedsReplyData;
+  } else if (projectData is model.SystemMetricsData) {
+    data = projectData as model.SystemMetricsData;
+  } else {
+    throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
+  }
+
   var now = new DateTime.now();
-  int lastUpdateTimeDiff =  now.difference(projectData.datetime).inHours;
+  int lastUpdateTimeDiff =  now.difference(data.datetime).inHours;
 
   if (lastUpdateTimeDiff >= 2) {
     return true;
@@ -287,48 +297,84 @@ bool isProjectStale(model.NeedsReplyData projectData) {
   }
 }
 
-void setupProjectTimer(model.NeedsReplyData projectData, [bool stale = false]) {
-  projectTimers[selectedProject]?.cancel();
+String getWatchdogTimerKey(Object data) {
+  if (data is model.NeedsReplyData) {
+    return  selectedProject;
+  } else if (data is model.SystemMetricsData) {
+    return SYSTEM_METRICS_ROOT_COLLECTION_KEY;
+  } else {
+    throw new model.DataModelNotSupported('Data object of type "${data.runtimeType}" not supported for staleness monitoring');
+  }
+}
+
+void setupWatchdogTimer(Object latestData, [bool stale = false]) {
+  var data;
+  if (latestData is model.NeedsReplyData) {
+    data = latestData as model.NeedsReplyData;
+  } else if (latestData is model.SystemMetricsData) {
+    data = latestData as model.SystemMetricsData;
+  } else {
+    throw new model.DataModelNotSupported('Data object of type "${latestData.runtimeType}" not supported for staleness monitoring');
+  }
+
+  watchdogTimers[getWatchdogTimerKey(data)]?.cancel();
 
   if (stale) {
-    projectTimers[selectedProject] = null;
+    watchdogTimers[getWatchdogTimerKey(data)] = null;
   } else {
-    var timeToExecute =  projectData.datetime.add(Duration(hours: 2));
+    var timeToExecute =  data.datetime.add(Duration(minutes: 30));
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      view.contentView.stale = true;
+      if (data.project == selectedProject) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+      }
+      view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
     });
-    projectTimers[selectedProject] = timer;
+    watchdogTimers[getWatchdogTimerKey(data)] = timer;
   }
 }
 
 void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
   if (updatedData.isEmpty) {
-    var selectedProjectTimer = projectTimers[selectedProject];
-    selectedProjectTimer?.cancel();
-    view.contentView.stale = false;
+    var selectedTimer = watchdogTimers[selectedProject];
+    selectedTimer?.cancel();
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
     return;
   }
 
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var latestProjectData = updatedData.last ?? null;
+  var latestData = updatedData.last;
 
-  if (latestProjectData != null) {
+  setupWatchdogTimer(latestData, isDataStale(latestData));
 
-      if (isProjectStale(latestProjectData)) {
-        setupProjectTimer(latestProjectData, true);
-      } else {
-        setupProjectTimer(latestProjectData);
-      }
-    }
-
-  var selectedProjectTimer = projectTimers[selectedProject];
-  if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-    view.contentView.stale = false;
+  var selectedTimer = watchdogTimers[selectedProject];
+  if (selectedTimer != null && selectedTimer.isActive) {
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
   } else {
-    view.contentView.stale = true;
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+  }
+}
+
+void checkSystemMetricsStale(List<model.SystemMetricsData> updatedData) {
+  if (updatedData.isEmpty) {
+    var selectedTimer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+    selectedTimer?.cancel();
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+    return;
+  }
+
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+  var latestData = updatedData.last;
+
+  setupWatchdogTimer(latestData, isDataStale(latestData));
+
+  var timer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+  if (timer != null && timer.isActive) {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+  } else {
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
   }
 }
 
@@ -414,11 +460,11 @@ void command(UIAction action, Data actionData) {
       updateDriverCharts(filterDriversData(driversDataMap));
       // skip updating the system metrics as these are project independent
 
-      var selectedProjectTimer = projectTimers[selectedProject];
-      if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
-        view.contentView.stale = false;
+      var selectedTimer = watchdogTimers[selectedProject];
+      if (selectedTimer != null && selectedTimer.isActive) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
       } else {
-        view.contentView.stale = true;
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
       }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       break;
