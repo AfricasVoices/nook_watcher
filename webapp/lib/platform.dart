@@ -63,7 +63,7 @@ StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilter
   log.verbose('Loading from metrics');
   var query;
   if (periodFilterDatetime != null) {
-    query  = _firestoreInstance
+    query = _firestoreInstance
       .collection(collectionRoot)
       .where(fieldPath, '>', periodFilterDatetime.toIso8601String());
   } else {
