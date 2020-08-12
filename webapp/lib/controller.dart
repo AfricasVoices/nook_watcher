@@ -277,7 +277,7 @@ bool isDataStale(Object projectData) {
   }
 }
 
-String getWatchdogTimer(Object data) {
+String getWatchdogTimerKey(Object data) {
   if (data is model.NeedsReplyData) {
     return  selectedProject;
   } else if (data is model.SystemMetricsData) {
