@@ -352,11 +352,7 @@ void checkSystemMetricsStale(List<model.SystemMetricsData> updatedData) {
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
   var latestData = updatedData.last;
 
-  if (isDataStale(latestData)) {
-    setupWatchdogTimer(latestData, true);
-  } else {
-    setupWatchdogTimer(latestData);
-  }
+  setupWatchdogTimer(latestData, isDataStale(latestData));
 
   var timer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
   if (timer != null && timer.isActive) {
