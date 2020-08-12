@@ -168,11 +168,8 @@ void initUI() {
 
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
-  listenForNeedsReplyMetrics(selectedProject);
-  listenForDriverMetrics(selectedProject, DRIVERS);
-  listenForSystemEvents(PROJECTS);
-  listenForSystemMetrics();
-  //listenForDirectoryMetrics(); // not yet in use
+  //selectedTab already initialized at this point. Doing this for the purpose of pulling data from firestore
+  command(UIAction.tabSwitched, new ChartTypeData(ChartType.conversation));
 }
 
 void listenForNeedsReplyMetrics(String project) {
@@ -184,6 +181,8 @@ void listenForNeedsReplyMetrics(String project) {
   needsReplyMetricsSubscription?.cancel();
   needsReplyMetricsSubscription = platform.listenForMetrics(
     'projects/$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
+    getFilteredDate(selectedPeriodFilter),
+    'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -211,6 +210,8 @@ void listenForDriverMetrics(String project, List<String> drivers) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
       'projects/$selectedProject/driver_metrics/$driver/metrics',
+      getFilteredDate(selectedPeriodFilter),
+      'datetime',
       (List<model.DocSnapshot> updatedMetrics) {
         if (signedInUser == null) {
           log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
@@ -231,6 +232,8 @@ void listenForSystemEvents(List<String> projects) {
     systemEventsDataMap[project] = [];
     platform.listenForMetrics(
       'projects/$project/$SYSTEM_EVENTS_COLLECTION_KEY',
+      getFilteredDate(selectedPeriodFilter),
+      'timestamp',
       (List<model.DocSnapshot> updatedEvents) {
         if (signedInUser == null) {
           log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -249,6 +252,8 @@ void listenForSystemEvents(List<String> projects) {
 void listenForSystemMetrics() {
   platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
+    getFilteredDate(selectedPeriodFilter),
+    'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -267,6 +272,8 @@ void listenForSystemMetrics() {
 void listenForDirectoryMetrics() {
   platform.listenForMetrics(
     '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
+    getFilteredDate(selectedPeriodFilter),
+    'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving system event data when user is not logged it, something's wrong, abort.");
@@ -410,25 +417,25 @@ void command(UIAction action, Data actionData) {
     /*** Data */
     case UIAction.needsReplyDataUpdated:
       if (selectedTab == ChartType.conversation) {
-        updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+        updateNeedsReplyCharts(needsReplyDataList);
       }
       break;
 
     case UIAction.driversDataUpdated:
       if (selectedTab == ChartType.driver) {
-        updateDriverCharts(filterDriversData(driversDataMap));
+        updateDriverCharts(driversDataMap);
       }
       break;
 
     case UIAction.systemEventsDataUpdated:
       if (selectedTab == ChartType.system) {
-        updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
+        updateSystemEventsCharts(systemEventsDataMap);
       }
       break;
 
     case UIAction.systemMetricsDataUpdated:
       if (selectedTab == ChartType.system) {
-        updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+        updateSystemMetricsCharts(systemMetricsDataList);
       }
       break;
 
@@ -450,23 +457,17 @@ void command(UIAction action, Data actionData) {
       driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      _updateChartsView();
+      _updateChartsView(true);
       break;
 
     case UIAction.projectSelected:
       ProjectData projectData = actionData;
       selectedProject = projectData.project;
-      listenForNeedsReplyMetrics(selectedProject);
-      listenForDriverMetrics(selectedProject, DRIVERS);
-      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
-      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
       view.contentView.clearDriverCharts();
       driverMetricsFilters.clear();
       driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
-      updateDriverCharts(filterDriversData(driversDataMap));
-      // skip updating the system metrics as these are project independent
-
+      _updateChartsView();
       var selectedTimer = watchdogTimers[selectedProject];
       if (selectedTimer != null && selectedTimer.isActive) {
         view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
@@ -482,23 +483,23 @@ void command(UIAction action, Data actionData) {
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
-      _updateChartsView();
+      _updateChartsView(true);
       break;
 
     case UIAction.driverMetricsSelected:
-      updateDriverCharts(filterDriversData(driversDataMap));
+      updateDriverCharts(driversDataMap);
       break;
 
     case UIAction.driverYUpperLimitSet:
-      updateDriverCharts(filterDriversData(driversDataMap));
+      updateDriverCharts(driversDataMap);
       break;
 
     case UIAction.driverXLowerLimitSet:
-      updateDriverCharts(filterDriversData(driversDataMap));
+      updateDriverCharts(driversDataMap);
       break;
 
     case UIAction.driverXUpperLimitSet:
-      updateDriverCharts(filterDriversData(driversDataMap));
+      updateDriverCharts(driversDataMap);
       break;
   }
 }
@@ -510,65 +511,25 @@ void _resetDriverMetricFilters() {
   });
 }
 
-void _updateChartsView() {
+void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   switch (selectedTab) {
     case ChartType.conversation:
-      updateNeedsReplyCharts(filterNeedsReplyData(needsReplyDataList));
+      listenForNeedsReplyMetrics(selectedProject);
+      updateNeedsReplyCharts(needsReplyDataList);
       break;
     case ChartType.driver:
-      updateDriverCharts(filterDriversData(driversDataMap));
+      listenForDriverMetrics(selectedProject, DRIVERS);
+      updateDriverCharts(driversDataMap);
       break;
     case ChartType.system:
-      updateSystemEventsCharts(filterSystemEventsData(systemEventsDataMap));
-      updateSystemMetricsCharts(filterSystemMetricsData(systemMetricsDataList));
+      listenForSystemEvents(PROJECTS);
+      updateSystemEventsCharts(systemEventsDataMap);
+      if (skipUpdateSystemMetricsChart) {
+        listenForSystemMetrics();
+        updateSystemMetricsCharts(systemMetricsDataList);
+      }
       break;
   }
-}
-
-List<model.NeedsReplyData> filterNeedsReplyData(List<model.NeedsReplyData> needsReplyData) {
-  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-
-  // early exit if there's no filtering needed
-  if (filterDate == null) return needsReplyData;
-
-  return needsReplyData.where((d) => d.datetime.isAfter(filterDate)).toList();
-}
-
-Map<String, List<model.DriverData>> filterDriversData(Map<String, List<model.DriverData>> driversData) {
-  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-
-  // early exit if there's no filtering needed
-  if (filterDate == null) return driversData;
-
-  Map<String, List<model.DriverData>> filteredDriversDataMap = {};
-
-  driversData.keys.forEach((driver) {
-    filteredDriversDataMap[driver] = driversData[driver].where((d) => d.datetime.isAfter(filterDate)).toList();
-  });
-
-  return filteredDriversDataMap;
-}
-
-List<model.SystemMetricsData> filterSystemMetricsData(List<model.SystemMetricsData> systemMetricsData) {
-  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-
-  // early exit if there's no filtering needed
-  if (filterDate == null) return systemMetricsData;
-
-  return systemMetricsDataList.where((d) => d.datetime.isAfter(filterDate)).toList();
-}
-
-Map<String, List<model.SystemEventsData>> filterSystemEventsData(Map<String, List<model.SystemEventsData>> systemEventsData) {
-  DateTime filterDate = getFilteredDate(selectedPeriodFilter);
-
-  // early exit if there's no filtering needed
-  if (filterDate == null) return systemEventsData;
-
-  Map<String, List<model.SystemEventsData>> filteredsystemEventsDataMap = {};
-  systemEventsData.keys.forEach((project) {
-    filteredsystemEventsDataMap[project] = systemEventsData[project].where((d) => d.timestamp.isAfter(filterDate)).toList();
-  });
-  return filteredsystemEventsDataMap;
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
@@ -648,7 +609,6 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     var chart = view.contentView.driverCharts[driverName];
 
     var selectedMetrics = Map.fromEntries(driverMetricsFilters[driverName].entries.where((m) => m.value == true));
-
     List<String> metricNames = selectedMetrics.keys.toList()..sort();
     List<DateTime> datetimes = driverData.map((d) => d.datetime).toSet().toList()..sort();
 

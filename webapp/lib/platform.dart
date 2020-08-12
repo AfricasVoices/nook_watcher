@@ -59,17 +59,23 @@ bool isUserSignedIn() {
 
 typedef CollectionListener(List<DocSnapshot> changes);
 
-StreamSubscription listenForMetrics(String collectionRoot, CollectionListener listener) {
+StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilterDatetime, String fieldPath, CollectionListener listener) {
   log.verbose('Loading from metrics');
-  return _firestoreInstance
-        .collection(collectionRoot)
-        .onSnapshot.listen((snapshots) {
-          List<DocSnapshot> changes = [];
-          log.verbose("Starting processing ${snapshots.docChanges().length} changes.");
-          for (var docChange in snapshots.docChanges()) {
-            log.verbose('Processing ${docChange.doc.id}');
-            changes.add(new DocSnapshot(docChange.doc.id, docChange.doc.data()));
-          }
-          listener(changes);
-    });
+  var query;
+  if (periodFilterDatetime != null) {
+    query = _firestoreInstance
+      .collection(collectionRoot)
+      .where(fieldPath, '>', periodFilterDatetime.toIso8601String());
+  } else {
+    query = _firestoreInstance.collection(collectionRoot);
+  }
+  return query.onSnapshot.listen((snapshots) {
+    List<DocSnapshot> changes = [];
+    log.verbose("Starting processing ${snapshots.docChanges().length} changes.");
+    for (var docChange in snapshots.docChanges()) {
+      log.verbose('Processing ${docChange.doc.id}');
+      changes.add(new DocSnapshot(docChange.doc.id, docChange.doc.data()));
+    }
+    listener(changes);
+  });
 }
