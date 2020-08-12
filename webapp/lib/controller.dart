@@ -257,7 +257,7 @@ void listenForDirectoryMetrics() {
   );
 }
 
-bool isDataStale<T>(T projectData) {
+bool isDataStale(Object projectData) {
   var data;
   if (projectData is model.NeedsReplyData) {
     data = projectData as model.NeedsReplyData;
@@ -287,12 +287,14 @@ String getWatchdogTimer(Object data) {
   }
 }
 
-void setupWatchdogTimer<T>(T latestData, [bool stale = false]) {
+void setupWatchdogTimer(Object latestData, [bool stale = false]) {
   var data;
   if (latestData is model.NeedsReplyData) {
     data = latestData as model.NeedsReplyData;
   } else if (latestData is model.SystemMetricsData) {
     data = latestData as model.SystemMetricsData;
+  } else {
+    throw new model.ModelDoesNotExistException('Model does not exist');
   }
 
   watchdogTimers[getWatchdogTimer(data)]?.cancel();
@@ -304,7 +306,7 @@ void setupWatchdogTimer<T>(T latestData, [bool stale = false]) {
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      if (data?.project == selectedProject) {
+      if (data.project == selectedProject) {
         view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
       }
       view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
@@ -323,16 +325,13 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
 
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
 
-  var latestData = updatedData.last ?? null;
+  var latestData = updatedData.last;
 
-  if (latestData != null) {
-
-      if (isDataStale(latestData)) {
-        setupWatchdogTimer(latestData, true);
-      } else {
-        setupWatchdogTimer(latestData);
-      }
-    }
+  if (isDataStale(latestData)) {
+    setupWatchdogTimer(latestData, true);
+  } else {
+    setupWatchdogTimer(latestData);
+  }
 
   var selectedTimer = watchdogTimers[selectedProject];
   if (selectedTimer != null && selectedTimer.isActive) {
@@ -343,6 +342,13 @@ void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
 }
 
 void checkSystemMetricsStale(List<model.SystemMetricsData> updatedData) {
+  if (updatedData.isEmpty) {
+    var selectedTimer = watchdogTimers[SYSTEM_METRICS_ROOT_COLLECTION_KEY];
+    selectedTimer?.cancel();
+    view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, false);
+    return;
+  }
+
   updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
   var latestData = updatedData.last;
 
