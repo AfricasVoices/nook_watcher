@@ -67,7 +67,7 @@ StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilter
       .collection(collectionRoot)
       .where(fieldPath, '>', periodFilterDatetime.toIso8601String());
   } else {
-    query  = _firestoreInstance.collection(collectionRoot);
+    query = _firestoreInstance.collection(collectionRoot);
   }
   return query.onSnapshot.listen((snapshots) {
     List<DocSnapshot> changes = [];
