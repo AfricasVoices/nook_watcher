@@ -384,7 +384,7 @@ void command(UIAction action, Data actionData) {
       view.ChartFiltersView().selectedPeriodFilter = selectedPeriodFilter;
       _resetDriverMetricFilters();
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
-      _updateChartsView();
+      _updateChartsView(true);
       break;
 
     case UIAction.projectSelected:
@@ -393,21 +393,7 @@ void command(UIAction action, Data actionData) {
       view.contentView.clearDriverCharts();
       driverMetricsFilters.clear();
       driverYUpperLimitFilters.clear();
-      switch (selectedTab) {
-        case ChartType.conversation:
-          listenForNeedsReplyMetrics(selectedProject);
-          updateNeedsReplyCharts(needsReplyDataList);
-          break;
-        case ChartType.driver:
-          listenForDriverMetrics(selectedProject, DRIVERS);
-          updateDriverCharts(driversDataMap);
-          break;
-        case ChartType.system:
-          listenForSystemEvents(PROJECTS);
-          updateSystemEventsCharts(systemEventsDataMap);
-          break;
-      }
-      // skip updating the system metrics as these are project independent
+      _updateChartsView();
       var selectedProjectTimer = projectTimers[selectedProject];
       if (selectedProjectTimer != null && selectedProjectTimer.isActive) {
         view.contentView.stale = false;
@@ -422,7 +408,7 @@ void command(UIAction action, Data actionData) {
       selectedPeriodFilter = chartFilterData.periodFilter;
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       driverYUpperLimitFilters.clear();
-      _updateChartsView();
+      _updateChartsView(true);
       break;
 
     case UIAction.driverMetricsSelected:
@@ -441,7 +427,7 @@ void _resetDriverMetricFilters() {
   });
 }
 
-void _updateChartsView() {
+void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   switch (selectedTab) {
     case ChartType.conversation:
       listenForNeedsReplyMetrics(selectedProject);
@@ -454,8 +440,10 @@ void _updateChartsView() {
     case ChartType.system:
       listenForSystemEvents(PROJECTS);
       updateSystemEventsCharts(systemEventsDataMap);
-      listenForSystemMetrics();
-      updateSystemMetricsCharts(systemMetricsDataList);
+      if (skipUpdateSystemMetricsChart) {
+        listenForSystemMetrics();
+        updateSystemMetricsCharts(systemMetricsDataList);
+      }
       break;
   }
 }
