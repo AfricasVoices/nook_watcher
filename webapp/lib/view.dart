@@ -316,9 +316,9 @@ class ContentView {
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
   charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
-  charts.DailyTimeseriesLineChartView cpuPercentSystemMetricsTimeseries;
-  charts.DailyTimeseriesLineChartView diskUsageSystemMetricsTimeseries;
-  charts.DailyTimeseriesLineChartView memoryUsageSystemMetricsTimeseries;
+  charts.SystemMetricsTimeseriesBarChartView cpuPercentSystemMetricsTimeseries;
+  charts.SystemMetricsTimeseriesBarChartView diskUsageSystemMetricsTimeseries;
+  charts.SystemMetricsTimeseriesBarChartView memoryUsageSystemMetricsTimeseries;
   charts.HistogramChartView needsReplyAgeHistogram;
   Map<String, charts.DriverTimeseriesBarChartView> driverCharts;
   Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
@@ -415,21 +415,21 @@ class ContentView {
 
     systemEventsCharts = {};
 
-    cpuPercentSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    cpuPercentSystemMetricsTimeseries = new charts.SystemMetricsTimeseriesBarChartView();
     cpuPercentSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(cpuPercentSystemMetricsTimeseries.chartContainer);
     cpuPercentSystemMetricsTimeseries.createEmptyChart(
       titleText: 'CPU Percentage (%)',
       datasetLabels: ['CPU Percentage (%)']);
 
-    diskUsageSystemMetricsTimeseries= new charts.DailyTimeseriesLineChartView();
+    diskUsageSystemMetricsTimeseries= new charts.SystemMetricsTimeseriesBarChartView();
     diskUsageSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(diskUsageSystemMetricsTimeseries.chartContainer);
     diskUsageSystemMetricsTimeseries.createEmptyChart(
       titleText: 'Disk Usage (GB)',
       datasetLabels: ['Disk Usage (GB)']);
 
-    memoryUsageSystemMetricsTimeseries = new charts.DailyTimeseriesLineChartView();
+    memoryUsageSystemMetricsTimeseries = new charts.SystemMetricsTimeseriesBarChartView();
     memoryUsageSystemMetricsTimeseries.chartContainer.classes.add('system-metrics');
     systemChartsTabContent.append(memoryUsageSystemMetricsTimeseries.chartContainer);
     memoryUsageSystemMetricsTimeseries.createEmptyChart(
