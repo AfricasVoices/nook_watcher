@@ -8,6 +8,7 @@ class SingleIndicatorChartView {
   DivElement chartContainer;
   DivElement title;
   DivElement value;
+  DivElement spinner;
 
   SingleIndicatorChartView() {
     chartContainer = new DivElement()
@@ -20,6 +21,9 @@ class SingleIndicatorChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
+
+    spinner = createSpinner();
+    chartContainer.append(spinner);
   }
 
   void createEmptyChart({String titleText = ''}) {
@@ -35,6 +39,7 @@ class SingleIndicatorChartView {
 class HistogramChartView {
   DivElement chartContainer;
   DivElement title;
+  DivElement spinner;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -53,6 +58,10 @@ class HistogramChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
+
+    spinner = createSpinner();
+    spinner.classes.add('chart5080');
+    chartContainer.append(spinner);
   }
 
   void createEmptyChart({String titleText = '', String datasetLabel = ''}) {
@@ -97,6 +106,7 @@ class HistogramChartView {
 class DailyTimeseriesLineChartView {
   DivElement chartContainer;
   DivElement title;
+  DivElement spinner;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -115,6 +125,10 @@ class DailyTimeseriesLineChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
+
+    spinner = createSpinner();
+    spinner.classes.add('chart3080');
+    chartContainer.append(spinner);
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
@@ -191,6 +205,7 @@ class DailyTimeseriesLineChartView {
 class SystemEventsTimeseriesLineChartView {
   DivElement chartContainer;
   DivElement title;
+  DivElement spinner;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -209,6 +224,10 @@ class SystemEventsTimeseriesLineChartView {
     title = new DivElement()
       ..classes.add('chart__title');
     chartContainer.append(title);
+
+    spinner = createSpinner();
+    spinner.classes.add('chart3080');
+    chartContainer.append(spinner);
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
@@ -300,6 +319,7 @@ class DriverTimeseriesBarChartView {
   DivElement metricsSelector;
   DivElement xUpperLimitRangeSlider;
   DivElement yUpperLimitRangeSlider;
+  DivElement spinner;
   CanvasElement canvas;
   chartjs.Chart chart;
   chartjs.ChartData chartData;
@@ -382,6 +402,10 @@ class DriverTimeseriesBarChartView {
         })
       );
     chartContainer.append(yUpperLimitRangeSlider);
+
+    spinner = createSpinner();
+    spinner.classes.add('chart3080');
+    chartContainer.append(spinner);
   }
 
   void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
@@ -471,4 +495,23 @@ class DriverTimeseriesBarChartView {
   }
 
   String _stringToHexColor(str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
+}
+
+// Util methods
+
+DivElement createSpinner() {
+  return new DivElement()
+    ..classes.add('sk-fading-circle')
+    ..append(new DivElement()..classes.addAll(['sk-circle1', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle2', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle3', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle4', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle5', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle6', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle7', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle8', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle9', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle10', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle11', 'sk-circle']))
+    ..append(new DivElement()..classes.addAll(['sk-circle12', 'sk-circle']));
 }
