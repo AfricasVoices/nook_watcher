@@ -176,6 +176,7 @@ void listenForNeedsReplyMetrics(String project) {
   // clear up the old data while the new data loads
   needsReplyDataList.clear();
   command(UIAction.needsReplyDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.conversation, true);
 
   // start listening for the new project collection
   needsReplyMetricsSubscription?.cancel();
@@ -194,6 +195,7 @@ void listenForNeedsReplyMetrics(String project) {
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
       checkNeedsReplyMetricsStale(updatedData);
+      view.contentView.toggleChartLoadingState(ChartType.conversation, false);
     }
   );
 }

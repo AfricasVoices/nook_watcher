@@ -23,6 +23,7 @@ class SingleIndicatorChartView {
     chartContainer.append(title);
 
     spinner = createSpinner();
+    spinner.classes.add('hidden');
     chartContainer.append(spinner);
   }
 
@@ -60,7 +61,7 @@ class HistogramChartView {
     chartContainer.append(title);
 
     spinner = createSpinner();
-    spinner.classes.add('chart5080');
+    spinner.classes.addAll(['hidden','chart5080']);
     chartContainer.append(spinner);
   }
 
@@ -127,7 +128,7 @@ class DailyTimeseriesLineChartView {
     chartContainer.append(title);
 
     spinner = createSpinner();
-    spinner.classes.add('chart3080');
+    spinner.classes.addAll(['hidden','chart3080']);
     chartContainer.append(spinner);
   }
 
@@ -226,7 +227,7 @@ class SystemEventsTimeseriesLineChartView {
     chartContainer.append(title);
 
     spinner = createSpinner();
-    spinner.classes.add('chart3080');
+    spinner.classes.addAll(['hidden','chart3080']);
     chartContainer.append(spinner);
   }
 
@@ -404,7 +405,7 @@ class DriverTimeseriesBarChartView {
     chartContainer.append(yUpperLimitRangeSlider);
 
     spinner = createSpinner();
-    spinner.classes.add('chart3080');
+    spinner.classes.addAll(['hidden','chart3080']);
     chartContainer.append(spinner);
   }
 
