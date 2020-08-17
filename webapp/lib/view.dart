@@ -583,15 +583,15 @@ class ContentView {
         break;
       case controller.ChartType.system:
         if (state) {
-          systemEventsCharts.forEach((project, chart) => chart.spinner.classes.add('hidden'));
-          cpuPercentSystemMetricsTimeseries.spinner.classes.add('hidden');
-          diskUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
-          memoryUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
-        } else {
           systemEventsCharts.forEach((project, chart) => chart.spinner.classes.remove('hidden'));
           cpuPercentSystemMetricsTimeseries.spinner.classes.remove('hidden');
           diskUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
           memoryUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
+        } else {
+          systemEventsCharts.forEach((project, chart) => chart.spinner.classes.add('hidden'));
+          cpuPercentSystemMetricsTimeseries.spinner.classes.add('hidden');
+          diskUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
+          memoryUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
         }
         break;
     }

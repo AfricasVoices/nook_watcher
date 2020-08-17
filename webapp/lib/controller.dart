@@ -135,6 +135,7 @@ Map<String, Timer> watchdogTimers = {};
 
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
+StreamSubscription systemMetricsSubscription;
 
 void init() async {
   view.init();
@@ -253,7 +254,12 @@ void listenForSystemEvents(List<String> projects) {
 }
 
 void listenForSystemMetrics() {
-  platform.listenForMetrics(
+  systemMetricsDataList.clear();
+  command(UIAction.systemMetricsDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.system, true);
+
+  systemMetricsSubscription?.cancel();
+  systemMetricsSubscription = platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     getFilteredDate(selectedPeriodFilter),
     'datetime',
@@ -268,6 +274,7 @@ void listenForSystemMetrics() {
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
       checkSystemMetricsStale(updatedData);
+      view.contentView.toggleChartLoadingState(ChartType.system, false);
     }
   );
 }
@@ -529,7 +536,6 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
       updateSystemEventsCharts(systemEventsDataMap);
       if (skipUpdateSystemMetricsChart) {
         listenForSystemMetrics();
-        updateSystemMetricsCharts(systemMetricsDataList);
       }
       break;
   }
