@@ -169,7 +169,7 @@ void initUI() {
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
   //selectedTab already initialized at this point. Doing this for the purpose of pulling data from firestore
-  command(UIAction.tabSwitched, new ChartTypeData(ChartType.conversation));
+  command(UIAction.tabSwitched, new ChartTypeData(selectedTab));
 }
 
 void listenForNeedsReplyMetrics(String project) {
