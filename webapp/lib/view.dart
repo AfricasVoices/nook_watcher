@@ -576,9 +576,9 @@ class ContentView {
         break;
       case controller.ChartType.driver:
         if (state) {
-          driverCharts.forEach((driver, chart) => chart.spinner.classes.add('hidden'));
-        } else {
           driverCharts.forEach((driver, chart) => chart.spinner.classes.remove('hidden'));
+        } else {
+          driverCharts.forEach((driver, chart) => chart.spinner.classes.add('hidden'));
         }
         break;
       case controller.ChartType.system:

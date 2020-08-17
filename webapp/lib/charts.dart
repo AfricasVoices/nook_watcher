@@ -405,7 +405,7 @@ class DriverTimeseriesBarChartView {
     chartContainer.append(yUpperLimitRangeSlider);
 
     spinner = createSpinner();
-    spinner.classes.addAll(['hidden', 'chart3080']);
+    spinner.classes.add('chart3080');
     chartContainer.append(spinner);
   }
 

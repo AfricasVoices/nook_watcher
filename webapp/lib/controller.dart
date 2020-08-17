@@ -224,6 +224,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
         driversDataMap[driver].removeWhere((d) => updatedIds.contains(d.docId));
         driversDataMap[driver].addAll(updatedData);
         command(UIAction.driversDataUpdated, null);
+        view.contentView.toggleChartLoadingState(ChartType.driver, false);
       }
     ));
   }
