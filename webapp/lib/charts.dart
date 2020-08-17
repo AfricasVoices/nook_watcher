@@ -227,7 +227,7 @@ class SystemEventsTimeseriesLineChartView {
     chartContainer.append(title);
 
     spinner = createSpinner();
-    spinner.classes.addAll(['hidden','chart3080']);
+    spinner.classes.addAll(['hidden', 'chart3080']);
     chartContainer.append(spinner);
   }
 

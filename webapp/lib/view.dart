@@ -549,7 +549,7 @@ class ContentView {
     driverChartsTabContent.children.clear();
   }
 
-  void toggleChartLoadingState(controller.ChartType chartType, bool state) {
+  void toggleChartLoadingState(controller.ChartType chartType, bool state, [bool isSystemEvents = false]) {
     switch(chartType){
       case controller.ChartType.conversation:
         if (state) {
@@ -583,15 +583,21 @@ class ContentView {
         break;
       case controller.ChartType.system:
         if (state) {
-          systemEventsCharts.forEach((project, chart) => chart.spinner.classes.remove('hidden'));
-          cpuPercentSystemMetricsTimeseries.spinner.classes.remove('hidden');
-          diskUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
-          memoryUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
+          if (isSystemEvents) {
+            systemEventsCharts.forEach((project, chart) => chart.spinner.classes.remove('hidden'));
+          } else {
+            cpuPercentSystemMetricsTimeseries.spinner.classes.remove('hidden');
+            diskUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
+            memoryUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
+          }
         } else {
-          systemEventsCharts.forEach((project, chart) => chart.spinner.classes.add('hidden'));
-          cpuPercentSystemMetricsTimeseries.spinner.classes.add('hidden');
-          diskUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
-          memoryUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
+          if (isSystemEvents) {
+            systemEventsCharts.forEach((project, chart) => chart.spinner.classes.add('hidden'));
+          } else {
+            cpuPercentSystemMetricsTimeseries.spinner.classes.add('hidden');
+            diskUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
+            memoryUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
+          }
         }
         break;
     }

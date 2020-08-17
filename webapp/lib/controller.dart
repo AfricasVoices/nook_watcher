@@ -135,6 +135,7 @@ Map<String, Timer> watchdogTimers = {};
 
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
+List<StreamSubscription> systemEventsSubscriptions = [];
 StreamSubscription systemMetricsSubscription;
 
 void init() async {
@@ -232,9 +233,17 @@ void listenForDriverMetrics(String project, List<String> drivers) {
 }
 
 void listenForSystemEvents(List<String> projects) {
+  // clear up the old data while the new data loads
+  systemEventsDataMap.clear();
+  command(UIAction.systemEventsDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.system, true, true);
+
+  // start listening for the new project collection
+  systemEventsSubscriptions.forEach((subscription) => subscription?.cancel());
+  systemEventsSubscriptions.clear();
   for (var project in projects) {
     systemEventsDataMap[project] = [];
-    platform.listenForMetrics(
+    systemEventsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/$SYSTEM_EVENTS_COLLECTION_KEY',
       getFilteredDate(selectedPeriodFilter),
       'timestamp',
@@ -248,16 +257,19 @@ void listenForSystemEvents(List<String> projects) {
         systemEventsDataMap[project].removeWhere((d) => updatedIds.contains(d.docId));
         systemEventsDataMap[project].addAll(updatedData);
         command(UIAction.systemEventsDataUpdated, null);
+        view.contentView.toggleChartLoadingState(ChartType.system, false, true);
       }
-    );
+    ));
   }
 }
 
 void listenForSystemMetrics() {
+  // clear up the old data while the new data loads
   systemMetricsDataList.clear();
   command(UIAction.systemMetricsDataUpdated, null);
   view.contentView.toggleChartLoadingState(ChartType.system, true);
 
+  // start listening for the new project collection
   systemMetricsSubscription?.cancel();
   systemMetricsSubscription = platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
@@ -533,7 +545,6 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
       break;
     case ChartType.system:
       listenForSystemEvents(PROJECTS);
-      updateSystemEventsCharts(systemEventsDataMap);
       if (skipUpdateSystemMetricsChart) {
         listenForSystemMetrics();
       }
