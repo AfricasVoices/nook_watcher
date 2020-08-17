@@ -206,6 +206,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
   // clear up the old data while the new data loads
   driversDataMap.clear();
   command(UIAction.driversDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.driver, true);
 
   // start listening for the new project collection
   driverMetricsSubscriptions.forEach((subscription) => subscription?.cancel());
@@ -537,11 +538,9 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   switch (selectedTab) {
     case ChartType.conversation:
       listenForNeedsReplyMetrics(selectedProject);
-      updateNeedsReplyCharts(needsReplyDataList);
       break;
     case ChartType.driver:
       listenForDriverMetrics(selectedProject, DRIVERS);
-      updateDriverCharts(driversDataMap);
       break;
     case ChartType.system:
       listenForSystemEvents(PROJECTS);
