@@ -1,3 +1,9 @@
+/*
+spinner stylesheet
+Modified from
+Tobias Ahlin's Spinkit CSS (https://github.com/tobiasahlin/SpinKit/blob/master/spinkit.css)
+*/
+
 .sk-fading-circle {
   margin: 100px auto;
   width: 17px;
