@@ -549,6 +549,34 @@ class ContentView {
     driverChartsTabContent.children.clear();
   }
 
+  void toggleChartLoadingState(controller.ChartType chartType, bool show, [bool isSystemEvents = false]) {
+    switch (chartType){
+      case controller.ChartType.conversation:
+        needsReplyLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyMoreThan24hTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateMoreThan24hTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyAgeHistogram.spinner.classes.toggle('hidden', !show);
+        break;
+      case controller.ChartType.driver:
+        driverCharts.forEach((driver, chart) => chart.spinner.classes.toggle('hidden', !show));
+        break;
+      case controller.ChartType.system:
+        if (isSystemEvents) {
+            systemEventsCharts.forEach((project, chart) => chart.spinner.classes.toggle('hidden', !show));
+          } else {
+            cpuPercentSystemMetricsTimeseries.spinner.classes.toggle('hidden', !show);
+            diskUsageSystemMetricsTimeseries.spinner.classes.toggle('hidden', !show);
+            memoryUsageSystemMetricsTimeseries.spinner.classes.toggle('hidden', !show);
+          }
+        break;
+    }
+  }
+
   void setStale (String type, bool staleState) {
     switch (type) {
       case 'needs_reply_metrics':

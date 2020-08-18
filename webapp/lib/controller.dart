@@ -135,6 +135,8 @@ Map<String, Timer> watchdogTimers = {};
 
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
+List<StreamSubscription> systemEventsSubscriptions = [];
+StreamSubscription systemMetricsSubscription;
 
 void init() async {
   view.init();
@@ -169,13 +171,14 @@ void initUI() {
   view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
 
   //selectedTab already initialized at this point. Doing this for the purpose of pulling data from firestore
-  command(UIAction.tabSwitched, new ChartTypeData(ChartType.conversation));
+  command(UIAction.tabSwitched, new ChartTypeData(selectedTab));
 }
 
 void listenForNeedsReplyMetrics(String project) {
   // clear up the old data while the new data loads
   needsReplyDataList.clear();
   command(UIAction.needsReplyDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.conversation, true);
 
   // start listening for the new project collection
   needsReplyMetricsSubscription?.cancel();
@@ -194,6 +197,7 @@ void listenForNeedsReplyMetrics(String project) {
       needsReplyDataList.addAll(updatedData);
       command(UIAction.needsReplyDataUpdated, null);
       checkNeedsReplyMetricsStale(updatedData);
+      view.contentView.toggleChartLoadingState(ChartType.conversation, false);
     }
   );
 }
@@ -202,6 +206,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
   // clear up the old data while the new data loads
   driversDataMap.clear();
   command(UIAction.driversDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.driver, true);
 
   // start listening for the new project collection
   driverMetricsSubscriptions.forEach((subscription) => subscription?.cancel());
@@ -222,15 +227,24 @@ void listenForDriverMetrics(String project, List<String> drivers) {
         driversDataMap[driver].removeWhere((d) => updatedIds.contains(d.docId));
         driversDataMap[driver].addAll(updatedData);
         command(UIAction.driversDataUpdated, null);
+        view.contentView.toggleChartLoadingState(ChartType.driver, false);
       }
     ));
   }
 }
 
 void listenForSystemEvents(List<String> projects) {
+  // clear up the old data while the new data loads
+  systemEventsDataMap.clear();
+  command(UIAction.systemEventsDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.system, true, true);
+
+  // start listening for the new project collection
+  systemEventsSubscriptions.forEach((subscription) => subscription?.cancel());
+  systemEventsSubscriptions.clear();
   for (var project in projects) {
     systemEventsDataMap[project] = [];
-    platform.listenForMetrics(
+    systemEventsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/$SYSTEM_EVENTS_COLLECTION_KEY',
       getFilteredDate(selectedPeriodFilter),
       'timestamp',
@@ -244,13 +258,21 @@ void listenForSystemEvents(List<String> projects) {
         systemEventsDataMap[project].removeWhere((d) => updatedIds.contains(d.docId));
         systemEventsDataMap[project].addAll(updatedData);
         command(UIAction.systemEventsDataUpdated, null);
+        view.contentView.toggleChartLoadingState(ChartType.system, false, true);
       }
-    );
+    ));
   }
 }
 
 void listenForSystemMetrics() {
-  platform.listenForMetrics(
+  // clear up the old data while the new data loads
+  systemMetricsDataList.clear();
+  command(UIAction.systemMetricsDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.system, true);
+
+  // start listening for the new project collection
+  systemMetricsSubscription?.cancel();
+  systemMetricsSubscription = platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
     getFilteredDate(selectedPeriodFilter),
     'datetime',
@@ -265,6 +287,7 @@ void listenForSystemMetrics() {
       systemMetricsDataList.addAll(updatedData);
       command(UIAction.systemMetricsDataUpdated, null);
       checkSystemMetricsStale(updatedData);
+      view.contentView.toggleChartLoadingState(ChartType.system, false);
     }
   );
 }
@@ -515,18 +538,14 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   switch (selectedTab) {
     case ChartType.conversation:
       listenForNeedsReplyMetrics(selectedProject);
-      updateNeedsReplyCharts(needsReplyDataList);
       break;
     case ChartType.driver:
       listenForDriverMetrics(selectedProject, DRIVERS);
-      updateDriverCharts(driversDataMap);
       break;
     case ChartType.system:
       listenForSystemEvents(PROJECTS);
-      updateSystemEventsCharts(systemEventsDataMap);
       if (skipUpdateSystemMetricsChart) {
         listenForSystemMetrics();
-        updateSystemMetricsCharts(systemMetricsDataList);
       }
       break;
   }
