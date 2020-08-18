@@ -498,6 +498,108 @@ class DriverTimeseriesBarChartView {
   String _stringToHexColor(str) => '#${md5.convert(utf8.encode(str)).toString().substring(0, 6)}';
 }
 
+class SystemMetricsTimeseriesBarChartView {
+  DivElement chartContainer;
+  DivElement title;
+  DivElement spinner;
+  CanvasElement canvas;
+  chartjs.Chart chart;
+  chartjs.ChartData chartData;
+
+  SystemMetricsTimeseriesBarChartView() {
+    chartContainer = new DivElement()
+      ..classes.add('chart');
+
+    canvas = new CanvasElement(height: 300, width: 800);
+
+    // Wrap the canvas into a <div> element as needed by Chart.js
+    chartContainer.append(new DivElement()
+      ..classes.add('chart--3080')
+      ..append(canvas));
+
+    title = new DivElement()
+      ..classes.add('chart__title');
+    chartContainer.append(title);
+
+    spinner = createSpinner();
+    spinner.classes.addAll(['hidden','chart3080']);
+    chartContainer.append(spinner);
+  }
+
+  void createEmptyChart({String titleText = '', List<String> datasetLabels = const []}) {
+    title.text = titleText;
+
+    List<chartjs.ChartDataSets> chartDatasets = [];
+    datasetLabels.forEach((datasetLabel) {
+      chartDatasets.add(new chartjs.ChartDataSets(
+          label: datasetLabel,
+          backgroundColor: '#24ABB8',
+          borderColor: '#24ABB8',
+          data: [],
+          showLine: false,
+          pointRadius: 8));
+      });
+
+    chartData = new chartjs.ChartData(labels: [], datasets: chartDatasets);
+
+    var chartOptions = new chartjs.ChartOptions(
+      legend: new chartjs.ChartLegendOptions(display: false),
+      scales: new chartjs.LinearScale(
+        xAxes: [
+          new chartjs.ChartXAxe()
+            ..type = 'time'
+            ..distribution = 'linear'
+            ..bounds = 'ticks'
+            ..time = (new chartjs.TimeScale(unit: 'day'))
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
+        ],
+        yAxes: [
+          new chartjs.ChartYAxe()
+            ..ticks = (new chartjs.LinearTickOptions()..beginAtZero = true)
+            ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
+        ]),
+      hover: new chartjs.ChartHoverOptions()..animationDuration = 0,
+      tooltips: new chartjs.ChartTooltipOptions()..mode = 'x-axis',
+    );
+
+    var chartConfig = new chartjs.ChartConfiguration(type: 'bar', data: chartData, options: chartOptions);
+    chart = chartjs.Chart(canvas.getContext('2d'), chartConfig);
+  }
+
+  void updateChart(List<Map<DateTime, num>> updatedCountsAtTimestampList, {String timeScaleUnit = 'day', num yLowerLimit = 0 , num yUpperLimit, DateTime xLowerLimit, DateTime xUpperLimit}) {
+    for (var i = 0; i < updatedCountsAtTimestampList.length; i++) {
+      List<chartjs.ChartPoint> timeseriesPoints = [];
+      List<DateTime> sortedDateTimes = updatedCountsAtTimestampList[i].keys.toList()
+        ..sort((t1, t2) => t1.compareTo(t2));
+      for (var datetime in sortedDateTimes) {
+        var value = updatedCountsAtTimestampList[i][datetime];
+        timeseriesPoints.add(
+            new chartjs.ChartPoint(t: datetime.toIso8601String(), y: value));
+      }
+      chartData.datasets[i].data
+        ..clear()
+        ..addAll(timeseriesPoints);
+    }
+    var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
+    if (timeScaleUnit == 'hour') {
+      timeScaleOptions.stepSize = 2;
+    }
+    chart.options.scales.xAxes[0].time = timeScaleOptions;
+    chart.options.scales.xAxes[0].type = 'time';
+    chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
+    chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
+    if (timeScaleUnit == 'hour') {
+      chart.options.scales.xAxes[0].time = (new chartjs.TimeScale()
+                                              ..displayFormats = new chartjs.TimeDisplayFormat(hour: 'D/MM hA'));
+    }
+    chart.options.scales.yAxes[0].ticks.min = yLowerLimit;
+    if (yUpperLimit != null) {
+      chart.options.scales.yAxes[0].ticks.max = yUpperLimit;
+    }
+    chart.update(new chartjs.ChartUpdateProps(duration: 0));
+  }
+}
+
 // Util methods
 
 DivElement createSpinner() {
