@@ -550,7 +550,7 @@ class ContentView {
   }
 
   void toggleChartLoadingState(controller.ChartType chartType, bool state, [bool isSystemEvents = false]) {
-    switch(chartType){
+    switch (chartType){
       case controller.ChartType.conversation:
         if (state) {
           needsReplyLatestValue.spinner.classes.remove('hidden');
