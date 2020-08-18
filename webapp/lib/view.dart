@@ -549,56 +549,30 @@ class ContentView {
     driverChartsTabContent.children.clear();
   }
 
-  void toggleChartLoadingState(controller.ChartType chartType, bool state, [bool isSystemEvents = false]) {
+  void toggleChartLoadingState(controller.ChartType chartType, bool show, [bool isSystemEvents = false]) {
     switch (chartType){
       case controller.ChartType.conversation:
-        if (state) {
-          needsReplyLatestValue.spinner.classes.remove('hidden');
-          needsReplyAndEscalateLatestValue.spinner.classes.remove('hidden');
-          needsReplyMoreThan24hLatestValue.spinner.classes.remove('hidden');
-          needsReplyAndEscalateMoreThan24hLatestValue.spinner.classes.remove('hidden');
-          needsReplyTimeseries.spinner.classes.remove('hidden');
-          needsReplyAndEscalateTimeseries.spinner.classes.remove('hidden');
-          needsReplyMoreThan24hTimeseries.spinner.classes.remove('hidden');
-          needsReplyAndEscalateMoreThan24hTimeseries.spinner.classes.remove('hidden');
-          needsReplyAgeHistogram.spinner.classes.remove('hidden');
-        } else {
-          needsReplyLatestValue.spinner.classes.add('hidden');
-          needsReplyAndEscalateLatestValue.spinner.classes.add('hidden');
-          needsReplyMoreThan24hLatestValue.spinner.classes.add('hidden');
-          needsReplyAndEscalateMoreThan24hLatestValue.spinner.classes.add('hidden');
-          needsReplyTimeseries.spinner.classes.add('hidden');
-          needsReplyAndEscalateTimeseries.spinner.classes.add('hidden');
-          needsReplyMoreThan24hTimeseries.spinner.classes.add('hidden');
-          needsReplyAndEscalateMoreThan24hTimeseries.spinner.classes.add('hidden');
-          needsReplyAgeHistogram.spinner.classes.add('hidden');
-        }
+        needsReplyLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
+        needsReplyTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyMoreThan24hTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyAndEscalateMoreThan24hTimeseries.spinner.classes.toggle('hidden', !show);
+        needsReplyAgeHistogram.spinner.classes.toggle('hidden', !show);
         break;
       case controller.ChartType.driver:
-        if (state) {
-          driverCharts.forEach((driver, chart) => chart.spinner.classes.remove('hidden'));
-        } else {
-          driverCharts.forEach((driver, chart) => chart.spinner.classes.add('hidden'));
-        }
+        driverCharts.forEach((driver, chart) => chart.spinner.classes.toggle('hidden', !show));
         break;
       case controller.ChartType.system:
-        if (state) {
-          if (isSystemEvents) {
-            systemEventsCharts.forEach((project, chart) => chart.spinner.classes.remove('hidden'));
+        if (isSystemEvents) {
+            systemEventsCharts.forEach((project, chart) => chart.spinner.classes.toggle('hidden', !show));
           } else {
-            cpuPercentSystemMetricsTimeseries.spinner.classes.remove('hidden');
-            diskUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
-            memoryUsageSystemMetricsTimeseries.spinner.classes.remove('hidden');
+            cpuPercentSystemMetricsTimeseries.spinner.classes.toggle('hidden', !show);
+            diskUsageSystemMetricsTimeseries.spinner.classes.toggle('hidden', !show);
+            memoryUsageSystemMetricsTimeseries.spinner.classes.toggle('hidden', !show);
           }
-        } else {
-          if (isSystemEvents) {
-            systemEventsCharts.forEach((project, chart) => chart.spinner.classes.add('hidden'));
-          } else {
-            cpuPercentSystemMetricsTimeseries.spinner.classes.add('hidden');
-            diskUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
-            memoryUsageSystemMetricsTimeseries.spinner.classes.add('hidden');
-          }
-        }
         break;
     }
   }
