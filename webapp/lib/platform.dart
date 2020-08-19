@@ -59,6 +59,9 @@ bool isUserSignedIn() {
 
 typedef CollectionListener(List<DocSnapshot> changes);
 
+Future<List<String>> get activeProjects async =>
+    (await _firestoreInstance.collection('projects').where('archived', '==', false).get()).docs.map((doc) => doc.id).toList();
+
 StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilterDatetime, String fieldPath, CollectionListener listener) {
   log.verbose('Loading from metrics');
   var query;
