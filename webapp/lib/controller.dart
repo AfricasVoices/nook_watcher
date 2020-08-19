@@ -112,7 +112,7 @@ class UserData extends Data {
 }
 
 List<String> PROJECTS;
-List<String> DRIVERS;
+Map<String, List<String>> DRIVERS;
 
 List<model.NeedsReplyData> needsReplyDataList;
 Map<String, List<model.DriverData>> driversDataMap;
@@ -143,7 +143,7 @@ void init() async {
 
 void initUI() async{
   PROJECTS = await platform.activeProjects;
-  DRIVERS = ['coda_adapter', 'pubsub_handler', 'firebase_adapter'];
+  DRIVERS = await platform.getProjectsDrivers;
 
   needsReplyDataList = [];
   driversDataMap = {};
@@ -203,7 +203,7 @@ void listenForNeedsReplyMetrics(String project) {
   );
 }
 
-void listenForDriverMetrics(String project, List<String> drivers) {
+void listenForDriverMetrics(String project, Map<String, List<String>> drivers) {
   // clear up the old data while the new data loads
   driversDataMap.clear();
   command(UIAction.driversDataUpdated, null);
@@ -212,7 +212,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
   // start listening for the new project collection
   driverMetricsSubscriptions.forEach((subscription) => subscription?.cancel());
   driverMetricsSubscriptions.clear();
-  for (var driver in drivers) {
+  for (var driver in drivers[selectedProject]) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
       'projects/$selectedProject/driver_metrics/$driver/metrics',
@@ -611,7 +611,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
 
   var previousFilters = new Map.from(driverMetricsFilters);
   if (filteredDriversDataMap.isNotEmpty) {
-    DRIVERS.forEach((driver) {
+    DRIVERS[selectedProject].forEach((driver) {
       var metricNames = filteredDriversDataMap[driver].map((d) => d.metrics.keys).toSet().expand((m) => m).toSet();
       driverMetricsFilters[driver] =  Map.fromIterable(metricNames, key: (m) => m, value: (_)=> true);
   });
