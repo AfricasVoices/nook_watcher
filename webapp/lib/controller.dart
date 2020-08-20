@@ -215,7 +215,7 @@ void listenForDriverMetrics(String project, Map<String, List<String>> drivers) {
   for (var driver in drivers[selectedProject]) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
-      'projects/$selectedProject/driver_metrics/$driver/metrics',
+      'projects/$project/driver_metrics/$driver/metrics',
       getFilteredDate(selectedPeriodFilter),
       'datetime',
       (List<model.DocSnapshot> updatedMetrics) {
