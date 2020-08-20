@@ -15,11 +15,6 @@ final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'systems';
 final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
 final DIR_SIZE_METRICS_ROOT_COLLECTION_KEY = 'dir_size_metrics';
 
-final PROJECTS = ['Lark_KK-Project-2020-COVID19', 'Lark_KK-Project-2020-COVID19-KE-URBAN',
-  'Lark_KK-Project-2020-COVID19-SOM-CC', 'Lark_KK-Project-2020-COVID19-SOM-IMAQAL', 'Lark_KK-Project-2020-COVID19-SOM-UNICEF'];
-
-final DRIVERS = ['coda_adapter', 'pubsub_handler', 'firebase_adapter'];
-
 enum UIAction {
   userSignedIn,
   userSignedOut,
@@ -116,6 +111,9 @@ class UserData extends Data {
   }
 }
 
+List<String> PROJECTS;
+Map<String, List<String>> DRIVERS;
+
 List<model.NeedsReplyData> needsReplyDataList;
 Map<String, List<model.DriverData>> driversDataMap;
 Map<String, List<model.SystemEventsData>> systemEventsDataMap;
@@ -143,7 +141,10 @@ void init() async {
   await platform.init();
 }
 
-void initUI() {
+void initUI() async{
+  PROJECTS = await platform.activeProjects;
+  DRIVERS = await platform.projectsDrivers;
+
   needsReplyDataList = [];
   driversDataMap = {};
   systemEventsDataMap = {};
@@ -183,7 +184,7 @@ void listenForNeedsReplyMetrics(String project) {
   // start listening for the new project collection
   needsReplyMetricsSubscription?.cancel();
   needsReplyMetricsSubscription = platform.listenForMetrics(
-    'projects/$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
+    'projects/$project/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -214,7 +215,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
   for (var driver in drivers) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
-      'projects/$selectedProject/driver_metrics/$driver/metrics',
+      'projects/$project/driver_metrics/$driver/metrics',
       getFilteredDate(selectedPeriodFilter),
       'datetime',
       (List<model.DocSnapshot> updatedMetrics) {
@@ -540,7 +541,7 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
       listenForNeedsReplyMetrics(selectedProject);
       break;
     case ChartType.driver:
-      listenForDriverMetrics(selectedProject, DRIVERS);
+      listenForDriverMetrics(selectedProject, DRIVERS[selectedProject]);
       break;
     case ChartType.system:
       listenForSystemEvents(PROJECTS);
@@ -610,7 +611,7 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
 
   var previousFilters = new Map.from(driverMetricsFilters);
   if (filteredDriversDataMap.isNotEmpty) {
-    DRIVERS.forEach((driver) {
+    DRIVERS[selectedProject].forEach((driver) {
       var metricNames = filteredDriversDataMap[driver].map((d) => d.metrics.keys).toSet().expand((m) => m).toSet();
       driverMetricsFilters[driver] =  Map.fromIterable(metricNames, key: (m) => m, value: (_)=> true);
   });

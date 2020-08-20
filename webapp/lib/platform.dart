@@ -59,6 +59,19 @@ bool isUserSignedIn() {
 
 typedef CollectionListener(List<DocSnapshot> changes);
 
+Future<List<String>> get activeProjects async =>
+    (await _firestoreInstance.collection('projects').where('archived', '==', false).get()).docs.map((doc) => doc.id).toList();
+
+Future<Map<String, List<String>>> get projectsDrivers async {
+  Map<String, List<String>> projectsDrivers = {};
+  for (var project in (await activeProjects)) {
+    projectsDrivers[project] = (await _firestoreInstance.collection('projects/$project/driver_metrics')
+      .where('archived', '==', false).get())
+        .docs.map((doc) => doc.id).toList();
+  }
+  return projectsDrivers;
+}
+
 StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilterDatetime, String fieldPath, CollectionListener listener) {
   log.verbose('Loading from metrics');
   var query;
