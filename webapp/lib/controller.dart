@@ -143,7 +143,7 @@ void init() async {
 
 void initUI() async{
   PROJECTS = await platform.activeProjects;
-  DRIVERS = await platform.getProjectsDrivers;
+  DRIVERS = await platform.projectsDrivers;
 
   needsReplyDataList = [];
   driversDataMap = {};
@@ -184,7 +184,7 @@ void listenForNeedsReplyMetrics(String project) {
   // start listening for the new project collection
   needsReplyMetricsSubscription?.cancel();
   needsReplyMetricsSubscription = platform.listenForMetrics(
-    'projects/$selectedProject/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
+    'projects/$project/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -203,7 +203,7 @@ void listenForNeedsReplyMetrics(String project) {
   );
 }
 
-void listenForDriverMetrics(String project, Map<String, List<String>> drivers) {
+void listenForDriverMetrics(String project, List<String> drivers) {
   // clear up the old data while the new data loads
   driversDataMap.clear();
   command(UIAction.driversDataUpdated, null);
@@ -212,7 +212,7 @@ void listenForDriverMetrics(String project, Map<String, List<String>> drivers) {
   // start listening for the new project collection
   driverMetricsSubscriptions.forEach((subscription) => subscription?.cancel());
   driverMetricsSubscriptions.clear();
-  for (var driver in drivers[selectedProject]) {
+  for (var driver in drivers) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/driver_metrics/$driver/metrics',
@@ -541,7 +541,7 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
       listenForNeedsReplyMetrics(selectedProject);
       break;
     case ChartType.driver:
-      listenForDriverMetrics(selectedProject, DRIVERS);
+      listenForDriverMetrics(selectedProject, DRIVERS[selectedProject]);
       break;
     case ChartType.system:
       listenForSystemEvents(PROJECTS);
