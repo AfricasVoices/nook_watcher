@@ -668,8 +668,10 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
     } else {
       metricNames.forEach((metric) {
         var metricData = chartData[metric];
-        var maxY = (metricData.values.toList()..sort()).last;
-        yUpperLimit += maxY;
+        if (metricData.isNotEmpty) {
+          var maxY = (metricData.values.toList()..sort()).last;
+          yUpperLimit += maxY;
+        }
       });
       view.contentView.setDriverChartsYAxisFilterMax(driverName, yUpperLimit);
     }
@@ -762,7 +764,7 @@ DateTime getStartDateTimeForPeriod(ChartPeriodFilters period) {
       startDate = new DateTime(now.year, now.month, now.day, now.hour - 4);
       break;
     case ChartPeriodFilters.hours10:
-      startDate = new DateTime(now.year, now.month, now.day, now.hour - 8);
+      startDate = new DateTime(now.year, now.month, now.day, now.hour - 10);
       break;
     case ChartPeriodFilters.days1:
       startDate = new DateTime(now.year, now.month, now.day - 1, 00);
