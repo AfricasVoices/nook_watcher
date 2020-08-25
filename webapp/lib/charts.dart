@@ -12,8 +12,9 @@ init() {
     }
     return new chartjs.Point(x: eventPosition.x, y: eventPosition.y);
   };
-  chartjs.ChartTooltipsStaticConfiguration()
-    ..positioners = new Map<String, chartjs.ChartTooltipPositioner>.from({'custom': custom});
+  var tooltipConfig = chartjs.ChartTooltipsStaticConfiguration()
+    ..positioners = {'custom': custom};
+  chartjs.Chart.Tooltip = tooltipConfig;
 }
 
 class SingleIndicatorChartView {
