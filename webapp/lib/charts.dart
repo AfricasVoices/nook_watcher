@@ -7,6 +7,9 @@ import 'package:chartjs/chartjs.dart' as chartjs;
 
 init() {
   chartjs.ChartTooltipPositioner custom = (List<dynamic> elements, chartjs.Point eventPosition) {
+    if (elements.isEmpty) {
+      return null;
+    }
     return new chartjs.Point(x: eventPosition.x, y: eventPosition.y);
   };
   chartjs.ChartTooltipsStaticConfiguration()
