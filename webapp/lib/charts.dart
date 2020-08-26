@@ -579,6 +579,10 @@ class SystemMetricsTimeseriesBarChartView {
       chartData.datasets[i].data
         ..clear()
         ..addAll(timeseriesPoints);
+
+      chartData.datasets[i]
+        ..barPercentage = 1.0
+        ..categoryPercentage = 1.4;
     }
     var timeScaleOptions = new chartjs.TimeScale(unit: timeScaleUnit);
     if (timeScaleUnit == 'hour') {
