@@ -10,7 +10,7 @@ init() {
     if (elements.isEmpty) {
       return null;
     }
-    return new chartjs.Point(x: eventPosition.x, y: eventPosition.y);
+    return new chartjs.Point(x: eventPosition.x, y: eventPosition.y < 10 ? 10: eventPosition.y);
   };
   chartjs.Chart.Tooltip.positioners.custom = custom;
 }
