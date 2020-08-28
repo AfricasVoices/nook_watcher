@@ -81,7 +81,7 @@ StreamSubscription listenForMetrics(String collectionRoot, String targetDoc, Dat
       .where(fieldPath, '>', periodFilterDatetime.toUtc().toIso8601String());
   } else {
     if (targetDoc != null) {
-      query = _firestoreInstance.collection('collectionRoot').doc('targetDoc');
+      query = _firestoreInstance.collection(collectionRoot).doc(targetDoc);
     } else {
       query = _firestoreInstance.collection(collectionRoot);
     }
