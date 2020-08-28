@@ -568,6 +568,10 @@ class ContentView {
   void toggleChartLoadingState(controller.ChartType chartType, bool show, [bool isSystemEvents = false]) {
     switch (chartType){
       case controller.ChartType.conversation:
+        conversationsCount.spinner.classes.toggle('hidden', !show);
+        escalateConversations.spinner.classes.toggle('hidden', !show);
+        escalateConversationsOurTurn.spinner.classes.toggle('hidden', !show);
+
         needsReplyLatestValue.spinner.classes.toggle('hidden', !show);
         needsReplyAndEscalateLatestValue.spinner.classes.toggle('hidden', !show);
         needsReplyMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
