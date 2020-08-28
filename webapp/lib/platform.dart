@@ -72,7 +72,7 @@ Future<Map<String, List<String>>> get projectsDrivers async {
   return projectsDrivers;
 }
 
-StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilterDatetime, String fieldPath, CollectionListener listener) {
+StreamSubscription listenForMetrics(String collectionRoot, String targetDoc, DateTime periodFilterDatetime, String fieldPath, CollectionListener listener) {
   log.verbose('Loading from metrics');
   var query;
   if (periodFilterDatetime != null) {
@@ -80,14 +80,23 @@ StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilter
       .collection(collectionRoot)
       .where(fieldPath, '>', periodFilterDatetime.toUtc().toIso8601String());
   } else {
-    query = _firestoreInstance.collection(collectionRoot);
+    if (targetDoc != null) {
+      query = _firestoreInstance.collection(collectionRoot).doc(targetDoc);
+    } else {
+      query = _firestoreInstance.collection(collectionRoot);
+    }
   }
-  return query.onSnapshot.listen((snapshots) {
+  return query.onSnapshot.listen((snapshot) {
     List<DocSnapshot> changes = [];
-    log.verbose("Starting processing ${snapshots.docChanges().length} changes.");
-    for (var docChange in snapshots.docChanges()) {
-      log.verbose('Processing ${docChange.doc.id}');
-      changes.add(new DocSnapshot(docChange.doc.id, docChange.doc.data()));
+    if (snapshot is firestore.QuerySnapshot) {
+      log.verbose("Starting processing ${snapshot.docChanges().length} changes.");
+      for (var docChange in snapshot.docChanges()) {
+        log.verbose('Processing ${docChange.doc.id}');
+        changes.add(new DocSnapshot(docChange.doc.id, docChange.doc.data()));
+      }
+    } else if (snapshot is firestore.DocumentSnapshot) {
+      log.verbose("Processing ${snapshot.id}");
+      if (snapshot.exists) changes.add(new DocSnapshot(snapshot.id, snapshot.data()));
     }
     listener(changes);
   });
