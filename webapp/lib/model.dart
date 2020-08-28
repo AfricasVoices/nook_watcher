@@ -2,6 +2,37 @@ import 'logger.dart';
 
 Logger log = new Logger('model.dart');
 
+class EscalateMetricsData {
+  String docId;
+  int conversationsCount;
+  int escalateConversations;
+  int escalateConversationsOurTurn;
+
+  static EscalateMetricsData fromSnapshot(DocSnapshot doc) =>
+      fromData(doc.data)..docId = doc.id;
+
+  static EscalateMetricsData fromData(Map data) {
+    if (data == null) return null;
+    return EscalateMetricsData()
+      ..conversationsCount = int_fromData(data['conversations_count'])
+      ..escalateConversations = int_fromData(data['escalate_conversations'])
+      ..escalateConversationsOurTurn = int_fromData(data['escalate_conversations_our_turn']);
+  }
+
+  Map<String, dynamic> toData() {
+    return {
+      if (conversationsCount != null) 'conversations_count': conversationsCount,
+      if (escalateConversations != null) 'escalate_conversations': escalateConversations,
+      if (escalateConversationsOurTurn != null) 'escalate_conversations_our_turn': escalateConversationsOurTurn
+    };
+  }
+
+  @override
+  String toString() {
+    return '$docId: ${toData()}';
+  }
+}
+
 class NeedsReplyData {
   String docId;
   DateTime datetime;
