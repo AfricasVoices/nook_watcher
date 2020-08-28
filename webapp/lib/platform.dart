@@ -96,7 +96,7 @@ StreamSubscription listenForMetrics(String collectionRoot, String targetDoc, Dat
       }
     } else if (snapshot is firestore.DocumentSnapshot) {
       log.verbose("Processing ${snapshot.id}");
-      changes.add(new DocSnapshot(snapshot.id, snapshot.data()));
+      if (snapshot.exists) changes.add(new DocSnapshot(snapshot.id, snapshot.data()));
     }
     listener(changes);
   });

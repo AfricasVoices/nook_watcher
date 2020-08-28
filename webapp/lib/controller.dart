@@ -192,7 +192,9 @@ void listenForEscalateMetrics(String project) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
         return;
       }
-      escalateMetricsData = updatedMetrics.map((doc) => model.EscalateMetricsData.fromSnapshot(doc)).first;
+      if (updatedMetrics.isNotEmpty) {
+        escalateMetricsData = updatedMetrics.map((doc) => model.EscalateMetricsData.fromSnapshot(doc)).first;
+      }
       command(UIAction.escalateMetricsDataUpdated, null);
       view.contentView.toggleChartLoadingState(ChartType.conversation, false);
     }
