@@ -302,4 +302,9 @@ class DocSnapshot {
   final Map<String, dynamic> data;
 
   DocSnapshot(this.id, this.data);
+
+  @override
+  String toString() {
+    return '$id: ${data}';
+  }
 }
