@@ -308,6 +308,10 @@ class ContentView {
   DivElement systemChartsTabContent;
   DivElement chartDataLastUpdateTime;
 
+  charts.SingleIndicatorChartView conversationsCount;
+  charts.SingleIndicatorChartView escalateConversations;
+  charts.SingleIndicatorChartView escalateConversationsOurTurn;
+
   charts.SingleIndicatorChartView needsReplyLatestValue;
   charts.SingleIndicatorChartView needsReplyAndEscalateLatestValue;
   charts.SingleIndicatorChartView needsReplyMoreThan24hLatestValue;
@@ -355,6 +359,18 @@ class ContentView {
     var singleIndicators = new DivElement()
       ..classes.add('single-indicator-container');
     conversationChartsTabContent.append(singleIndicators);
+
+    conversationsCount = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'conversations count');
+    singleIndicators.append(conversationsCount.chartContainer);
+
+    escalateConversations = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'escalate conversations');
+    singleIndicators.append(escalateConversations.chartContainer);
+
+    escalateConversationsOurTurn = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'escalate conversations our turn');
+    singleIndicators.append(escalateConversationsOurTurn.chartContainer);
 
     needsReplyLatestValue = new charts.SingleIndicatorChartView()
       ..createEmptyChart(titleText: 'needs reply');
