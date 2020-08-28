@@ -9,6 +9,7 @@ import 'view.dart' as view;
 
 Logger log = new Logger('controller.dart');
 
+final ESCALATE_METRICS_COLLECTION_KEY = 'escalate_metrics';
 final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics';
 final SYSTEM_EVENTS_COLLECTION_KEY = 'system_events';
 final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'systems';
@@ -20,6 +21,7 @@ enum UIAction {
   userSignedOut,
   signInButtonClicked,
   signOutButtonClicked,
+  escalateMetricsDataUpdated,
   needsReplyDataUpdated,
   driversDataUpdated,
   systemMetricsDataUpdated,
@@ -114,6 +116,7 @@ class UserData extends Data {
 List<String> PROJECTS;
 Map<String, List<String>> DRIVERS;
 
+model.EscalateMetricsData escalateMetricsData;
 List<model.NeedsReplyData> needsReplyDataList;
 Map<String, List<model.DriverData>> driversDataMap;
 Map<String, List<model.SystemEventsData>> systemEventsDataMap;
@@ -131,6 +134,7 @@ model.User signedInUser;
 
 Map<String, Timer> watchdogTimers = {};
 
+StreamSubscription escalateMetricsSubscription;
 StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
 List<StreamSubscription> systemEventsSubscriptions = [];
@@ -175,6 +179,32 @@ void initUI() async{
   command(UIAction.tabSwitched, new ChartTypeData(selectedTab));
 }
 
+void listenForEscalateMetrics(String project) {
+  // clear up the old data while the new data loads
+  escalateMetricsData = null;
+  command(UIAction.escalateMetricsDataUpdated, null);
+  view.contentView.toggleChartLoadingState(ChartType.conversation, true);
+
+  // start listening for the new project collection
+  escalateMetricsSubscription?.cancel();
+  escalateMetricsSubscription = platform.listenForMetrics(
+    'projects/$project/$ESCALATE_METRICS_COLLECTION_KEY',
+    'escalate_analytics',
+    null,
+    'datetime',
+    (List<model.DocSnapshot> updatedMetrics) {
+      if (signedInUser == null) {
+        log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
+        return;
+      }
+      escalateMetricsData = updatedMetrics.map((doc) => model.EscalateMetricsData.fromSnapshot(doc)).first;
+      command(UIAction.escalateMetricsDataUpdated, null);
+      view.contentView.toggleChartLoadingState(ChartType.conversation, false);
+    }
+  );
+}
+
+
 void listenForNeedsReplyMetrics(String project) {
   // clear up the old data while the new data loads
   needsReplyDataList.clear();
@@ -185,6 +215,7 @@ void listenForNeedsReplyMetrics(String project) {
   needsReplyMetricsSubscription?.cancel();
   needsReplyMetricsSubscription = platform.listenForMetrics(
     'projects/$project/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
+    null,
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -216,6 +247,7 @@ void listenForDriverMetrics(String project, List<String> drivers) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/driver_metrics/$driver/metrics',
+      null,
       getFilteredDate(selectedPeriodFilter),
       'datetime',
       (List<model.DocSnapshot> updatedMetrics) {
@@ -247,6 +279,7 @@ void listenForSystemEvents(List<String> projects) {
     systemEventsDataMap[project] = [];
     systemEventsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/$SYSTEM_EVENTS_COLLECTION_KEY',
+      null,
       getFilteredDate(selectedPeriodFilter),
       'timestamp',
       (List<model.DocSnapshot> updatedEvents) {
@@ -275,6 +308,7 @@ void listenForSystemMetrics() {
   systemMetricsSubscription?.cancel();
   systemMetricsSubscription = platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
+    null,
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -296,6 +330,7 @@ void listenForSystemMetrics() {
 void listenForDirectoryMetrics() {
   platform.listenForMetrics(
     '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
+    null,
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -439,6 +474,12 @@ void command(UIAction action, Data actionData) {
       break;
 
     /*** Data */
+    case UIAction.escalateMetricsDataUpdated:
+      if (selectedTab == ChartType.conversation) {
+        updateEscalateMetricsCharts(escalateMetricsData);
+      }
+      break;
+
     case UIAction.needsReplyDataUpdated:
       if (selectedTab == ChartType.conversation) {
         updateNeedsReplyCharts(needsReplyDataList);
@@ -538,6 +579,7 @@ void _resetDriverMetricFilters() {
 void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   switch (selectedTab) {
     case ChartType.conversation:
+      listenForEscalateMetrics(selectedProject);
       listenForNeedsReplyMetrics(selectedProject);
       break;
     case ChartType.driver:
@@ -550,6 +592,19 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
       }
       break;
   }
+}
+
+void updateEscalateMetricsCharts(model.EscalateMetricsData filteredEscalateMetricsData) {
+  if (filteredEscalateMetricsData == null) {
+    view.contentView.conversationsCount.updateChart('-');
+    view.contentView.escalateConversations.updateChart('-');
+    view.contentView.escalateConversationsOurTurn.updateChart('-');
+    return;
+  }
+
+  view.contentView.conversationsCount.updateChart('${filteredEscalateMetricsData.conversationsCount}');
+  view.contentView.escalateConversations.updateChart('${filteredEscalateMetricsData.escalateConversations}');
+  view.contentView.escalateConversationsOurTurn.updateChart('${filteredEscalateMetricsData.escalateConversationsOurTurn}');
 }
 
 void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
