@@ -33,49 +33,6 @@ class EscalateMetricsData {
   }
 }
 
-class NeedsReplyData {
-  String docId;
-  DateTime datetime;
-  DateTime earliestNeedsReplyDate;
-  int needsReplyCount;
-  int needsReplyAndEscalateCount;
-  int needsReplyMoreThan24h;
-  int needsReplyAndEscalateMoreThan24hCount;
-  Map<String, int> needsReplyMessagesByDate;
-
-  static NeedsReplyData fromSnapshot(DocSnapshot doc) =>
-      fromData(doc.data)..docId = doc.id;
-
-  static NeedsReplyData fromData(Map data) {
-    if (data == null) return null;
-    return NeedsReplyData()
-      ..datetime = DateTime_fromData(data['datetime'])
-      ..earliestNeedsReplyDate = DateTime_fromData(data['earliest_needs_reply_date'])
-      ..needsReplyCount = int_fromData(data['needs_reply_count'])
-      ..needsReplyAndEscalateCount = int_fromData(data['needs_reply_and_escalate_count'])
-      ..needsReplyMoreThan24h = int_fromData(data['needs_reply_more_than_24h'])
-      ..needsReplyAndEscalateMoreThan24hCount = int_fromData(data['needs_reply_and_escalate_more_than_24h'])
-      ..needsReplyMessagesByDate = Map_fromData(data['needs_reply_messages_by_date'], int_fromData);
-  }
-
-  Map<String, dynamic> toData() {
-    return {
-      if (datetime != null) 'datetime': datetime.toIso8601String(),
-      if (earliestNeedsReplyDate != null) 'earliest_needs_reply_date': datetime.toIso8601String(),
-      if (needsReplyCount != null) 'needs_reply_count': needsReplyCount,
-      if (needsReplyAndEscalateCount != null) 'needs_reply_and_escalate_count': needsReplyAndEscalateCount,
-      if (needsReplyMoreThan24h != null) 'needs_reply_more_than_24h': needsReplyMoreThan24h,
-      if (needsReplyAndEscalateMoreThan24hCount != null) 'needs_reply_and_escalate_more_than_24h': needsReplyAndEscalateMoreThan24hCount,
-      if (needsReplyMessagesByDate != null) 'needs_reply_messages_by_date': needsReplyMessagesByDate,
-    };
-  }
-
-  @override
-  String toString() {
-    return '$docId: ${toData()}';
-  }
-}
-
 class DriverData {
   String docId;
   DateTime datetime;
