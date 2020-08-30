@@ -9,7 +9,7 @@ import 'view.dart' as view;
 
 Logger log = new Logger('controller.dart');
 
-final ESCALATE_METRICS_COLLECTION_KEY = 'escalate_metrics';
+final NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics';
 final SYSTEM_EVENTS_COLLECTION_KEY = 'system_events';
 final SYSTEM_METRICS_ROOT_COLLECTION_KEY = 'systems';
 final SYSTEM_METRICS_MACHINE_NAME = 'miranda';
@@ -20,7 +20,7 @@ enum UIAction {
   userSignedOut,
   signInButtonClicked,
   signOutButtonClicked,
-  escalateMetricsDataUpdated,
+  needsReplyDataUpdated,
   driversDataUpdated,
   systemMetricsDataUpdated,
   dirSizeMetricsDataUpdated,
@@ -114,7 +114,7 @@ class UserData extends Data {
 List<String> PROJECTS;
 Map<String, List<String>> DRIVERS;
 
-model.EscalateMetricsData escalateMetricsData;
+List<model.NeedsReplyData> needsReplyDataList;
 Map<String, List<model.DriverData>> driversDataMap;
 Map<String, List<model.SystemEventsData>> systemEventsDataMap;
 List<model.SystemMetricsData> systemMetricsDataList;
@@ -131,7 +131,7 @@ model.User signedInUser;
 
 Map<String, Timer> watchdogTimers = {};
 
-StreamSubscription escalateMetricsSubscription;
+StreamSubscription needsReplyMetricsSubscription;
 List<StreamSubscription> driverMetricsSubscriptions = [];
 List<StreamSubscription> systemEventsSubscriptions = [];
 StreamSubscription systemMetricsSubscription;
@@ -145,6 +145,7 @@ void initUI() async{
   PROJECTS = await platform.activeProjects;
   DRIVERS = await platform.projectsDrivers;
 
+  needsReplyDataList = [];
   driversDataMap = {};
   systemEventsDataMap = {};
   systemMetricsDataList = [];
@@ -174,28 +175,29 @@ void initUI() async{
   command(UIAction.tabSwitched, new ChartTypeData(selectedTab));
 }
 
-void listenForEscalateMetrics(String project) {
+void listenForNeedsReplyMetrics(String project) {
   // clear up the old data while the new data loads
-  escalateMetricsData = null;
-  command(UIAction.escalateMetricsDataUpdated, null);
+  needsReplyDataList.clear();
+  command(UIAction.needsReplyDataUpdated, null);
   view.contentView.toggleChartLoadingState(ChartType.conversation, true);
 
   // start listening for the new project collection
-  escalateMetricsSubscription?.cancel();
-  escalateMetricsSubscription = platform.listenForMetrics(
-    'projects/$project/$ESCALATE_METRICS_COLLECTION_KEY',
-    'escalate_analytics',
-    null,
+  needsReplyMetricsSubscription?.cancel();
+  needsReplyMetricsSubscription = platform.listenForMetrics(
+    'projects/$project/$NEEDS_REPLY_METRICS_COLLECTION_KEY',
+    getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");
         return;
       }
-      if (updatedMetrics.isNotEmpty) {
-        escalateMetricsData = updatedMetrics.map((doc) => model.EscalateMetricsData.fromSnapshot(doc)).first;
-      }
-      command(UIAction.escalateMetricsDataUpdated, null);
+      var updatedIds = updatedMetrics.map((m) => m.id).toSet();
+      var updatedData = updatedMetrics.map((doc) => model.NeedsReplyData.fromSnapshot(doc)).toList();
+      needsReplyDataList.removeWhere((d) => updatedIds.contains(d.docId));
+      needsReplyDataList.addAll(updatedData);
+      command(UIAction.needsReplyDataUpdated, null);
+      checkNeedsReplyMetricsStale(updatedData);
       view.contentView.toggleChartLoadingState(ChartType.conversation, false);
     }
   );
@@ -214,7 +216,6 @@ void listenForDriverMetrics(String project, List<String> drivers) {
     driversDataMap[driver] = [];
     driverMetricsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/driver_metrics/$driver/metrics',
-      null,
       getFilteredDate(selectedPeriodFilter),
       'datetime',
       (List<model.DocSnapshot> updatedMetrics) {
@@ -246,7 +247,6 @@ void listenForSystemEvents(List<String> projects) {
     systemEventsDataMap[project] = [];
     systemEventsSubscriptions.add(platform.listenForMetrics(
       'projects/$project/$SYSTEM_EVENTS_COLLECTION_KEY',
-      null,
       getFilteredDate(selectedPeriodFilter),
       'timestamp',
       (List<model.DocSnapshot> updatedEvents) {
@@ -275,7 +275,6 @@ void listenForSystemMetrics() {
   systemMetricsSubscription?.cancel();
   systemMetricsSubscription = platform.listenForMetrics(
     '$SYSTEM_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
-    null,
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -297,7 +296,6 @@ void listenForSystemMetrics() {
 void listenForDirectoryMetrics() {
   platform.listenForMetrics(
     '$DIR_SIZE_METRICS_ROOT_COLLECTION_KEY/$SYSTEM_METRICS_MACHINE_NAME/metrics',
-    null,
     getFilteredDate(selectedPeriodFilter),
     'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
@@ -316,7 +314,9 @@ void listenForDirectoryMetrics() {
 
 bool isDataStale(Object projectData) {
   var data;
-  if (projectData is model.SystemMetricsData) {
+  if (projectData is model.NeedsReplyData) {
+    data = projectData as model.NeedsReplyData;
+  } else if (projectData is model.SystemMetricsData) {
     data = projectData as model.SystemMetricsData;
   } else {
     throw new model.DataModelNotSupported('Data object of type "${projectData.runtimeType}" not supported for staleness monitoring');
@@ -333,7 +333,9 @@ bool isDataStale(Object projectData) {
 }
 
 String getWatchdogTimerKey(Object data) {
-  if (data is model.SystemMetricsData) {
+  if (data is model.NeedsReplyData) {
+    return  selectedProject;
+  } else if (data is model.SystemMetricsData) {
     return SYSTEM_METRICS_ROOT_COLLECTION_KEY;
   } else {
     throw new model.DataModelNotSupported('Data object of type "${data.runtimeType}" not supported for staleness monitoring');
@@ -342,7 +344,9 @@ String getWatchdogTimerKey(Object data) {
 
 void setupWatchdogTimer(Object latestData, [bool stale = false]) {
   var data;
-  if (latestData is model.SystemMetricsData) {
+  if (latestData is model.NeedsReplyData) {
+    data = latestData as model.NeedsReplyData;
+  } else if (latestData is model.SystemMetricsData) {
     data = latestData as model.SystemMetricsData;
   } else {
     throw new model.DataModelNotSupported('Data object of type "${latestData.runtimeType}" not supported for staleness monitoring');
@@ -357,9 +361,34 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
+      if (data.project == selectedProject) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+      }
       view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
     });
     watchdogTimers[getWatchdogTimerKey(data)] = timer;
+  }
+}
+
+void checkNeedsReplyMetricsStale(List<model.NeedsReplyData> updatedData) {
+  if (updatedData.isEmpty) {
+    var selectedTimer = watchdogTimers[selectedProject];
+    selectedTimer?.cancel();
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
+    return;
+  }
+
+  updatedData.sort((d1, d2) => d1.datetime.compareTo(d2.datetime));
+
+  var latestData = updatedData.last;
+
+  setupWatchdogTimer(latestData, isDataStale(latestData));
+
+  var selectedTimer = watchdogTimers[selectedProject];
+  if (selectedTimer != null && selectedTimer.isActive) {
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
+  } else {
+    view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
   }
 }
 
@@ -410,9 +439,9 @@ void command(UIAction action, Data actionData) {
       break;
 
     /*** Data */
-    case UIAction.escalateMetricsDataUpdated:
+    case UIAction.needsReplyDataUpdated:
       if (selectedTab == ChartType.conversation) {
-        updateEscalateMetricsCharts(escalateMetricsData);
+        updateNeedsReplyCharts(needsReplyDataList);
       }
       break;
 
@@ -463,6 +492,12 @@ void command(UIAction action, Data actionData) {
       driverXLimitFilters.clear();
       driverYUpperLimitFilters.clear();
       _updateChartsView();
+      var selectedTimer = watchdogTimers[selectedProject];
+      if (selectedTimer != null && selectedTimer.isActive) {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, false);
+      } else {
+        view.contentView.setStale(NEEDS_REPLY_METRICS_COLLECTION_KEY, true);
+      }
       view.contentView.setUrlFilters(selectedTab, selectedProject, selectedPeriodFilter);
       break;
 
@@ -503,7 +538,7 @@ void _resetDriverMetricFilters() {
 void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   switch (selectedTab) {
     case ChartType.conversation:
-      listenForEscalateMetrics(selectedProject);
+      listenForNeedsReplyMetrics(selectedProject);
       break;
     case ChartType.driver:
       listenForDriverMetrics(selectedProject, DRIVERS[selectedProject]);
@@ -517,17 +552,55 @@ void _updateChartsView([skipUpdateSystemMetricsChart = false]) {
   }
 }
 
-void updateEscalateMetricsCharts(model.EscalateMetricsData filteredEscalateMetricsData) {
-  if (filteredEscalateMetricsData == null) {
-    view.contentView.conversationsCount.updateChart('-');
-    view.contentView.escalateConversations.updateChart('-');
-    view.contentView.escalateConversationsOurTurn.updateChart('-');
+void updateNeedsReplyCharts(List<model.NeedsReplyData> filteredNeedsReplyDataList) {
+  var timeScaleUnit = dayFilters.contains(selectedPeriodFilter) ? 'hour' : 'day';
+
+  DateTime xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+  DateTime xLowerLimitDateTime = getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+
+  Map<DateTime, int> data = new Map.fromIterable(filteredNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
+    value: (item) => (item as model.NeedsReplyData).needsReplyCount);
+  view.contentView.needsReplyTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+
+  data = new Map.fromIterable(filteredNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
+    value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateCount);
+  view.contentView.needsReplyAndEscalateTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+
+  data = new Map.fromIterable(filteredNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
+    value: (item) => (item as model.NeedsReplyData).needsReplyMoreThan24h);
+  view.contentView.needsReplyMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+
+  data = new Map.fromIterable(filteredNeedsReplyDataList,
+    key: (item) => (item as model.NeedsReplyData).datetime.toLocal(),
+    value: (item) => (item as model.NeedsReplyData).needsReplyAndEscalateMoreThan24hCount);
+  view.contentView.needsReplyAndEscalateMoreThan24hTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+
+  if (filteredNeedsReplyDataList.isEmpty) {
+    view.contentView.chartDataLastUpdateTime.text = 'No data to show for selected project and time range';
+    view.contentView.needsReplyLatestValue.updateChart('-');
+    view.contentView.needsReplyAndEscalateLatestValue.updateChart('-');
+    view.contentView.needsReplyMoreThan24hLatestValue.updateChart('-');
+    view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('-');
+    // TODO: show a message on the timeseries charts saying that there's no data to show
     return;
   }
 
-  view.contentView.conversationsCount.updateChart('${filteredEscalateMetricsData.conversationsCount}');
-  view.contentView.escalateConversations.updateChart('${filteredEscalateMetricsData.escalateConversations}');
-  view.contentView.escalateConversationsOurTurn.updateChart('${filteredEscalateMetricsData.escalateConversationsOurTurn}');
+  DateTime latestDateTime = data.keys.reduce((dt1, dt2) => dt1.isAfter(dt2) ? dt1 : dt2);
+  var latestData = filteredNeedsReplyDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
+
+  view.contentView.needsReplyLatestValue.updateChart('${latestData.needsReplyCount}');
+  view.contentView.needsReplyAndEscalateLatestValue.updateChart('${latestData.needsReplyAndEscalateCount}');
+  view.contentView.needsReplyMoreThan24hLatestValue.updateChart('${latestData.needsReplyMoreThan24h}');
+  view.contentView.needsReplyAndEscalateMoreThan24hLatestValue.updateChart('${latestData.needsReplyAndEscalateMoreThan24hCount}');
+
+  view.contentView.needsReplyAgeHistogram.updateChart(latestData.needsReplyMessagesByDate);
+
+  filteredNeedsReplyDataList.sort((a, b) => a.datetime.compareTo(b.datetime));
+  DateTime lastUpdateTime = filteredNeedsReplyDataList.last.datetime;
+  view.contentView.chartDataLastUpdateTime.text = 'Charts last updated on: ${lastUpdateTime.toLocal()}';
 }
 
 void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
