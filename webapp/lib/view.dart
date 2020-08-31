@@ -308,9 +308,12 @@ class ContentView {
   DivElement systemChartsTabContent;
   DivElement chartDataLastUpdateTime;
 
-  charts.SingleIndicatorChartView conversationsCount;
-  charts.SingleIndicatorChartView escalateConversations;
-  charts.SingleIndicatorChartView escalateConversationsOurTurn;
+  charts.SingleIndicatorChartView conversationsCountValue;
+  charts.SingleIndicatorChartView escalateConversationsLatestValue;
+  charts.SingleIndicatorChartView escalateConversationsOurTurnValue;
+  charts.DailyTimeseriesLineChartView conversationsCountTimeseries;
+  charts.DailyTimeseriesLineChartView escalateConversationsTimeseries;
+  charts.DailyTimeseriesLineChartView escalateConversationsOurTurnTimeseries;
   charts.SystemMetricsTimeseriesBarChartView cpuPercentSystemMetricsTimeseries;
   charts.SystemMetricsTimeseriesBarChartView diskUsageSystemMetricsTimeseries;
   charts.SystemMetricsTimeseriesBarChartView memoryUsageSystemMetricsTimeseries;
@@ -350,21 +353,39 @@ class ContentView {
       ..classes.add('single-indicator-container');
     conversationChartsTabContent.append(singleIndicators);
 
-    conversationsCount = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'conversations count');
-    singleIndicators.append(conversationsCount.chartContainer);
+    conversationsCountValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'all conversations');
+    singleIndicators.append(conversationsCountValue.chartContainer);
 
-    escalateConversations = new charts.SingleIndicatorChartView()
+    escalateConversationsLatestValue = new charts.SingleIndicatorChartView()
       ..createEmptyChart(titleText: 'escalate conversations');
-    singleIndicators.append(escalateConversations.chartContainer);
+    singleIndicators.append(escalateConversationsLatestValue.chartContainer);
 
-    escalateConversationsOurTurn = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'escalate conversations our turn');
-    singleIndicators.append(escalateConversationsOurTurn.chartContainer);
+    escalateConversationsOurTurnValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'escalate coversations our turn');
+    singleIndicators.append(escalateConversationsOurTurnValue.chartContainer);
 
     chartDataLastUpdateTime = new DivElement()
       ..id = 'charts-last-update';
     conversationChartsTabContent.append(chartDataLastUpdateTime);
+
+    conversationsCountTimeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(conversationsCountTimeseries.chartContainer);
+    conversationsCountTimeseries.createEmptyChart(
+      titleText: 'all conversations',
+      datasetLabels: ['all conversations']);
+
+    escalateConversationsTimeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(escalateConversationsTimeseries.chartContainer);
+    escalateConversationsTimeseries.createEmptyChart(
+      titleText: 'escalate conversations',
+      datasetLabels: ['escalate conversations']);
+
+    escalateConversationsOurTurnTimeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(escalateConversationsOurTurnTimeseries.chartContainer);
+    escalateConversationsOurTurnTimeseries.createEmptyChart(
+      titleText: 'escalate conversations our turn',
+      datasetLabels: ['escalate conversations our turn']);
 
     driverChartsTabContent = new DivElement()
       ..id = "drivers";
@@ -512,9 +533,12 @@ class ContentView {
   void toggleChartLoadingState(controller.ChartType chartType, bool show, [bool isSystemEvents = false]) {
     switch (chartType){
       case controller.ChartType.conversation:
-        conversationsCount.spinner.classes.toggle('hidden', !show);
-        escalateConversations.spinner.classes.toggle('hidden', !show);
-        escalateConversationsOurTurn.spinner.classes.toggle('hidden', !show);
+        conversationsCountValue.spinner.classes.toggle('hidden', !show);
+        escalateConversationsLatestValue.spinner.classes.toggle('hidden', !show);
+        escalateConversationsOurTurnValue.spinner.classes.toggle('hidden', !show);
+        conversationsCountTimeseries.spinner.classes.toggle('hidden', !show);
+        escalateConversationsTimeseries.spinner.classes.toggle('hidden', !show);
+        escalateConversationsOurTurnTimeseries.spinner.classes.toggle('hidden', !show);
         break;
       case controller.ChartType.driver:
         driverCharts.forEach((driver, chart) => chart.spinner.classes.toggle('hidden', !show));
@@ -533,6 +557,13 @@ class ContentView {
 
   void setStale (String type, bool staleState) {
     switch (type) {
+      case 'conversation_metrics':
+        if (staleState) {
+          _conversationCharts.forEach((chart) => chart.classes.add('stale'));
+        } else {
+          _conversationCharts.forEach((chart) => chart.classes.remove('stale'));
+        }
+        break;
       case 'systems':
         if (staleState) {
           _systemCharts.forEach((chart) => chart.classes.add('stale'));
