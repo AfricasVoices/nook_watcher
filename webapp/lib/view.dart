@@ -308,18 +308,15 @@ class ContentView {
   DivElement systemChartsTabContent;
   DivElement chartDataLastUpdateTime;
 
-  charts.SingleIndicatorChartView needsReplyLatestValue;
-  charts.SingleIndicatorChartView needsReplyAndEscalateLatestValue;
-  charts.SingleIndicatorChartView needsReplyMoreThan24hLatestValue;
-  charts.SingleIndicatorChartView needsReplyAndEscalateMoreThan24hLatestValue;
-  charts.DailyTimeseriesLineChartView needsReplyTimeseries;
-  charts.DailyTimeseriesLineChartView needsReplyAndEscalateTimeseries;
-  charts.DailyTimeseriesLineChartView needsReplyMoreThan24hTimeseries;
-  charts.DailyTimeseriesLineChartView needsReplyAndEscalateMoreThan24hTimeseries;
+  charts.SingleIndicatorChartView conversationsCountValue;
+  charts.SingleIndicatorChartView escalateConversationsLatestValue;
+  charts.SingleIndicatorChartView escalateConversationsOurTurnValue;
+  charts.DailyTimeseriesLineChartView conversationsCountTimeseries;
+  charts.DailyTimeseriesLineChartView escalateConversationsTimeseries;
+  charts.DailyTimeseriesLineChartView escalateConversationsOurTurnTimeseries;
   charts.SystemMetricsTimeseriesBarChartView cpuPercentSystemMetricsTimeseries;
   charts.SystemMetricsTimeseriesBarChartView diskUsageSystemMetricsTimeseries;
   charts.SystemMetricsTimeseriesBarChartView memoryUsageSystemMetricsTimeseries;
-  charts.HistogramChartView needsReplyAgeHistogram;
   Map<String, charts.DriverTimeseriesBarChartView> driverCharts;
   Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
 
@@ -356,55 +353,39 @@ class ContentView {
       ..classes.add('single-indicator-container');
     conversationChartsTabContent.append(singleIndicators);
 
-    needsReplyLatestValue = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'needs reply');
-    singleIndicators.append(needsReplyLatestValue.chartContainer);
+    conversationsCountValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'all conversations');
+    singleIndicators.append(conversationsCountValue.chartContainer);
 
-    needsReplyAndEscalateLatestValue = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'needs reply and escalate');
-    singleIndicators.append(needsReplyAndEscalateLatestValue.chartContainer);
+    escalateConversationsLatestValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'escalate conversations');
+    singleIndicators.append(escalateConversationsLatestValue.chartContainer);
 
-    needsReplyMoreThan24hLatestValue = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'needs reply more than 24h');
-    singleIndicators.append(needsReplyMoreThan24hLatestValue.chartContainer);
-
-    needsReplyAndEscalateMoreThan24hLatestValue = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'needs reply and escalate more than 24h');
-    singleIndicators.append(needsReplyAndEscalateMoreThan24hLatestValue.chartContainer);
+    escalateConversationsOurTurnValue = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: 'escalate coversations our turn');
+    singleIndicators.append(escalateConversationsOurTurnValue.chartContainer);
 
     chartDataLastUpdateTime = new DivElement()
       ..id = 'charts-last-update';
     conversationChartsTabContent.append(chartDataLastUpdateTime);
 
-    needsReplyTimeseries = new charts.DailyTimeseriesLineChartView();
-    conversationChartsTabContent.append(needsReplyTimeseries.chartContainer);
-    needsReplyTimeseries.createEmptyChart(
-      titleText: 'needs reply',
-      datasetLabels: ['needs reply']);
+    conversationsCountTimeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(conversationsCountTimeseries.chartContainer);
+    conversationsCountTimeseries.createEmptyChart(
+      titleText: 'all conversations',
+      datasetLabels: ['all conversations']);
 
-    needsReplyAndEscalateTimeseries = new charts.DailyTimeseriesLineChartView();
-    conversationChartsTabContent.append(needsReplyAndEscalateTimeseries.chartContainer);
-    needsReplyAndEscalateTimeseries.createEmptyChart(
-      titleText: 'needs reply and escalate',
-      datasetLabels: ['needs reply and escalate']);
+    escalateConversationsTimeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(escalateConversationsTimeseries.chartContainer);
+    escalateConversationsTimeseries.createEmptyChart(
+      titleText: 'escalate conversations',
+      datasetLabels: ['escalate conversations']);
 
-    needsReplyMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
-    conversationChartsTabContent.append(needsReplyMoreThan24hTimeseries.chartContainer);
-    needsReplyMoreThan24hTimeseries.createEmptyChart(
-      titleText: 'needs reply more than 24h',
-      datasetLabels: ['needs reply more than 24h']);
-
-    needsReplyAndEscalateMoreThan24hTimeseries = new charts.DailyTimeseriesLineChartView();
-    conversationChartsTabContent.append(needsReplyAndEscalateMoreThan24hTimeseries.chartContainer);
-    needsReplyAndEscalateMoreThan24hTimeseries.createEmptyChart(
-      titleText: 'needs reply and escalate more than 24h',
-      datasetLabels: ['needs reply and escalate more than 24h']);
-
-    needsReplyAgeHistogram = new charts.HistogramChartView();
-    conversationChartsTabContent.append(needsReplyAgeHistogram.chartContainer);
-    needsReplyAgeHistogram.createEmptyChart(
-      titleText: 'needs reply messages by date',
-      datasetLabel: 'needs reply messages by date');
+    escalateConversationsOurTurnTimeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(escalateConversationsOurTurnTimeseries.chartContainer);
+    escalateConversationsOurTurnTimeseries.createEmptyChart(
+      titleText: 'escalate conversations our turn',
+      datasetLabels: ['escalate conversations our turn']);
 
     driverChartsTabContent = new DivElement()
       ..id = "drivers";
@@ -552,15 +533,12 @@ class ContentView {
   void toggleChartLoadingState(controller.ChartType chartType, bool show, [bool isSystemEvents = false]) {
     switch (chartType){
       case controller.ChartType.conversation:
-        needsReplyLatestValue.spinner.classes.toggle('hidden', !show);
-        needsReplyAndEscalateLatestValue.spinner.classes.toggle('hidden', !show);
-        needsReplyMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
-        needsReplyAndEscalateMoreThan24hLatestValue.spinner.classes.toggle('hidden', !show);
-        needsReplyTimeseries.spinner.classes.toggle('hidden', !show);
-        needsReplyAndEscalateTimeseries.spinner.classes.toggle('hidden', !show);
-        needsReplyMoreThan24hTimeseries.spinner.classes.toggle('hidden', !show);
-        needsReplyAndEscalateMoreThan24hTimeseries.spinner.classes.toggle('hidden', !show);
-        needsReplyAgeHistogram.spinner.classes.toggle('hidden', !show);
+        conversationsCountValue.spinner.classes.toggle('hidden', !show);
+        escalateConversationsLatestValue.spinner.classes.toggle('hidden', !show);
+        escalateConversationsOurTurnValue.spinner.classes.toggle('hidden', !show);
+        conversationsCountTimeseries.spinner.classes.toggle('hidden', !show);
+        escalateConversationsTimeseries.spinner.classes.toggle('hidden', !show);
+        escalateConversationsOurTurnTimeseries.spinner.classes.toggle('hidden', !show);
         break;
       case controller.ChartType.driver:
         driverCharts.forEach((driver, chart) => chart.spinner.classes.toggle('hidden', !show));
@@ -579,7 +557,7 @@ class ContentView {
 
   void setStale (String type, bool staleState) {
     switch (type) {
-      case 'needs_reply_metrics':
+      case 'conversation_metrics':
         if (staleState) {
           _conversationCharts.forEach((chart) => chart.classes.add('stale'));
         } else {

@@ -2,40 +2,32 @@ import 'logger.dart';
 
 Logger log = new Logger('model.dart');
 
-class NeedsReplyData {
+class ConversationMetricsData {
   String docId;
   DateTime datetime;
-  DateTime earliestNeedsReplyDate;
-  int needsReplyCount;
-  int needsReplyAndEscalateCount;
-  int needsReplyMoreThan24h;
-  int needsReplyAndEscalateMoreThan24hCount;
-  Map<String, int> needsReplyMessagesByDate;
+  int conversationsCount;
+  int escalateConversations;
+  int escalateConversationsOurTurn;
 
-  static NeedsReplyData fromSnapshot(DocSnapshot doc) =>
+  static ConversationMetricsData fromSnapshot(DocSnapshot doc) =>
       fromData(doc.data)..docId = doc.id;
 
-  static NeedsReplyData fromData(Map data) {
+  static ConversationMetricsData fromData(Map data) {
+    print(data);
     if (data == null) return null;
-    return NeedsReplyData()
-      ..datetime = DateTime_fromData(data['datetime'])
-      ..earliestNeedsReplyDate = DateTime_fromData(data['earliest_needs_reply_date'])
-      ..needsReplyCount = int_fromData(data['needs_reply_count'])
-      ..needsReplyAndEscalateCount = int_fromData(data['needs_reply_and_escalate_count'])
-      ..needsReplyMoreThan24h = int_fromData(data['needs_reply_more_than_24h'])
-      ..needsReplyAndEscalateMoreThan24hCount = int_fromData(data['needs_reply_and_escalate_more_than_24h'])
-      ..needsReplyMessagesByDate = Map_fromData(data['needs_reply_messages_by_date'], int_fromData);
+    return ConversationMetricsData()
+      ..datetime = DateTime_fromData(data['date'])
+      ..conversationsCount = int_fromData(data['conversations_count'])
+      ..escalateConversations = int_fromData(data['escalate_conversations'])
+      ..escalateConversationsOurTurn = int_fromData(data['escalate_conversations_our_turn']);
   }
 
   Map<String, dynamic> toData() {
     return {
-      if (datetime != null) 'datetime': datetime.toIso8601String(),
-      if (earliestNeedsReplyDate != null) 'earliest_needs_reply_date': datetime.toIso8601String(),
-      if (needsReplyCount != null) 'needs_reply_count': needsReplyCount,
-      if (needsReplyAndEscalateCount != null) 'needs_reply_and_escalate_count': needsReplyAndEscalateCount,
-      if (needsReplyMoreThan24h != null) 'needs_reply_more_than_24h': needsReplyMoreThan24h,
-      if (needsReplyAndEscalateMoreThan24hCount != null) 'needs_reply_and_escalate_more_than_24h': needsReplyAndEscalateMoreThan24hCount,
-      if (needsReplyMessagesByDate != null) 'needs_reply_messages_by_date': needsReplyMessagesByDate,
+      if (datetime != null) 'date': datetime.toIso8601String(),
+      if (conversationsCount != null) 'conversations_count': conversationsCount,
+      if (escalateConversations != null) 'escalate_conversations': escalateConversations,
+      if (escalateConversationsOurTurn != null) 'escalate_conversations_our_turn': escalateConversationsOurTurn,
     };
   }
 

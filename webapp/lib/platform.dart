@@ -73,7 +73,7 @@ Future<Map<String, List<String>>> get projectsDrivers async {
 }
 
 StreamSubscription listenForMetrics(String collectionRoot, DateTime periodFilterDatetime, String fieldPath, CollectionListener listener) {
-  log.verbose('Loading from metrics');
+  log.verbose('Loading from metrics ${collectionRoot}');
   var query;
   if (periodFilterDatetime != null) {
     query = _firestoreInstance
