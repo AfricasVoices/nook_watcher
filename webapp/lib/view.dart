@@ -30,6 +30,8 @@ void init() {
 
   headerElement.insertAdjacentElement('beforeBegin', bannerView.bannerElement);
   headerElement.append(authHeaderView.authElement);
+
+  charts.init();
 }
 
 void initSignedInView() {

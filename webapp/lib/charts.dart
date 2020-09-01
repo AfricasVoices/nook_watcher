@@ -4,6 +4,17 @@ import 'dart:html';
 import 'package:crypto/crypto.dart';
 import 'package:chartjs/chartjs.dart' as chartjs;
 
+
+init() {
+  chartjs.ChartTooltipPositioner custom = (List<dynamic> elements, chartjs.Point eventPosition) {
+    if (elements.isEmpty) {
+      return null;
+    }
+    return new chartjs.Point(x: eventPosition.x, y: eventPosition.y < 10 ? 10: eventPosition.y);
+  };
+  chartjs.Chart.Tooltip.positioners.custom = custom;
+}
+
 class SingleIndicatorChartView {
   DivElement chartContainer;
   DivElement title;
@@ -487,6 +498,8 @@ class DriverTimeseriesBarChartView {
     chart.options.scales.xAxes[0].ticks.min = xLowerLimit?.toIso8601String();
     chart.options.scales.xAxes[0].ticks.max = xUpperLimit?.toIso8601String();
     chart.options.scales.xAxes[0].stacked = true;
+
+    chart.options.tooltips.position = 'custom';
 
     chart.options.scales.yAxes[0].stacked = true;
     chart.options.scales.yAxes[0].ticks.min = yLowerLimit;
