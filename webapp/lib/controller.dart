@@ -184,9 +184,9 @@ void listenForConversationMetrics(String project) {
   // start listening for the new project collection
   conversationMetricsSubscription?.cancel();
   conversationMetricsSubscription = platform.listenForMetrics(
-    'project/$project/$CONVERSATION_METRICS_COLLECTION_KEY', // TODO: update after the infrastructure is changed to use projects/
+    'projects/$project/$CONVERSATION_METRICS_COLLECTION_KEY',
     getFilteredDate(selectedPeriodFilter),
-    'date', // TODO: update after the infrastructure is changed to use datetime
+    'datetime',
     (List<model.DocSnapshot> updatedMetrics) {
       if (signedInUser == null) {
         log.error("Receiving metrics when user is not logged it, something's wrong, abort.");

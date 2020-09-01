@@ -16,7 +16,7 @@ class ConversationMetricsData {
     print(data);
     if (data == null) return null;
     return ConversationMetricsData()
-      ..datetime = DateTime_fromData(data['date'])
+      ..datetime = DateTime_fromData(data['datetime'])
       ..conversationsCount = int_fromData(data['conversations_count'])
       ..escalateConversations = int_fromData(data['escalate_conversations'])
       ..escalateConversationsOurTurn = int_fromData(data['escalate_conversations_our_turn']);
@@ -24,7 +24,7 @@ class ConversationMetricsData {
 
   Map<String, dynamic> toData() {
     return {
-      if (datetime != null) 'date': datetime.toIso8601String(),
+      if (datetime != null) 'datetime': datetime.toIso8601String(),
       if (conversationsCount != null) 'conversations_count': conversationsCount,
       if (escalateConversations != null) 'escalate_conversations': escalateConversations,
       if (escalateConversationsOurTurn != null) 'escalate_conversations_our_turn': escalateConversationsOurTurn,
