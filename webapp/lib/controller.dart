@@ -194,7 +194,6 @@ void listenForConversationMetrics(String project) {
       }
       var updatedIds = updatedMetrics.map((m) => m.id).toSet();
       var updatedData = updatedMetrics.map((doc) => model.ConversationMetricsData.fromSnapshot(doc)).toList();
-      print(updatedData);
       conversationMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       conversationMetricsDataList.addAll(updatedData);
       command(UIAction.conversationMetricsDataUpdated, null);
@@ -345,10 +344,13 @@ String getWatchdogTimerKey(Object data) {
 
 void setupWatchdogTimer(Object latestData, [bool stale = false]) {
   var data;
+  var type;
   if (latestData is model.ConversationMetricsData) {
     data = latestData as model.ConversationMetricsData;
+    type = CONVERSATION_METRICS_COLLECTION_KEY;
   } else if (latestData is model.SystemMetricsData) {
     data = latestData as model.SystemMetricsData;
+    type = SYSTEM_METRICS_ROOT_COLLECTION_KEY;
   } else {
     throw new model.DataModelNotSupported('Data object of type "${latestData.runtimeType}" not supported for staleness monitoring');
   }
@@ -362,10 +364,7 @@ void setupWatchdogTimer(Object latestData, [bool stale = false]) {
     var now = new DateTime.now();
     var duration = timeToExecute.difference(now);
     var timer = new Timer(duration, () {
-      if (data.project == selectedProject) {
-        view.contentView.setStale(CONVERSATION_METRICS_COLLECTION_KEY, true);
-      }
-      view.contentView.setStale(SYSTEM_METRICS_ROOT_COLLECTION_KEY, true);
+      view.contentView.setStale(type, true);
     });
     watchdogTimers[getWatchdogTimerKey(data)] = timer;
   }
