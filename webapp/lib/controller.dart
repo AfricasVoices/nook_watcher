@@ -595,9 +595,6 @@ void updateConversationCharts(List<model.ConversationMetricsData> filteredConver
 }
 
 void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataMap) {
-  var xLowerLimitDateTime= getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
-  var xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
-
   view.contentView.createDriverCharts(filteredDriversDataMap);
 
   var previousFilters = new Map.from(driverMetricsFilters);
@@ -618,6 +615,9 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
 
   filteredDriversDataMap.forEach((driverName, driverData) {
     var chart = view.contentView.driverCharts[driverName];
+
+    var xLowerLimitDateTime= getStartDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
+    var xUpperLimitDateTime = getEndDateTimeForPeriod(view.ChartFiltersView().selectedPeriodFilter);
 
     var selectedMetrics = Map.fromEntries(driverMetricsFilters[driverName].entries.where((m) => m.value == true));
     List<String> metricNames = selectedMetrics.keys.toList()..sort();
