@@ -453,7 +453,7 @@ class DriverTimeseriesBarChartView {
             ..gridLines = (new chartjs.GridLineOptions(zeroLineWidth: 0))
         ]),
       hover: new chartjs.ChartHoverOptions()..animationDuration = 0,
-      tooltips: new chartjs.ChartTooltipOptions()..mode = 'x-axis',
+      tooltips: new chartjs.ChartTooltipOptions()..mode = 'index',
     );
 
     var chartConfig = new chartjs.ChartConfiguration(type: 'bar', data: chartData, options: chartOptions);
