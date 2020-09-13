@@ -641,17 +641,23 @@ void updateDriverCharts(Map<String, List<model.DriverData>> filteredDriversDataM
       });
     });
 
+    var filteredXLowerLimitDateTime;
+    var filteredXUpperLimitDateTime;
+
     if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName].containsKey('min')) {
-      xLowerLimitDateTime = driverXLimitFilters[driverName]['min'];
+      filteredXLowerLimitDateTime = driverXLimitFilters[driverName]['min'];
     } else {
       view.contentView.setDriverChartsXAxisFilterMin(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
     }
 
     if (driverXLimitFilters[driverName] != null && driverXLimitFilters[driverName]['max'] != null) {
-      xUpperLimitDateTime = driverXLimitFilters[driverName]['max'];
+      filteredXUpperLimitDateTime = driverXLimitFilters[driverName]['max'];
     } else {
       view.contentView.setDriverChartsXAxisFilterMax(driverName, xLowerLimitDateTime, xUpperLimitDateTime);
     }
+
+    if (filteredXLowerLimitDateTime == null) filteredXLowerLimitDateTime = xLowerLimitDateTime;
+    if (filteredXUpperLimitDateTime == null) filteredXUpperLimitDateTime = xUpperLimitDateTime;
 
     var yUpperLimit = 0;
     if (driverYUpperLimitFilters[driverName] != null) {
