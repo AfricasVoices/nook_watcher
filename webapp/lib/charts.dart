@@ -497,6 +497,8 @@ class DriverTimeseriesBarChartView {
       timeScaleOptions.unit = 'minute';
       timeScaleOptions.displayFormats = new chartjs.TimeDisplayFormat(hour: 'D/MM h:mm a');
       timeScaleOptions.stepSize = 15;
+    } else if (xUpperLimit.difference(xLowerLimit).inHours <= 12) {
+      timeScaleOptions.stepSize = 1;
     }
     chart.options.scales.xAxes[0].time = timeScaleOptions;
     chart.options.scales.xAxes[0].type = 'time';
