@@ -200,7 +200,7 @@ void listenForConversationMetrics(String project) {
       var updatedData = updatedMetrics.map((doc) => model.ConversationMetricsData.fromSnapshot(doc)).toList();
       conversationMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       conversationMetricsDataList.addAll(updatedData);
-      var updatedMonitoredTags = updatedData.fold<Set<String>>(new Set(), (tags, data) => tags..addAll(data.tagCountData.keys)).toList();
+      var updatedMonitoredTags = updatedData.fold<Set<String>>(new Set(), (tags, data) => tags..addAll(data.tagsCount.keys)).toList();
       var newMonitoredTags = updatedMonitoredTags.toSet().difference(monitoredConversationTags);
       if (newMonitoredTags.isNotEmpty) {
         for (var tag in newMonitoredTags) {
@@ -577,9 +577,9 @@ void updateConversationCharts(List<model.ConversationMetricsData> filteredConver
   view.contentView.conversationsCountTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
   for (var tag in monitoredConversationTags) {
-    data = new Map.fromIterable(filteredConversationMetricsDataList.where((element) => element.tagCountData.containsKey(tag)),
+    data = new Map.fromIterable(filteredConversationMetricsDataList.where((element) => element.tagsCount.containsKey(tag)),
       key: (item) => (item as model.ConversationMetricsData).datetime.toLocal(),
-      value: (item) => (item as model.ConversationMetricsData).tagCountData[tag]);
+      value: (item) => (item as model.ConversationMetricsData).tagsCount[tag]);
     view.contentView.tagCountTimeseriesCharts[tag].updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
   }
 
@@ -598,7 +598,7 @@ void updateConversationCharts(List<model.ConversationMetricsData> filteredConver
 
   view.contentView.conversationsCountValue.updateChart('${latestData.conversationsCount}');
   for (var tag in monitoredConversationTags) {
-    view.contentView.tagCountCharts[tag].updateChart('${latestData.tagCountData[tag]}');
+    view.contentView.tagCountCharts[tag].updateChart('${latestData.tagsCount[tag]}');
   }
 
   filteredConversationMetricsDataList.sort((a, b) => a.datetime.compareTo(b.datetime));

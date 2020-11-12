@@ -6,7 +6,7 @@ class ConversationMetricsData {
   String docId;
   DateTime datetime;
   int conversationsCount;
-  Map<String, int> tagCountData;
+  Map<String, int> tagsCount;
 
   static ConversationMetricsData fromSnapshot(DocSnapshot doc) =>
       fromData(doc.data)..docId = doc.id;
@@ -17,14 +17,14 @@ class ConversationMetricsData {
     return ConversationMetricsData()
       ..datetime = DateTime_fromData(data['datetime'])
       ..conversationsCount = int_fromData(data['conversations_count'])
-      ..tagCountData = Map_fromData(data['tag_count_data'], int_fromData) ?? {};
+      ..tagsCount = Map_fromData(data['tags_count'], int_fromData) ?? {};
   }
 
   Map<String, dynamic> toData() {
     return {
       if (datetime != null) 'datetime': datetime.toIso8601String(),
       if (conversationsCount != null) 'conversations_count': conversationsCount,
-      if (tagCountData != null) 'tag_count_data': tagCountData,
+      if (tagsCount != null) 'tags_count': tagsCount,
     };
   }
 
