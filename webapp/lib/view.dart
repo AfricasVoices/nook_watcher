@@ -306,19 +306,23 @@ class ContentView {
 
   DivElement contentElement;
   DivElement conversationChartsTabContent;
+  DivElement singleIndicators;
   DivElement driverChartsTabContent;
   DivElement systemChartsTabContent;
   DivElement chartDataLastUpdateTime;
 
+  // Conversations monitoring page
   charts.SingleIndicatorChartView conversationsCountValue;
-  charts.SingleIndicatorChartView escalateConversationsLatestValue;
-  charts.SingleIndicatorChartView escalateConversationsOurTurnValue;
+  Map<String, charts.SingleIndicatorChartView> tagCountCharts;
   charts.DailyTimeseriesLineChartView conversationsCountTimeseries;
-  charts.DailyTimeseriesLineChartView escalateConversationsTimeseries;
-  charts.DailyTimeseriesLineChartView escalateConversationsOurTurnTimeseries;
+  Map<String, charts.DailyTimeseriesLineChartView> tagCountTimeseriesCharts;
+
+  // Systems monitoring page
   charts.SystemMetricsTimeseriesBarChartView cpuPercentSystemMetricsTimeseries;
   charts.SystemMetricsTimeseriesBarChartView diskUsageSystemMetricsTimeseries;
   charts.SystemMetricsTimeseriesBarChartView memoryUsageSystemMetricsTimeseries;
+
+  // Drivers monitoring page
   Map<String, charts.DriverTimeseriesBarChartView> driverCharts;
   Map<String, charts.SystemEventsTimeseriesLineChartView> systemEventsCharts;
 
@@ -351,7 +355,7 @@ class ContentView {
     conversationChartsTabContent = new DivElement()
       ..id = "conversations";
 
-    var singleIndicators = new DivElement()
+    singleIndicators = new DivElement()
       ..classes.add('single-indicator-container');
     conversationChartsTabContent.append(singleIndicators);
 
@@ -359,13 +363,7 @@ class ContentView {
       ..createEmptyChart(titleText: 'all conversations');
     singleIndicators.append(conversationsCountValue.chartContainer);
 
-    escalateConversationsLatestValue = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'escalate conversations');
-    singleIndicators.append(escalateConversationsLatestValue.chartContainer);
-
-    escalateConversationsOurTurnValue = new charts.SingleIndicatorChartView()
-      ..createEmptyChart(titleText: 'escalate coversations our turn');
-    singleIndicators.append(escalateConversationsOurTurnValue.chartContainer);
+    tagCountCharts = {};
 
     chartDataLastUpdateTime = new DivElement()
       ..id = 'charts-last-update';
@@ -377,17 +375,7 @@ class ContentView {
       titleText: 'all conversations',
       datasetLabels: ['all conversations']);
 
-    escalateConversationsTimeseries = new charts.DailyTimeseriesLineChartView();
-    conversationChartsTabContent.append(escalateConversationsTimeseries.chartContainer);
-    escalateConversationsTimeseries.createEmptyChart(
-      titleText: 'escalate conversations',
-      datasetLabels: ['escalate conversations']);
-
-    escalateConversationsOurTurnTimeseries = new charts.DailyTimeseriesLineChartView();
-    conversationChartsTabContent.append(escalateConversationsOurTurnTimeseries.chartContainer);
-    escalateConversationsOurTurnTimeseries.createEmptyChart(
-      titleText: 'escalate conversations our turn',
-      datasetLabels: ['escalate conversations our turn']);
+    tagCountTimeseriesCharts = {};
 
     driverChartsTabContent = new DivElement()
       ..id = "drivers";
@@ -432,6 +420,31 @@ class ContentView {
         return systemEventsChart;
       });
     });
+  }
+
+  void addTagCountIndicator(String tag) {
+    var indicator = new charts.SingleIndicatorChartView()
+      ..createEmptyChart(titleText: tag);
+    singleIndicators.append(indicator.chartContainer);
+    tagCountCharts[tag] = indicator;
+  }
+
+  void addTagCountTimeseries(String tag) {
+    var timeseries = new charts.DailyTimeseriesLineChartView();
+    conversationChartsTabContent.append(timeseries.chartContainer);
+    timeseries.createEmptyChart(titleText: tag, datasetLabels: [tag]);
+    tagCountTimeseriesCharts[tag] = timeseries;
+  }
+
+  void clearTagCountCharts() {
+    for (var chart in tagCountCharts.values) {
+      chart.chartContainer.remove();
+    }
+    tagCountCharts.clear();
+    for (var chart in tagCountTimeseriesCharts.values) {
+      chart.chartContainer.remove();
+    }
+    tagCountTimeseriesCharts.clear();
   }
 
   void createDriverCharts(Map<String, List<model.DriverData>> driversData) {
@@ -536,11 +549,9 @@ class ContentView {
     switch (chartType){
       case controller.ChartType.conversation:
         conversationsCountValue.spinner.classes.toggle('hidden', !show);
-        escalateConversationsLatestValue.spinner.classes.toggle('hidden', !show);
-        escalateConversationsOurTurnValue.spinner.classes.toggle('hidden', !show);
+        tagCountCharts.forEach((tag, chart) => chart.spinner.classes.toggle('hidden', !show));
         conversationsCountTimeseries.spinner.classes.toggle('hidden', !show);
-        escalateConversationsTimeseries.spinner.classes.toggle('hidden', !show);
-        escalateConversationsOurTurnTimeseries.spinner.classes.toggle('hidden', !show);
+        tagCountTimeseriesCharts.forEach((tag, chart) => chart.spinner.classes.toggle('hidden', !show));
         break;
       case controller.ChartType.driver:
         driverCharts.forEach((driver, chart) => chart.spinner.classes.toggle('hidden', !show));
