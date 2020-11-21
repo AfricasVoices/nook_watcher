@@ -735,10 +735,10 @@ void updateSystemMetricsCharts(List<model.SystemMetricsData> filteredSystemMetri
   double maxDiskSpace = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.diskUsage['total']);
   view.contentView.diskUsageSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxDiskSpace);
 
+  double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['total']);
   data = new Map.fromIterable(filteredSystemMetricsDataList,
       key: (item) => (item as model.SystemMetricsData).datetime.toLocal(),
-      value: (item) => model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).memoryUsage['used']));
-  double maxMemory = model.SystemMetricsData.sizeInGB(filteredSystemMetricsDataList.last.memoryUsage['total']);
+      value: (item) => maxMemory - model.SystemMetricsData.sizeInGB((item as model.SystemMetricsData).memoryUsage['available']));
   view.contentView.memoryUsageSystemMetricsTimeseries.updateChart([data], yUpperLimit: maxMemory);
 }
 
