@@ -115,6 +115,7 @@ List<String> PROJECTS;
 Map<String, List<String>> DRIVERS;
 
 List<model.ConversationMetricsData> conversationMetricsDataList;
+Set<String> monitoredConversationTags;
 Map<String, List<model.DriverData>> driversDataMap;
 Map<String, List<model.SystemEventsData>> systemEventsDataMap;
 List<model.SystemMetricsData> systemMetricsDataList;
@@ -146,6 +147,7 @@ void initUI() async{
   DRIVERS = await platform.projectsDrivers;
 
   conversationMetricsDataList = [];
+  monitoredConversationTags = new Set();
   driversDataMap = {};
   systemEventsDataMap = {};
   systemMetricsDataList = [];
@@ -178,8 +180,10 @@ void initUI() async{
 void listenForConversationMetrics(String project) {
   // clear up the old data while the new data loads
   conversationMetricsDataList.clear();
+  monitoredConversationTags.clear();
   command(UIAction.conversationMetricsDataUpdated, null);
   view.contentView.toggleChartLoadingState(ChartType.conversation, true);
+  view.contentView.clearTagCountCharts();
 
   // start listening for the new project collection
   conversationMetricsSubscription?.cancel();
@@ -196,6 +200,15 @@ void listenForConversationMetrics(String project) {
       var updatedData = updatedMetrics.map((doc) => model.ConversationMetricsData.fromSnapshot(doc)).toList();
       conversationMetricsDataList.removeWhere((d) => updatedIds.contains(d.docId));
       conversationMetricsDataList.addAll(updatedData);
+      var updatedMonitoredTags = updatedData.fold<Set<String>>(new Set(), (tags, data) => tags..addAll(data.tagsCount.keys)).toList();
+      var newMonitoredTags = updatedMonitoredTags.toSet().difference(monitoredConversationTags);
+      if (newMonitoredTags.isNotEmpty) {
+        for (var tag in newMonitoredTags) {
+          view.contentView.addTagCountIndicator(tag);
+          view.contentView.addTagCountTimeseries(tag);
+          monitoredConversationTags.add(tag);
+        }
+      }
       command(UIAction.conversationMetricsDataUpdated, null);
       checkConversationMetricsStale(updatedData);
       view.contentView.toggleChartLoadingState(ChartType.conversation, false);
@@ -563,21 +576,19 @@ void updateConversationCharts(List<model.ConversationMetricsData> filteredConver
     value: (item) => (item as model.ConversationMetricsData).conversationsCount);
   view.contentView.conversationsCountTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
 
-  data = new Map.fromIterable(filteredConversationMetricsDataList,
-    key: (item) => (item as model.ConversationMetricsData).datetime.toLocal(),
-    value: (item) => (item as model.ConversationMetricsData).escalateConversations);
-  view.contentView.escalateConversationsTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
-
-  data = new Map.fromIterable(filteredConversationMetricsDataList,
-    key: (item) => (item as model.ConversationMetricsData).datetime.toLocal(),
-    value: (item) => (item as model.ConversationMetricsData).escalateConversationsOurTurn);
-  view.contentView.escalateConversationsOurTurnTimeseries.updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+  for (var tag in monitoredConversationTags) {
+    data = new Map.fromIterable(filteredConversationMetricsDataList.where((element) => element.tagsCount.containsKey(tag)),
+      key: (item) => (item as model.ConversationMetricsData).datetime.toLocal(),
+      value: (item) => (item as model.ConversationMetricsData).tagsCount[tag]);
+    view.contentView.tagCountTimeseriesCharts[tag].updateChart([data], timeScaleUnit: timeScaleUnit, xLowerLimit: xLowerLimitDateTime, xUpperLimit: xUpperLimitDateTime);
+  }
 
   if (filteredConversationMetricsDataList.isEmpty) {
     view.contentView.chartDataLastUpdateTime.text = 'No data to show for selected project and time range';
     view.contentView.conversationsCountValue.updateChart('-');
-    view.contentView.escalateConversationsLatestValue.updateChart('-');
-    view.contentView.escalateConversationsOurTurnValue.updateChart('-');
+    for (var tag in monitoredConversationTags) {
+      view.contentView.tagCountCharts[tag].updateChart('-');
+    }
     // TODO: show a message on the timeseries charts saying that there's no data to show
     return;
   }
@@ -586,8 +597,9 @@ void updateConversationCharts(List<model.ConversationMetricsData> filteredConver
   var latestData = filteredConversationMetricsDataList.firstWhere((d) => d.datetime.toLocal() == latestDateTime, orElse: () => null);
 
   view.contentView.conversationsCountValue.updateChart('${latestData.conversationsCount}');
-  view.contentView.escalateConversationsLatestValue.updateChart('${latestData.escalateConversations}');
-  view.contentView.escalateConversationsOurTurnValue.updateChart('${latestData.escalateConversationsOurTurn}');
+  for (var tag in monitoredConversationTags) {
+    view.contentView.tagCountCharts[tag].updateChart('${latestData.tagsCount[tag]}');
+  }
 
   filteredConversationMetricsDataList.sort((a, b) => a.datetime.compareTo(b.datetime));
   DateTime lastUpdateTime = filteredConversationMetricsDataList.last.datetime;
