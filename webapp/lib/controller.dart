@@ -210,7 +210,9 @@ void listenForConversationMetrics(String project) {
         }
       }
       command(UIAction.conversationMetricsDataUpdated, null);
-      checkConversationMetricsStale(updatedData);
+      // TODO(mariana): Temporarily disable conversation metrics staleness as it's no longer a periodic event,
+      // but instead reacts to user activity. It will need replacing with a different mechanism to monitor this system.
+      // checkConversationMetricsStale(updatedData);
       view.contentView.toggleChartLoadingState(ChartType.conversation, false);
     }
   );
